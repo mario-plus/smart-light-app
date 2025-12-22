@@ -69,7 +69,7 @@ fun DeviceCardItem(retrofitClient: RetrofitClient, lightDevice: LightDevice, typ
                 DeviceType.LAMP -> LampFeatureContent(lightDevice, retrofitClient )
                DeviceType .LOOP -> LoopFeatureContent(lightDevice)
                 DeviceType .PLAY_BOX -> PlayboxFeatureContent(lightDevice)
-                DeviceType.ENV->EnvFeatureContent(lightDevice,retrofitClient)
+                DeviceType.ENV->EnvFeatureContent(lightDevice)
             }
         }
     }

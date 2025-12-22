@@ -77,7 +77,10 @@ data class LightDevice(
     //当前节目
     var playingProgramName: String?,
     //分辨率
-    var widthHeighProgram: String?
+    var widthHeighProgram: String?,
+
+    //环境传感器数据
+    var envData: EnvData?
 )
 
 data class LoopInfo(
@@ -207,7 +210,11 @@ data class EnvData(
     val humidity: Any? = null,
 )
 
-data class EnvDisplayInfo(val label: String, val value: String, val unit: String)
+data class EnvDisplayInfo(
+    val label: String,
+    val value: String,
+    val unit: String
+)
 
 //wbertc
 data class WebRTCResponse(
@@ -217,9 +224,6 @@ data class WebRTCResponse(
     val type: String
 )
 
-// 定义信令请求数据模型
-data class WebRTCSignalingRequest(
-    val app: String,
-    val stream: String,
-    val type: String,
+data class EnvDataReq(
+    val ids: List<Long>
 )

@@ -6,6 +6,8 @@ import androidx.paging.PagingState
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.constant.DeviceType
+import com.unilumin.smartapp.client.data.EnvData
+import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
@@ -75,18 +77,38 @@ suspend fun getDeviceList(
                 deviceService.getLedList(searchQuery, page, pageSize, 12, 3), context
             )
         return parseDataNewSuspend?.list ?: emptyList()
-    } else if (type == DeviceType.ENV || type == DeviceType.CAMERA) {
-        var parseDataNewSuspend =
-            UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
-                deviceService.getDeviceList(
-                    searchQuery,
-                    page,
-                    pageSize,
-                    DeviceType.getDeviceProductTypeId(type)
-                ), context
-            )
-        return parseDataNewSuspend?.list ?: emptyList()
+    } else if (type == DeviceType.ENV) {
+        var iotDevices = getIotDevices(type, deviceService, searchQuery, page, pageSize, context)
+        val deviceIds = iotDevices.map { it.id }
+        //填充环境传感器设备数据
+        val envDataMap = if (deviceIds.isNotEmpty()) {
+            UniCallbackService<Map<Long, EnvData>>().parseDataNewSuspend(
+                deviceService.getEnvDataList(EnvDataReq(deviceIds)), context
+            ) ?: emptyMap()
+        } else {
+            emptyMap()
+        }
+        iotDevices.forEach { device ->
+            val envData = envDataMap[device.id]
+            device.envData = envData
+        }
+        return iotDevices
     }
-    // TODO 可以扩展其他类型的设备获取逻辑
     return emptyList()
+}
+
+suspend fun getIotDevices(
+    type: String,
+    deviceService: DeviceService,
+    searchQuery: String,
+    page: Int,
+    pageSize: Int,
+    context: Context
+): List<LightDevice> {
+    var parseDataNewSuspend = UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+        deviceService.getDeviceList(
+            searchQuery, page, pageSize, DeviceType.getDeviceProductTypeId(type)
+        ), context
+    )
+    return parseDataNewSuspend?.list ?: emptyList()
 }

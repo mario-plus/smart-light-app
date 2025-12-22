@@ -2,6 +2,7 @@ package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
 import com.unilumin.smartapp.client.data.EnvData
+import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.client.data.NewResponseData
@@ -57,6 +58,9 @@ interface DeviceService {
 
     @GET(RequestPathKey.KEY_ENV_DATA)
     fun getEnvData(@Query("id") id: Long): Call<NewResponseData<EnvData?>?>?
+
+    @POST(RequestPathKey.KEY_ENV_DATA_LIST)
+    fun getEnvDataList(@Body req: EnvDataReq): Call<NewResponseData<Map<Long, EnvData>?>?>?
 
 
     //获取iot设备列表

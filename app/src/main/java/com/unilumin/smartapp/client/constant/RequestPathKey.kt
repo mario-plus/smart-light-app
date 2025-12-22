@@ -13,6 +13,7 @@ object RequestPathKey {
     const val KEY_ROAD_LIST: String = "$SMART_COMMON_APPLICATION/base/project_road_list"
     const val LEY_LAMP_LIST: String = "$SMART_COMMON_APPLICATION/base/smart_lamppole_list"
     const val KEY_ENV_DATA: String = "$SMART_COMMON_APPLICATION/env/map_visualization_weather_condition"
+    const val KEY_ENV_DATA_LIST: String = "$SMART_COMMON_APPLICATION/env/env_data"
     const val KEY_CAMERA_LIVE_URL: String = "$SMART_COMMON_APPLICATION/security/camera_live"
     const val KEY_CAMERA_LIVE: String = "$ZLM/index/api/webrtc"
 
