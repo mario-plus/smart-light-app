@@ -5,6 +5,7 @@ import com.unilumin.smartapp.client.data.EnvData
 import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LightDevice
+import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
@@ -13,6 +14,7 @@ import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Query
 
 
@@ -55,6 +57,9 @@ interface DeviceService {
 
     @POST(RequestPathKey.KEY_LAMP_CTL)
     fun lampCtl(@Body lampCtlReq: LampCtlReq): Call<NewResponseData<String?>?>?
+
+    @PUT(RequestPathKey.KEY_LOOP_CTL)
+    fun loopCtl(@Body loopCtlReq: LoopCtlReq): Call<NewResponseData<String?>?>?
 
     @GET(RequestPathKey.KEY_ENV_DATA)
     fun getEnvData(@Query("id") id: Long): Call<NewResponseData<EnvData?>?>?

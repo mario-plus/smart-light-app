@@ -25,7 +25,6 @@ import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
@@ -35,7 +34,6 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
-import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -435,49 +433,39 @@ fun DeviceStatus(status: Int?) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoopCircleItem(loop: LoopInfo) {
-    // 1. 同时定义颜色和状态描述文字
-    val (circleColor, stateText) = when (loop.state) {
-        1 -> Color(0xFF4CAF50) to "通电"
-        0 -> Color(0xFFF44336) to "断电"
-        else -> Color(0xFF9E9E9E) to "未知"
+    val (baseColor, contentColor) = when (loop.state) {
+        1 -> Color(0xFFE8F5E9) to Color(0xFF2E7D32) // 柔和绿 (通电)
+        0 -> Color(0xFFFFEBEE) to Color(0xFFC62828) // 柔和红 (断电)
+        else -> Color(0xFFF5F5F5) to Color(0xFF757575) // 浅灰 (未知)
     }
-    // 2. 定义 Tooltip 状态
     val tooltipState = rememberTooltipState()
-    // 3. 使用 TooltipBox 包裹内容
     TooltipBox(
         positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
         tooltip = {
-            // 悬浮显示的提示框内容
-            PlainTooltip {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stateText,
-                        fontWeight = FontWeight.Bold,
-                        color = White // Tooltip 背景通常较深，根据主题可能需要调整
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "更新: ${loop.updateTime ?: "--"}", // 防止时间为空
-                        fontSize = 10.sp,
-                        color = White.copy(alpha = 0.8f)
-                    )
+            PlainTooltip(
+                containerColor = Color(0xFF333333).copy(alpha = 0.9f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(modifier = Modifier.padding(4.dp)) {
+                    Text("状态: ${if(loop.state == 1) "通电" else "断电"}", color = Color.White)
+                    Text("回路: 第 ${loop.loopNum} 路", fontSize = 10.sp, color = Color.White.copy(0.7f))
                 }
             }
         },
         state = tooltipState
     ) {
-        // 4. 原有的圆圈组件 (作为触发源)
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(32.dp)
-                .background(color = circleColor, shape = CircleShape)
+                .size(36.dp) // 稍微加大尺寸，更易点击
+                .background(color = baseColor, shape = CircleShape)
+                .border(1.dp, contentColor.copy(alpha = 0.3f), CircleShape) // 添加同色系的浅色边框
         ) {
             Text(
                 text = "${loop.loopNum}",
-                color = Color.White,
+                color = contentColor, // 文字颜色与边框/状态保持一致
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
         }
     }

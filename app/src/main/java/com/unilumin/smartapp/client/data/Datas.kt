@@ -178,6 +178,13 @@ data class LampCtlReq(
     val cmdType: Int, val cmdValue: Int, val ids: List<Long>, val subSystemType: Int
 )
 
+data class LoopCtlReq(
+    val idList: List<Long>,
+    val loopNumList: List<Int>,
+    //0关1开
+    val onOff: Int
+)
+
 data class EnvData(
     val pm2_5: String? = null,
     val pm10: String? = null,
