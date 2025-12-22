@@ -1,0 +1,86 @@
+package com.unilumin.smartapp.client.service
+
+import com.unilumin.smartapp.client.constant.RequestPathKey
+import com.unilumin.smartapp.client.data.EnvData
+import com.unilumin.smartapp.client.data.LampCtlReq
+import com.unilumin.smartapp.client.data.LightDevice
+import com.unilumin.smartapp.client.data.NewResponseData
+import com.unilumin.smartapp.client.data.PageResponse
+import com.unilumin.smartapp.client.data.RequestParam
+import com.unilumin.smartapp.client.data.WebRTCResponse
+import retrofit2.Call
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Query
+
+
+interface DeviceService {
+    //单灯列表
+    @POST(RequestPathKey.KEY_GET_LIGHT_LIST)
+    fun getLightCtlList(@Body param: RequestParam?): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+
+    //集控列表
+    @POST(RequestPathKey.KEY_GET_GW_LIST)
+    fun getGwCtlList(@Body param: RequestParam?): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+
+    //回路控制器列表
+    @GET(RequestPathKey.KEY_GET_LOOP_LIST)
+    fun getLoopCtlList(
+        @Query("keyword") keyword: String,
+        @Query("curPage") curPage: Int,
+        @Query("pageSize") pageSize: Int,
+        @Query("subSystemType") subSystemType: Int
+    ): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+
+    @GET(RequestPathKey.KEY_LED_LIST)
+    fun getLedList(
+        @Query("keyword") keyword: String,
+        @Query("curPage") curPage: Int,
+        @Query("pageSize") pageSize: Int,
+        @Query("productTypeId") productTypeId: Int,
+        @Query("subSystemType") subSystemType: Int
+    ): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+
+
+    //分组列表
+    @POST(RequestPathKey.KEY_GET_GROUP_LIST)
+    fun getGroupList()
+
+    //策略列表
+    @POST(RequestPathKey.KEY_GET_STRATEGY_LIST)
+    fun getStrategyList()
+
+
+    @POST(RequestPathKey.KEY_LAMP_CTL)
+    fun lampCtl(@Body lampCtlReq: LampCtlReq): Call<NewResponseData<String?>?>?
+
+    @GET(RequestPathKey.KEY_ENV_DATA)
+    fun getEnvData(@Query("id") id: Long): Call<NewResponseData<EnvData?>?>?
+
+
+    //获取iot设备列表
+    @GET(RequestPathKey.KEY_GET_DEVICE)
+    fun getDeviceList(
+        @Query("keyword") keyword: String,
+        @Query("curPage") curPage: Int,
+        @Query("pageSize") pageSize: Int,
+        @Query("productTypeIds") productTypeIds: Int
+    ): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+
+    @GET(RequestPathKey.KEY_CAMERA_LIVE_URL)
+    fun getCameraLiveUrl(
+        @Query("id") id: Long,
+        @Query("isPushStream") isPushStream: Int,
+        @Query("streamType") streamType: Int
+    ): Call<NewResponseData<String?>?>?
+
+    @GET(RequestPathKey.KEY_CAMERA_LIVE)
+    fun getCameraLive(
+        @Query("app") app: String,
+        @Query("stream") stream: String,
+        @Query("type") type: String
+    ): Call<WebRTCResponse>
+
+
+}

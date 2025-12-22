@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@android:color/white" />
+
+    <item android:height="300dp" android:gravity="top">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="#1A0072BC"
+                android:endColor="#00FFFFFF"
+                android:type="linear"/>
+        </shape>
+    </item>
+
+    <item
+        android:width="140dp"
+        android:height="140dp"
+        android:gravity="center"
+        android:bottom="80dp"> <layer-list>
+        <item>
+            <shape android:shape="oval">
+                <solid android:color="#0072BC"/>
+            </shape>
+        </item>
+        <item android:bottom="20dp" android:top="20dp" android:left="20dp" android:right="20dp">
+            <vector android:width="100dp" android:height="100dp" android:viewportWidth="108" android:viewportHeight="108">
+                <group android:translateX="30" android:translateY="-5">
+                    <path android:fillColor="#FFFFFF" android:pathData="M12,60 L18,60 L18,10 L12,10 Z" /> <path android:fillColor="#FFD600" android:pathData="M6,14 L10,14 L9,16 L7,16 Z" /> <path android:fillColor="#FFFFFF" android:pathData="M12,16 L4,14 L4,10 L18,10 L18,16 Z" /> <group android:translateX="18" android:translateY="14">
+                    <path android:fillColor="#FFFFFF" android:pathData="M0,2 L4,2 L4,4 L0,4 Z M4,0 L9,0 L9,6 L4,6 Z" /> </group>
+                    <group android:translateY="22" android:translateX="10">
+                        <path android:fillColor="#FFFFFF" android:pathData="M0,0 H10 V16 H0 Z" /> <path android:fillColor="#80FFFFFF" android:pathData="M1,1 H9 V15 H1 Z" /> </group>
+                </group>
+            </vector>
+        </item>
+    </layer-list>
+    </item>
+
+    <item android:bottom="60dp" android:gravity="bottom|center_horizontal">
+        <vector android:width="160dp" android:height="40dp" android:viewportWidth="160" android:viewportHeight="40">
+            <group android:translateX="20" android:scaleX="2.5" android:scaleY="2.5">
+                <path
+                    android:fillColor="#333333"
+                    android:pathData="M0,10 V6 C0,6 0,10 0,10 V0 H2 V6 C2,8 4,8 4,6 V0 H6 V6 C6,9 2,9 2,9 C2,9 0,9 0,6 Z M8,2 H10 V10 H8 Z M8,0 H10 V1.5 H8 Z M12,2 H14 V10 H12 Z M16,0 H18 V10 H16 Z M20,2 H22 V10 H20 Z M20,0 H22 V1.5 H20 Z M24,2 H26 V4 C26,4 27,2 29,2 C31,2 32,3 32,5 V10 H30 V5 C30,4 29,3.5 28,3.5 C27,3.5 26,4 26,5 V10 H24 Z M34,2 H36 V10 H34 Z M34,0 H36 V1.5 H34 Z M38,2 H40 V4 C40,4 41,2 43,2 C45,2 46,3 46,5 V10 H44 V5 C44,4 43,3.5 42,3.5 C41,3.5 40,4 40,5 V10 H38 Z" />
+            </group>
+
+            <path
+                android:fillColor="#999999"
+                android:pathData="M40,35 H120 V36 H40 Z" /> </vector>
+    </item>
+</layer-list>
