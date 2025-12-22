@@ -106,14 +106,14 @@ fun LampFeatureContent(
             }
             Spacer(modifier = Modifier.height(12.dp))
 
-            RemoteControlButton(
-                canClick = lightDevice.state == 1, onClick = {
-                    if (lightDevice.state == 1) {
+            if (lightDevice.state == 1) {
+                //离线隐藏控制按钮
+                RemoteControlButton(
+                    canClick = true, onClick = {
                         showDialog = true
-                    } else {
-                        Toast.makeText(context, "设备已离线", Toast.LENGTH_SHORT).show()
-                    }
-                })
+                    })
+            }
+
         }
     }
     if (showDialog) {
