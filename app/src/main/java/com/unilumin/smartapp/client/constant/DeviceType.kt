@@ -39,6 +39,9 @@ object DeviceType {
         CAMERA to "摄像头"
     )
 
+    //双色温单灯产品id
+    val colorTempSupportedList = listOf("107", "125")
+
     fun getDeviceProductTypeId(type: String): Int {
         return when (type) {
             ENV -> 7

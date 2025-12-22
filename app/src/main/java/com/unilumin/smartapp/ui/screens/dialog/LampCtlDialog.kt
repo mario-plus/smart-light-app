@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.unilumin.smartapp.client.constant.DeviceType
 import com.unilumin.smartapp.ui.components.BrightnessControlCard
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.ControlRed
@@ -41,13 +42,13 @@ import com.unilumin.smartapp.ui.theme.ControlRed
 fun DeviceControlDialog(
     productId: String,
     deviceName: String,
-    initialBrightness: Int,
-    initColorT: Int,
+    initialBrightness: Int?,
+    initColorT: Int?,
     onDismiss: () -> Unit,
     onClick: (Int, Int) -> Unit,
 ) {
-    var bright by remember { mutableIntStateOf(initialBrightness) }
-    var colorT by remember { mutableIntStateOf(initColorT) }
+    var bright by remember { mutableIntStateOf(initialBrightness ?: 0) }
+    var colorT by remember { mutableIntStateOf(initColorT ?: 0) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -145,7 +146,7 @@ fun DeviceControlDialog(
                         onClick(2, value)
                     })
                 Spacer(modifier = Modifier.height(24.dp))
-                if (productId == "107") {
+                if (DeviceType.colorTempSupportedList.contains(productId)) {
                     BrightnessControlCard(
                         "色温",
                         initValue = colorT,

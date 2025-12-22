@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
+import com.unilumin.smartapp.client.constant.DeviceType.colorTempSupportedList
 import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.client.data.NewResponseData
@@ -87,27 +88,44 @@ fun LampFeatureContent(
                     ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    InfoColumn(
-                        "开关", if (lightDevice.onOff == 1) "开" else "关", isHighlight = true
-                    )
+                    // 1. 开关状态
+                    val powerState = when(lightDevice.onOff) {
+                        1 -> "开"
+                        0 -> "关"
+                        else -> "--"
+                    }
+                    InfoColumn("开关", powerState, isHighlight = true)
                     VerticalDivider()
-                    InfoColumn("亮度", "${lightDevice.bright1}%", isHighlight = true)
+                    // 2. 亮度
+                    val brightness = lightDevice.bright1?.let { "$it%" } ?: "--"
+                    InfoColumn("亮度", brightness, isHighlight = true)
+                    // 3. 色温 (仅在产品列表中才显示)
+                    if (lightDevice.productId in colorTempSupportedList) {
+                        VerticalDivider()
+                        val colorTemp = lightDevice.bright2?.let { "$it%" } ?: "--"
+                        InfoColumn("色温", colorTemp, isHighlight = true)
+                    }
                     VerticalDivider()
-                    InfoColumn("色温", "${lightDevice.bright2}%", isHighlight = true)
+                    // 4. 电压 (处理 Float/Double 的格式化)
+                    val voltageStr = lightDevice.voltage?.let { String.format("%.1fV", it) } ?: "--"
+                    InfoColumn("电压", voltageStr)
                     VerticalDivider()
-                    InfoColumn("电压", "${String.format("%.1f", lightDevice.voltage)}V")
+                    // 5. 电流
+                    val currentStr = lightDevice.current?.let { String.format("%.1fmA", it) } ?: "--"
+                    InfoColumn("电流", currentStr)
                     VerticalDivider()
-                    InfoColumn("电流", "${String.format("%.1f", lightDevice.current)}mA")
+                    // 6. 功率
+                    val powerStr = lightDevice.power?.let { String.format("%.1fW", it) } ?: "--"
+                    InfoColumn("功率", powerStr)
                     VerticalDivider()
-                    InfoColumn("功率", "${String.format("%.1f", lightDevice.power)}W")
-                    VerticalDivider()
-                    InfoColumn("功率因子", String.format("%.1f", lightDevice.factor))
+                    // 7. 功率因子
+                    val factorStr = lightDevice.factor?.let { String.format("%.1f", it) } ?: "--"
+                    InfoColumn("功率因子", factorStr)
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
 
             if (lightDevice.state == 1) {
-                //离线隐藏控制按钮
                 RemoteControlButton(
                     canClick = true, onClick = {
                         showDialog = true
@@ -128,3 +146,6 @@ fun LampFeatureContent(
             })
     }
 }
+
+
+

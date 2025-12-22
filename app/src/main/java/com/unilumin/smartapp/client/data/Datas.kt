@@ -55,16 +55,16 @@ data class LightDevice(
     var deviceState: Int,
     //工作状态: 1告警 0正常
     var alarmType: Int,
-    var voltage: Double,
-    var current: Double,
-    var power: Double,
-    var factor: Double,
+    var voltage: Double?,
+    var current: Double?,
+    var power: Double?,
+    var factor: Double?,
     //亮度
-    var bright1: Int,
+    var bright1: Int?,
     //色温
-    var bright2: Int,
+    var bright2: Int?,
     //开关
-    var onOff: Int,
+    var onOff: Int?,
     //回路信息
     var loops: List<LoopInfo>?,
 
