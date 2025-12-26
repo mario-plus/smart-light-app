@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
@@ -61,6 +62,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -447,8 +449,12 @@ fun LoopCircleItem(loop: LoopInfo) {
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Column(modifier = Modifier.padding(4.dp)) {
-                    Text("状态: ${if(loop.state == 1) "通电" else "断电"}", color = Color.White)
-                    Text("回路: 第 ${loop.loopNum} 路", fontSize = 10.sp, color = Color.White.copy(0.7f))
+                    Text("状态: ${if (loop.state == 1) "通电" else "断电"}", color = Color.White)
+                    Text(
+                        "回路: 第 ${loop.loopNum} 路",
+                        fontSize = 10.sp,
+                        color = Color.White.copy(0.7f)
+                    )
                 }
             }
         },
@@ -676,6 +682,84 @@ fun RemoteControlButton(
             text = text,
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+/**
+ * @param canClick 远程控制是否可以点击
+ * @param onHistoryClick 历史数据事件
+ * @param onRemoteControlClick 远程控制事件
+ * */
+@Composable
+fun RemoteControlButtonGroup(
+    canClick: Boolean,
+    showRemoteCtlBtn:Boolean,
+    onRemoteControlClick: () -> Unit,
+    onHistoryClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // 历史数据
+        ControlButton(
+            text = "设备详情",
+            icon = Icons.Default.History,
+            canClick = true,
+            onClick = onHistoryClick,
+            modifier = Modifier.weight(1f),
+            activeColor = Color(0xFF6750A4)
+        )
+        if (showRemoteCtlBtn){
+            ControlButton(
+                text = "远程控制",
+                icon = Icons.Default.PowerSettingsNew,
+                canClick = canClick,
+                onClick = onRemoteControlClick,
+                modifier = Modifier.weight(1f),
+                activeColor = ControlBlue
+            )
+        }
+
+    }
+}
+
+
+@Composable
+private fun ControlButton(
+    text: String,
+    icon: ImageVector,
+    canClick: Boolean,
+    activeColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    FilledTonalButton(
+        onClick = if (canClick) onClick else ({}),
+        modifier = modifier
+            .height(56.dp)
+            .alpha(if (canClick) 1f else 0.6f),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = if (canClick) activeColor.copy(alpha = 0.1f) else Gray50,
+            contentColor = if (canClick) activeColor else Color.DarkGray
+        ),
+        enabled = canClick
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1
         )
     }
 }

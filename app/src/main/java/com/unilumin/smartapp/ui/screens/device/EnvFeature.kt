@@ -1,4 +1,3 @@
-
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.unilumin.smartapp.client.data.EnvData
 import com.unilumin.smartapp.client.data.EnvDisplayInfo
 import com.unilumin.smartapp.client.data.LightDevice
+import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
 import com.unilumin.smartapp.ui.screens.device.FeatureContentContainer
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -53,6 +53,12 @@ fun EnvFeatureContent(lightDevice: LightDevice) {
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(12.dp))
+            RemoteControlButtonGroup(
+                canClick = lightDevice.state == 1,
+                showRemoteCtlBtn = false,
+                onRemoteControlClick = { },
+                onHistoryClick = {})
         }
     }
 }

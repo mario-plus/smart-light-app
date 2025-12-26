@@ -33,7 +33,7 @@ import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.ui.components.InfoColumn
-import com.unilumin.smartapp.ui.components.RemoteControlButton
+import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
 import com.unilumin.smartapp.ui.components.VerticalDivider
 import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
 import com.unilumin.smartapp.ui.theme.Gray100
@@ -89,7 +89,7 @@ fun LampFeatureContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // 1. 开关状态
-                    val powerState = when(lightDevice.onOff) {
+                    val powerState = when (lightDevice.onOff) {
                         1 -> "开"
                         0 -> "关"
                         else -> "--"
@@ -111,7 +111,8 @@ fun LampFeatureContent(
                     InfoColumn("电压", voltageStr)
                     VerticalDivider()
                     // 5. 电流
-                    val currentStr = lightDevice.current?.let { String.format("%.1fmA", it) } ?: "--"
+                    val currentStr =
+                        lightDevice.current?.let { String.format("%.1fmA", it) } ?: "--"
                     InfoColumn("电流", currentStr)
                     VerticalDivider()
                     // 6. 功率
@@ -124,14 +125,11 @@ fun LampFeatureContent(
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-
-            if (lightDevice.state == 1) {
-                RemoteControlButton(
-                    canClick = true, onClick = {
-                        showDialog = true
-                    })
-            }
-
+            RemoteControlButtonGroup(
+                canClick = lightDevice.state == 1,
+                showRemoteCtlBtn = true,
+                onRemoteControlClick = { showDialog = true },
+                onHistoryClick = {})
         }
     }
     if (showDialog) {

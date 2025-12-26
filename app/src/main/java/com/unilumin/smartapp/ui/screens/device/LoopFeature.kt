@@ -28,7 +28,7 @@ import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.ui.components.LoopCircleItem
-import com.unilumin.smartapp.ui.components.RemoteControlButton
+import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
 import com.unilumin.smartapp.ui.screens.dialog.LoopControlDialog
 import com.unilumin.smartapp.ui.theme.Gray400
 import kotlinx.coroutines.launch
@@ -76,12 +76,15 @@ fun LoopFeatureContent(lightDevice: LightDevice, retrofitClient: RetrofitClient)
                     LoopCircleItem(loop)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                if (lightDevice.state == 1) {
-                    RemoteControlButton(
-                        canClick = true, onClick = {
-                            showDialog = true
-                        })
-                }
+
+                RemoteControlButtonGroup(
+                    canClick = lightDevice.state == 1,
+                    showRemoteCtlBtn = true,
+                    onRemoteControlClick = {
+                        showDialog = true
+                    },
+                    onHistoryClick = {}
+                )
             }
         } else {
             Box(

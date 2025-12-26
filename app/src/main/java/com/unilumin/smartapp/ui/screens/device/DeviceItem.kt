@@ -54,7 +54,6 @@ fun DeviceCardItem(retrofitClient: RetrofitClient, lightDevice: LightDevice, typ
         0 -> Gray100 to Gray400
         else -> Orange50 to Orange500
     }
-
     Surface(
         color = White,
         shape = RoundedCornerShape(16.dp),
