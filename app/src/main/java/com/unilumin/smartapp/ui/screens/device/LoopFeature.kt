@@ -38,7 +38,7 @@ import retrofit2.Call
  * 回路 (Loop) 特有内容
  */
 @Composable
-fun LoopFeatureContent(lightDevice: LightDevice, retrofitClient: RetrofitClient) {
+fun LoopFeatureContent(lightDevice: LightDevice, retrofitClient: RetrofitClient,onDetailClick: (LightDevice) -> Unit) {
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current

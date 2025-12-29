@@ -47,7 +47,12 @@ import com.unilumin.smartapp.ui.theme.White
 
 @SuppressLint("DefaultLocale")
 @Composable
-fun DeviceCardItem(retrofitClient: RetrofitClient, lightDevice: LightDevice, type: String) {
+fun DeviceCardItem(
+    retrofitClient: RetrofitClient,
+    lightDevice: LightDevice,
+    type: String,
+    onDetailClick: (LightDevice) -> Unit
+) {
     // 状态颜色逻辑
     val (iconBg, iconTint) = when (lightDevice.state) {
         1 -> Blue50 to Blue600
@@ -65,10 +70,10 @@ fun DeviceCardItem(retrofitClient: RetrofitClient, lightDevice: LightDevice, typ
 
             DeviceHeader(lightDevice, type, iconBg, iconTint)
             when (type) {
-                DeviceType.LAMP -> LampFeatureContent(lightDevice, retrofitClient )
-               DeviceType .LOOP -> LoopFeatureContent(lightDevice, retrofitClient)
-                DeviceType .PLAY_BOX -> PlayboxFeatureContent(lightDevice)
-                DeviceType.ENV->EnvFeatureContent(lightDevice)
+                DeviceType.LAMP -> LampFeatureContent(lightDevice, retrofitClient, onDetailClick)
+                DeviceType.LOOP -> LoopFeatureContent(lightDevice, retrofitClient, onDetailClick)
+                DeviceType.PLAY_BOX -> PlayboxFeatureContent(lightDevice, onDetailClick)
+                DeviceType.ENV -> EnvFeatureContent(lightDevice, onDetailClick)
             }
         }
     }

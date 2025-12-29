@@ -32,7 +32,6 @@ import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.List
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.Button
@@ -42,7 +41,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -65,6 +66,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -72,10 +74,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.unilumin.smartapp.client.data.LoopInfo
 import com.unilumin.smartapp.ui.theme.Amber50
 import com.unilumin.smartapp.ui.theme.Amber500
-import com.unilumin.smartapp.ui.theme.Amber700
 import com.unilumin.smartapp.ui.theme.BgLightGray
 import com.unilumin.smartapp.ui.theme.Blue50
 import com.unilumin.smartapp.ui.theme.Blue600
+import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.Emerald50
 import com.unilumin.smartapp.ui.theme.Emerald600
@@ -88,10 +90,13 @@ import com.unilumin.smartapp.ui.theme.Gray500
 import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.Green50
 import com.unilumin.smartapp.ui.theme.Green500
+import com.unilumin.smartapp.ui.theme.LineColor
 import com.unilumin.smartapp.ui.theme.Orange50
 import com.unilumin.smartapp.ui.theme.Orange500
 import com.unilumin.smartapp.ui.theme.Red50
 import com.unilumin.smartapp.ui.theme.Red500
+import com.unilumin.smartapp.ui.theme.TextDark
+import com.unilumin.smartapp.ui.theme.TextGray
 import com.unilumin.smartapp.ui.theme.White
 
 @Composable
@@ -256,38 +261,6 @@ fun BottomNavBar(navController: NavController) {
 }
 
 
-@Composable
-fun SwitchButton(isOn: Boolean) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = if (isOn) Amber50 else Gray100,
-        border = if (isOn) BorderStroke(1.dp, Color(0xFFFEF3C7)) else null,
-        modifier = Modifier
-            .height(32.dp)
-            .clickable {
-
-            }
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp)
-        ) {
-            Icon(
-                Icons.Rounded.PowerSettingsNew,
-                null,
-                tint = if (isOn) Amber700 else Gray500,
-                modifier = Modifier.size(14.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                if (isOn) "已开启" else "已关闭",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isOn) Amber700 else Gray500
-            )
-        }
-    }
-}
 
 @Composable
 fun PageLoadingView() {
@@ -695,7 +668,7 @@ fun RemoteControlButtonGroup(
     canClick: Boolean,
     showRemoteCtlBtn:Boolean,
     onRemoteControlClick: () -> Unit,
-    onHistoryClick: () -> Unit,
+    onHistoryClick:  () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -761,5 +734,142 @@ private fun ControlButton(
             fontWeight = FontWeight.SemiBold,
             maxLines = 1
         )
+    }
+}
+
+/**
+ * 提取单个条目组件，方便优化样式
+ */
+@Composable
+fun InfoRowItem(key: String, value: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = key, color = Color.Gray, fontSize = 14.sp
+            )
+            Text(
+                text = value,
+                color = Color(0xFF333333),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.End,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        HorizontalDivider(
+            thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f)
+        )
+    }
+}
+
+
+/**
+ * 居中显示的分割线组件
+ */
+@Composable
+fun DeviceConfigHeader(tip: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 左侧横线
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            thickness = 0.5.dp,
+            color = Color.LightGray
+        )
+
+        // 中间文字
+        Text(
+            text = tip,
+            modifier = Modifier.padding(horizontal = 8.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray
+        )
+
+        // 右侧横线
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            thickness = 0.5.dp,
+            color = Color.LightGray
+        )
+    }
+}
+
+
+/**
+ * 美观的标签组件
+ */
+@Composable
+fun DeviceTag(text: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f), // 浅色背景
+        shape = RoundedCornerShape(4.dp), // 轻微圆角，显得更有工业/科技感
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.primary // 字体颜色
+            )
+        )
+    }
+}
+
+@Composable
+fun DetailCard(title: String, content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().shadow(elevation = 0.5.dp, shape = RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardWhite)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = title,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = ControlBlue, // 标题使用品牌色突出
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            content()
+        }
+    }
+}
+
+/**
+ * 优化后的信息展示行
+ */
+@Composable
+fun DetailRow(label: String, value: String) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = label, color = TextGray, fontSize = 14.sp)
+            Text(
+                text = value,
+                color = TextDark,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
+        HorizontalDivider(thickness = 0.5.dp, color = LineColor)
     }
 }

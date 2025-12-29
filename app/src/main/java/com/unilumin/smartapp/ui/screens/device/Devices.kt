@@ -43,6 +43,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceType
+import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.ui.components.EmptyDataView
 import com.unilumin.smartapp.ui.components.EndOfListView
 import com.unilumin.smartapp.ui.components.ErrorRetryView
@@ -62,7 +63,8 @@ import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DevicesScreen(
-    retrofitClient: RetrofitClient
+    retrofitClient: RetrofitClient,
+    onDetailClick: (LightDevice) -> Unit
 ) {
     val context = LocalContext.current
     val viewModel: DeviceViewModel = viewModel(factory = object : ViewModelProvider.Factory {
@@ -98,7 +100,6 @@ fun DevicesScreen(
                     Text(
                         "设备列表", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Gray900
                     )
-
                     Surface(
                         shape = CircleShape,
                         border = BorderStroke(1.dp, Gray200),
@@ -156,7 +157,12 @@ fun DevicesScreen(
                 items(lazyPagingItems.itemCount) { index ->
                     val device = lazyPagingItems[index]
                     if (device != null) {
-                        DeviceCardItem(retrofitClient, device, viewModel.currentFilter.value)
+                        DeviceCardItem(
+                            retrofitClient,
+                            device,
+                            viewModel.currentFilter.value,
+                            onDetailClick
+                        )
                     }
                 }
 

@@ -40,3 +40,10 @@ val Amber600 = Color(0xFFD97706)
  val ControlBlue = Color(0xFF2196F3)
  val ControlRed = Color(0xFFFF5252)
  val BgLightGray = Color(0xFFF5F5F5)
+
+
+ val PageBackground = Color(0xFFF6F8FA) // 浅灰蓝底色
+ val CardWhite = Color.White
+ val TextDark = Color(0xFF1D1D1F)      // 深黑灰文本
+ val TextGray = Color(0xFF86868B)      // 辅助灰色文本
+ val LineColor = Color(0xFFF2F2F7)     // 极淡分割线

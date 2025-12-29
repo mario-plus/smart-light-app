@@ -1,5 +1,6 @@
 package com.unilumin.smartapp.ui.screens.device
 
+
 import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -44,12 +45,13 @@ import retrofit2.Call
 @SuppressLint("DefaultLocale", "UnusedBoxWithConstraintsScope")
 @Composable
 fun LampFeatureContent(
-    lightDevice: LightDevice, retrofitClient: RetrofitClient
+    lightDevice: LightDevice, retrofitClient: RetrofitClient, onDetailClick: (LightDevice) -> Unit
 ) {
     val deviceService = remember(retrofitClient) {
         retrofitClient.getService(DeviceService::class.java)
     }
     var showDialog by remember { mutableStateOf(false) }
+    var showDeviceDataDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -129,7 +131,7 @@ fun LampFeatureContent(
                 canClick = lightDevice.state == 1,
                 showRemoteCtlBtn = true,
                 onRemoteControlClick = { showDialog = true },
-                onHistoryClick = {})
+                onHistoryClick = { showDeviceDataDialog = true })
         }
     }
     if (showDialog) {
@@ -142,6 +144,14 @@ fun LampFeatureContent(
             onClick = { a, b ->
                 scope.launch { lampCtl(a, b) }
             })
+    }
+    if (showDeviceDataDialog) {
+        onDetailClick(lightDevice)
+//        DeviceDetailDialog(
+//            lightDevice = lightDevice,
+//            retrofitClient = retrofitClient,
+//            onDismissRequest = { showDeviceDataDialog = false }
+//        )
     }
 }
 

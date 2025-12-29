@@ -9,7 +9,7 @@ import com.unilumin.smartapp.ui.components.VerticalDivider
  * 播放盒 (Playbox) 特有内容
  */
 @Composable
-fun PlayboxFeatureContent(lightDevice: LightDevice) {
+fun PlayboxFeatureContent(lightDevice: LightDevice,onDetailClick: (LightDevice) -> Unit) {
     FeatureContentContainer {
         DetailInfoScrollRow {
             InfoColumn(

@@ -1,8 +1,13 @@
 package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
+import com.unilumin.smartapp.client.data.DeviceConfig
+import com.unilumin.smartapp.client.data.DeviceDetail
+import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.EnvData
 import com.unilumin.smartapp.client.data.EnvDataReq
+import com.unilumin.smartapp.client.data.HistoryData
+import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.client.data.LoopCtlReq
@@ -86,10 +91,20 @@ interface DeviceService {
 
     @GET(RequestPathKey.KEY_CAMERA_LIVE)
     fun getCameraLive(
-        @Query("app") app: String,
-        @Query("stream") stream: String,
-        @Query("type") type: String
+        @Query("app") app: String, @Query("stream") stream: String, @Query("type") type: String
     ): Call<WebRTCResponse>
+
+    @GET(RequestPathKey.KEY_GET_DEVICE_DETAIL)
+    fun getDeviceDetail(@Query("id") id: Long): Call<NewResponseData<DeviceDetail?>?>?
+
+    @GET(RequestPathKey.KEY_GET_DEVICE_CONFIG)
+    fun getDeviceConfig(@Query("deviceId") deviceId: Long): Call<NewResponseData<List<DeviceConfig>?>?>?
+
+    @POST(RequestPathKey.KEY_GET_DEVICE_REAL_DATA)
+    fun getDeviceRealTimeData(@Body req: DeviceRealTimeDataReq): Call<NewResponseData<String?>?>?
+
+    @POST(RequestPathKey.KEY_GET_DEVICE_HISTORY_DATA)
+    fun getDeviceHistoryData(@Body req: HistoryDataReq): Call<NewResponseData<PageResponse<HistoryData>?>?>?
 
 
 }

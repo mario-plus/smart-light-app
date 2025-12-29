@@ -23,9 +23,11 @@ import androidx.navigation.compose.rememberNavController
 import com.amap.api.maps.MapsInitializer
 import com.unilumin.smartapp.auth.TokenManagerFactory
 import com.unilumin.smartapp.client.RetrofitClient
+import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.mock.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
 import com.unilumin.smartapp.ui.screens.DashboardScreen
+import com.unilumin.smartapp.ui.screens.DeviceDetailScreen
 import com.unilumin.smartapp.ui.screens.LoginScreen
 import com.unilumin.smartapp.ui.screens.ProfileScreen
 import com.unilumin.smartapp.ui.screens.device.DevicesScreen
@@ -67,7 +69,6 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
         // 使用 key 包装，当 sessionKey 变化时，内部所有状态都会被销毁重置
         key(sessionKey) {
             val navController = rememberNavController()
-
             if (!isLoggedIn) {
                 LoginScreen(
                     retrofitClient = retrofitClient,
@@ -86,9 +87,30 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("dashboard") { DashboardScreen(retrofitClient) }
-                        composable("devices") { DevicesScreen(retrofitClient) }
+                        composable("devices") {
+                            DevicesScreen(
+                                retrofitClient,
+                                onDetailClick = { lightDevice ->
+                                    val deviceJson = com.google.gson.Gson().toJson(lightDevice)
+                                    val encodedJson =
+                                        java.net.URLEncoder.encode(deviceJson, "UTF-8")
+                                    navController.navigate("deviceDetail/$encodedJson")
+                                }
+                            )
+                        }
+                        //设备详情页面
+                        composable("deviceDetail/{deviceJson}") { backStackEntry ->
+                            val encodedJson = backStackEntry.arguments?.getString("deviceJson")
+                            val deviceJson = java.net.URLDecoder.decode(encodedJson, "UTF-8")
+                            val lightDevice =
+                                com.google.gson.Gson().fromJson(deviceJson, LightDevice::class.java)
+                            DeviceDetailScreen(
+                                lightDevice = lightDevice,
+                                retrofitClient = retrofitClient,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
                         composable("sites") { SitesScreen(retrofitClient) }
-//                        composable("monitor") { MonitorScreen(retrofitClient) }
                         composable("profile") {
                             ProfileScreen(
                                 retrofitClient = retrofitClient,

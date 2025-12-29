@@ -32,7 +32,7 @@ import com.unilumin.smartapp.ui.screens.device.FeatureContentContainer
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun EnvFeatureContent(lightDevice: LightDevice) {
+fun EnvFeatureContent(lightDevice: LightDevice, onDetailClick: (LightDevice) -> Unit) {
     val displayItems = lightDevice.envData?.let { getDisplayItems(it) }
     if (displayItems.isNullOrEmpty()) return
     FeatureContentContainer {

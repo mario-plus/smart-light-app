@@ -39,8 +39,7 @@ data class UserInfo(
 data class LightDevice(
     var id: Long,
     @SerializedName(
-        value = "name",
-        alternate = ["loopControllerName", "deviceName"]
+        value = "name", alternate = ["loopControllerName", "deviceName"]
     ) var name: String,
 
     var serialNum: String,
@@ -179,8 +178,7 @@ data class LampCtlReq(
 )
 
 data class LoopCtlReq(
-    val idList: List<Long>,
-    val loopNumList: List<Int>,
+    val idList: List<Long>, val loopNumList: List<Int>,
     //0关1开
     val onOff: Int
 )
@@ -218,19 +216,64 @@ data class EnvData(
 )
 
 data class EnvDisplayInfo(
-    val label: String,
-    val value: String,
-    val unit: String
+    val label: String, val value: String, val unit: String
 )
 
 //wbertc
 data class WebRTCResponse(
-    val code: Int,
-    val id: String,
-    val sdp: String,
-    val type: String
+    val code: Int, val id: String, val sdp: String, val type: String
 )
 
 data class EnvDataReq(
     val ids: List<Long>
+)
+
+//设备详情
+data class DeviceDetail(
+    //设备id
+    val id: Long,
+    //设备名称
+    val deviceName: String,
+    //序列码
+    val serialNum: String,
+    //产品类型
+    val productTypeName: String,
+    //产品名称
+    val name: String,
+    //产品厂商
+    val productFactoryName: String,
+    //传输协议类型
+    val transportProtocol: String,
+    //协议名称
+    val messageProtocol: String,
+
+    //物模型数据(设备能力)
+    val metadata: String
+)
+
+data class DeviceConfig(
+    val key: String,
+    val keyDes: String,
+    val value: String,
+    val modify: Int,
+    val type: Int,
+    val order: Int,
+    //val switchContent: String,
+    val required: Boolean
+)
+
+data class DeviceRealTimeDataReq(
+    val deviceId: Long, val keys: List<String>
+)
+
+data class HistoryData(
+    val deviceId: String, val eventTs: String, val key: String, val name: String, val value: String
+)
+
+data class HistoryDataReq(
+    val deviceId: String,
+    val startTime: String,
+    val endTime: String,
+    val deviceIds: List<String>,
+    val keys: List<String>
 )
