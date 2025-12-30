@@ -119,8 +119,17 @@ fun DeviceDetailScreen(
 
     var pageIndex by remember { mutableIntStateOf(1) }
     var hasMore by remember { mutableStateOf(true) }
-    var startDate by remember { mutableStateOf(LocalDate.now().minusDays(7).format(formatter)) }
-    var endDate by remember { mutableStateOf(LocalDate.now().format(formatter)) }
+    //
+    var startDate by remember { mutableStateOf("") }
+    //LocalDate.now().format(formatter)
+    var endDate by remember { mutableStateOf("") }
+
+    // 派生状态：标题根据日期自动变化
+    val title = if (startDate.isEmpty() || endDate.isEmpty()) {
+        "请选择日期"
+    } else {
+        "$startDate 至 $endDate"
+    }
 
     suspend fun loadHistoryData(isRefresh: Boolean = false, keys: List<String>) {
         if (isRefresh) {
@@ -420,6 +429,8 @@ fun DeviceDetailScreen(
                         }
                     }
                 } else {
+                    startDate = LocalDate.now().minusDays(7).format(formatter)
+                    endDate = LocalDate.now().format(formatter)
                     var keys = if (selectedLabel == EVENT) {
                         deviceEventsDataList.map { it.key }
                     } else {
@@ -427,11 +438,11 @@ fun DeviceDetailScreen(
                     }
 
                     Column(modifier = Modifier.fillMaxSize()) {
-                        DateRangePickerModern { start, end ->
+                        DateRangePickerModern(tip = title, { start, end ->
                             startDate = start
                             endDate = end
                             scope.launch { loadHistoryData(isRefresh = true, keys = keys) }
-                        }
+                        })
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 16.dp)
@@ -449,19 +460,16 @@ fun DeviceDetailScreen(
                                     item {
                                         LaunchedEffect(Unit) {
                                             loadHistoryData(
-                                                isRefresh = false,
-                                                keys = keys
+                                                isRefresh = false, keys = keys
                                             )
                                         }
                                         Box(
                                             Modifier
                                                 .fillMaxWidth()
-                                                .padding(16.dp),
-                                            Alignment.Center
+                                                .padding(16.dp), Alignment.Center
                                         ) {
                                             CircularProgressIndicator(
-                                                Modifier.size(24.dp),
-                                                strokeWidth = 2.dp
+                                                Modifier.size(24.dp), strokeWidth = 2.dp
                                             )
                                         }
                                     }

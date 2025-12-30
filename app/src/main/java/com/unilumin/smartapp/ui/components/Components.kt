@@ -72,7 +72,6 @@ import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -263,11 +262,11 @@ fun BottomNavBar(navController: NavController) {
             val isSelected = currentRoute == route
             NavigationBarItem(
                 icon = {
-                Icon(
-                    imageVector = if (isSelected) info.second else info.third,
-                    contentDescription = info.first
-                )
-            },
+                    Icon(
+                        imageVector = if (isSelected) info.second else info.third,
+                        contentDescription = info.first
+                    )
+                },
                 label = { Text(info.first, fontSize = 10.sp) },
                 selected = isSelected,
                 onClick = {
@@ -576,16 +575,16 @@ fun BrightnessControlCard(
             // 使用 weight(1f) 让它填满标题和数值中间的所有空间
             Slider(
                 value = initValue.toFloat(), onValueChange = { newValue ->
-                onValueChange(newValue.toInt())
-            }, onValueChangeFinished = {
-                onValueChangeFinished(initValue)
-            }, valueRange = 0f..100f, colors = SliderDefaults.colors(
-                thumbColor = Color.White,
-                activeTrackColor = ControlBlue,
-                inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
-            ), modifier = Modifier
+                    onValueChange(newValue.toInt())
+                }, onValueChangeFinished = {
+                    onValueChangeFinished(initValue)
+                }, valueRange = 0f..100f, colors = SliderDefaults.colors(
+                    thumbColor = Color.White,
+                    activeTrackColor = ControlBlue,
+                    inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
+                ), modifier = Modifier
                     .weight(1f) // 关键：占据剩余空间
-                .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
+                    .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
                 thumb = {
                     // 自定义小滑块，比之前那个版本要做得更小一点，适配单行
                     Surface(
@@ -829,32 +828,22 @@ fun DeviceRealDataCardModern(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateRangePickerModern(
+    tip: String,
     onRangeSelected: (String, String) -> Unit
 ) {
     val context = LocalContext.current
-    // 强制设置中文 Locale 确保 Picker 内部显示中文
     val locale = Locale.CHINESE
     val sdf = remember { SimpleDateFormat("yyyy-MM-dd", locale) }
 
-    // 1. 初始化时间状态
-    val calendar = Calendar.getInstance()
-    val todayMillis = calendar.timeInMillis
-    calendar.add(Calendar.DAY_OF_YEAR, -7)
-    val weekAgoMillis = calendar.timeInMillis
-
-    var startDateMillis by remember { mutableLongStateOf(weekAgoMillis) }
-    var endDateMillis by remember { mutableLongStateOf(todayMillis) }
-    var dateRangeDisplay by remember {
-        mutableStateOf("${sdf.format(weekAgoMillis)} ~ ${sdf.format(todayMillis)}")
-    }
-
     var showPicker by remember { mutableStateOf(false) }
+
+    // 初始化时间状态（默认最近一周）
     val state = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = startDateMillis,
-        initialSelectedEndDateMillis = endDateMillis
+        initialSelectedStartDateMillis = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }.timeInMillis,
+        initialSelectedEndDateMillis = Calendar.getInstance().timeInMillis
     )
 
-    // 2. 外部展示卡片：带淡淡的渐变色
+    // UI：外部展示卡片
     val gradientBrush = Brush.linearGradient(
         colors = listOf(Color(0xFFF0F4FF), Color.White),
         start = Offset(0f, 0f),
@@ -866,28 +855,25 @@ fun DateRangePickerModern(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
-        color = Color.Transparent, // 透明以显示背景渐变
         shadowElevation = 2.dp
     ) {
-        Row(modifier = Modifier
-            .background(brush = gradientBrush)
-            .clickable { showPicker = true }
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "时间周期", style = TextStyle(
-                        fontSize = 13.sp, color = Color(0xFF8E8E93), fontWeight = FontWeight.Medium
-                    )
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = dateRangeDisplay, style = TextStyle(
-                        fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E)
-                    )
-                )
-            }
+        Row(
+            modifier = Modifier
+                .background(brush = gradientBrush)
+                .clickable { showPicker = true }
+                .padding(horizontal = 16.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "时间周期",
+                style = TextStyle(fontSize = 13.sp, color = Color(0xFF8E8E93), fontWeight = FontWeight.Medium)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = tip,
+                modifier = Modifier.weight(1f),
+                style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E))
+            )
             Icon(
                 imageVector = Icons.Default.DateRange,
                 contentDescription = null,
@@ -897,7 +883,6 @@ fun DateRangePickerModern(
         }
     }
 
-    // 3. 宽度铺满的日期选择器
     if (showPicker) {
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
@@ -906,17 +891,12 @@ fun DateRangePickerModern(
                     val start = state.selectedStartDateMillis
                     val end = state.selectedEndDateMillis
                     if (start != null && end != null) {
-                        val sevenDaysMillis = 7L * 24 * 60 * 60 * 1000
-                        if (end - start > sevenDaysMillis) {
-                            Toast.makeText(context, "日期跨度不能超过7天", Toast.LENGTH_SHORT)
-                                .show()
+                        // 校验：不能超过7天 (7 * 24 * 60 * 60 * 1000)
+                        val limit = 7 * 24 * 60 * 60 * 1000L
+                        if (end - start > limit) {
+                            Toast.makeText(context, "日期跨度不能超过7天", Toast.LENGTH_SHORT).show()
                         } else {
-                            val startStr = sdf.format(Date(start))
-                            val endStr = sdf.format(Date(end))
-                            startDateMillis = start
-                            endDateMillis = end
-                            dateRangeDisplay = "$startStr ~ $endStr"
-                            onRangeSelected(startStr, endStr)
+                            onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
                             showPicker = false
                         }
                     } else {
@@ -926,54 +906,41 @@ fun DateRangePickerModern(
                     Text("确认选择", fontWeight = FontWeight.Bold, color = Color(0xFF3478F6))
                 }
             },
-            dismissButton = null,
-            properties = DialogProperties(usePlatformDefaultWidth = false) // 禁用默认宽度以实现铺满
+            properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.85f) // 限制高度在 85% 以内，留出呼吸感
+                    .fillMaxHeight(0.85f)
                     .background(Color.White)
             ) {
                 // 自定义 Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(
-                            text = "选择查询范围",
-                            style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        )
-                        Text(
-                            text = "单次查询最大支持7天",
-                            style = TextStyle(fontSize = 12.sp, color = Color.Gray)
-                        )
+                        Text("选择查询范围", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold))
+                        Text("单次查询最大支持7天", style = TextStyle(fontSize = 12.sp, color = Color.Gray))
                     }
                     IconButton(onClick = { showPicker = false }) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "关闭",
-                            tint = Color(0xFF8E8E93)
-                        )
+                        Icon(Icons.Default.Close, contentDescription = "关闭")
                     }
                 }
 
-                // 日期选择内容铺满
                 DateRangePicker(
                     state = state,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                    modifier = Modifier.weight(1f),
                     title = null,
                     headline = null,
                     showModeToggle = false,
                     colors = DatePickerDefaults.colors(
                         selectedDayContainerColor = Color(0xFF3478F6),
-                        todayContentColor = Color(0xFF3478F6)
+                        todayContentColor = Color(0xFF3478F6),
+                        dayInSelectionRangeContainerColor = Color(0xFF3478F6).copy(alpha = 0.1f)
                     )
                 )
             }
@@ -1018,11 +985,17 @@ fun HistoryDataCard(data: HistoryData) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).background(accentColor, CircleShape))
+                    Box(modifier = Modifier
+                        .size(8.dp)
+                        .background(accentColor, CircleShape))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = data.eventTs ?: "--",
-                        style = TextStyle(fontSize = 12.sp, color = Color(0xFF8E8E93), fontFamily = FontFamily.Monospace)
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            color = Color(0xFF8E8E93),
+                            fontFamily = FontFamily.Monospace
+                        )
                     )
                 }
                 Icon(
@@ -1038,7 +1011,11 @@ fun HistoryDataCard(data: HistoryData) {
             // 主标题
             Text(
                 text = data.name ?: "未知参数",
-                style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C1C1E))
+                style = TextStyle(
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1C1C1E)
+                )
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -1054,7 +1031,9 @@ fun HistoryDataCard(data: HistoryData) {
                 SelectionContainer {
                     Text(
                         // 核心：展开时显示 AnnotatedString，收起时显示原始字符串预览
-                        text = if (isExpanded) annotatedJson else AnnotatedString(data.value ?: "--"),
+                        text = if (isExpanded) annotatedJson else AnnotatedString(
+                            data.value ?: "--"
+                        ),
                         style = TextStyle(
                             fontSize = 13.sp,
                             color = Color(0xFF48484A),
@@ -1070,14 +1049,15 @@ fun HistoryDataCard(data: HistoryData) {
             if (!isExpanded) {
                 Text(
                     text = "点击展开查看结构化详情",
-                    modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally),
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .align(Alignment.CenterHorizontally),
                     style = TextStyle(fontSize = 11.sp, color = accentColor.copy(alpha = 0.8f))
                 )
             }
         }
     }
 }
-
 
 
 /**
