@@ -1,7 +1,7 @@
 package com.unilumin.smartapp.ui.components
 
-
 import android.widget.Toast
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,11 +22,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
@@ -84,15 +87,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.data.DeviceModelData
+import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.LoopInfo
 import com.unilumin.smartapp.ui.theme.Amber50
 import com.unilumin.smartapp.ui.theme.Amber500
@@ -124,6 +135,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.regex.Pattern
 
 @Composable
 fun AppCard(
@@ -757,8 +769,7 @@ fun DetailRow(label: String, value: String) {
 
 @Composable
 fun DeviceRealDataCardModern(
-    data: DeviceModelData,
-    onHistoryClick: () -> Unit
+    data: DeviceModelData, onHistoryClick: () -> Unit
 ) {
     // 淡淡的青蓝渐变
     val gradientBrush = Brush.linearGradient(
@@ -777,7 +788,10 @@ fun DeviceRealDataCardModern(
         border = BorderStroke(1.dp, Color(0xFFF2F2F7))
     ) {
         Column(
-            modifier = Modifier.background(gradientBrush).padding(12.dp).fillMaxSize(),
+            modifier = Modifier
+                .background(gradientBrush)
+                .padding(12.dp)
+                .fillMaxSize(),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -785,19 +799,28 @@ fun DeviceRealDataCardModern(
                     text = data.name,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E)),
+                    style = TextStyle(
+                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E)
+                    ),
                     modifier = Modifier.weight(1f, fill = false)
                 )
                 if (!data.unit.isNullOrBlank()) {
-                    Text(text = " (${data.unit})", style = TextStyle(fontSize = 10.sp, color = Color(0xFF8E8E93)))
+                    Text(
+                        text = " (${data.unit})",
+                        style = TextStyle(fontSize = 10.sp, color = Color(0xFF8E8E93))
+                    )
                 }
             }
-            Text(
-                text = data.value?.ifEmpty { "--" } ?: "--",
-                style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF3478F6))
-            )
+            Text(text = data.value?.ifEmpty { "--" } ?: "--", style = TextStyle(
+                fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF3478F6)
+            ))
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, modifier = Modifier.size(12.dp), tint = Color(0xFFD1D1D6))
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    null,
+                    modifier = Modifier.size(12.dp),
+                    tint = Color(0xFFD1D1D6)
+                )
             }
         }
     }
@@ -846,23 +869,23 @@ fun DateRangePickerModern(
         color = Color.Transparent, // 透明以显示背景渐变
         shadowElevation = 2.dp
     ) {
-        Row(
-            modifier = Modifier
-                .background(brush = gradientBrush)
-                .clickable { showPicker = true }
-                .padding(horizontal = 16.dp, vertical = 18.dp),
+        Row(modifier = Modifier
+            .background(brush = gradientBrush)
+            .clickable { showPicker = true }
+            .padding(horizontal = 16.dp, vertical = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+            horizontalArrangement = Arrangement.SpaceBetween) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "时间周期",
-                    style = TextStyle(fontSize = 13.sp, color = Color(0xFF8E8E93), fontWeight = FontWeight.Medium)
+                    text = "时间周期", style = TextStyle(
+                        fontSize = 13.sp, color = Color(0xFF8E8E93), fontWeight = FontWeight.Medium
+                    )
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = dateRangeDisplay,
-                    style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E))
+                    text = dateRangeDisplay, style = TextStyle(
+                        fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E)
+                    )
                 )
             }
             Icon(
@@ -885,7 +908,8 @@ fun DateRangePickerModern(
                     if (start != null && end != null) {
                         val sevenDaysMillis = 7L * 24 * 60 * 60 * 1000
                         if (end - start > sevenDaysMillis) {
-                            Toast.makeText(context, "日期跨度不能超过7天", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "日期跨度不能超过7天", Toast.LENGTH_SHORT)
+                                .show()
                         } else {
                             val startStr = sdf.format(Date(start))
                             val endStr = sdf.format(Date(end))
@@ -930,14 +954,20 @@ fun DateRangePickerModern(
                         )
                     }
                     IconButton(onClick = { showPicker = false }) {
-                        Icon(Icons.Default.Close, contentDescription = "关闭", tint = Color(0xFF8E8E93))
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "关闭",
+                            tint = Color(0xFF8E8E93)
+                        )
                     }
                 }
 
                 // 日期选择内容铺满
                 DateRangePicker(
                     state = state,
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                     title = null,
                     headline = null,
                     showModeToggle = false,
@@ -948,5 +978,148 @@ fun DateRangePickerModern(
                 )
             }
         }
+    }
+}
+
+/**
+ * 设备物模型历史数据卡片
+ * */
+@Composable
+fun HistoryDataCard(data: HistoryData) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    // 颜色配置
+    val accentColor = Color(0xFF3478F6)   // 品牌蓝
+    val keyHighlightColor = Color(0xFF005FB8) // Key 的颜色（深蓝色）
+    val jsonBgColor = Color(0xFFF8F9FA)
+
+    // 获取带颜色的格式化字符串
+    val annotatedJson = rememberFormattedJson(data.value, keyColor = keyHighlightColor)
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .animateContentSize(),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFF2F2F7)),
+        shadowElevation = 0.5.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .clickable { isExpanded = !isExpanded }
+                .padding(16.dp)
+        ) {
+            // 头部：时间戳与图标 (保持不变)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(8.dp).background(accentColor, CircleShape))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = data.eventTs ?: "--",
+                        style = TextStyle(fontSize = 12.sp, color = Color(0xFF8E8E93), fontFamily = FontFamily.Monospace)
+                    )
+                }
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = Color(0xFFC7C7CC)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 主标题
+            Text(
+                text = data.name ?: "未知参数",
+                style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C1C1E))
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // JSON 详情区域
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(jsonBgColor)
+                    .padding(12.dp)
+            ) {
+                SelectionContainer {
+                    Text(
+                        // 核心：展开时显示 AnnotatedString，收起时显示原始字符串预览
+                        text = if (isExpanded) annotatedJson else AnnotatedString(data.value ?: "--"),
+                        style = TextStyle(
+                            fontSize = 13.sp,
+                            color = Color(0xFF48484A),
+                            fontFamily = FontFamily.Monospace,
+                            lineHeight = 18.sp
+                        ),
+                        maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            if (!isExpanded) {
+                Text(
+                    text = "点击展开查看结构化详情",
+                    modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally),
+                    style = TextStyle(fontSize = 11.sp, color = accentColor.copy(alpha = 0.8f))
+                )
+            }
+        }
+    }
+}
+
+
+
+/**
+ * 将 JSON 字符串转换为带高亮的 AnnotatedString
+ */
+@Composable
+fun rememberFormattedJson(json: String?, keyColor: Color = Color(0xFFD32F2F)): AnnotatedString {
+    return remember(json) {
+        val prettyJson = formatJson(json) // 使用之前定义的 formatJson 函数
+
+        buildAnnotatedString {
+            // 正则表达式匹配 JSON 的 Key 部分: "key":
+            val pattern = Pattern.compile("\"(.*)\"\\s*:")
+            val matcher = pattern.matcher(prettyJson)
+
+            var lastIndex = 0
+            while (matcher.find()) {
+                // 添加匹配项之前的普通文本（Value 或 标点）
+                append(prettyJson.substring(lastIndex, matcher.start()))
+
+                // 为 Key 应用颜色样式
+                withStyle(style = SpanStyle(color = keyColor, fontWeight = FontWeight.Bold)) {
+                    append(matcher.group())
+                }
+
+                lastIndex = matcher.end()
+            }
+            // 添加最后剩余的部分
+            append(prettyJson.substring(lastIndex))
+        }
+    }
+}
+
+fun formatJson(json: String?): String {
+    if (json.isNullOrBlank()) return "--"
+    return try {
+        val jsonElement = JsonParser().parse(json)
+        val gson = GsonBuilder().setPrettyPrinting() // 核心：设置美化打印（带缩进）
+            .disableHtmlEscaping() // 防止特殊字符被转义
+            .create()
+        gson.toJson(jsonElement)
+    } catch (e: Exception) {
+        json
     }
 }

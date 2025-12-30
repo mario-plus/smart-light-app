@@ -271,11 +271,12 @@ data class HistoryData(
 )
 
 data class HistoryDataReq(
-    val deviceId: String,
-    val startTime: String,
-    val endTime: String,
+    val startTime: String? = null,
+    val endTime: String? = null,
     val deviceIds: List<String>,
-    val keys: List<String>
+    val keys: List<String>,
+    val curPage: Int,
+    val pageSize: Int
 )
 
 data class DeviceModelData(

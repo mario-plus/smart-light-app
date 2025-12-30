@@ -1,8 +1,14 @@
 package com.unilumin.smartapp.ui.screens.device
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.ui.components.InfoColumn
+import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
 import com.unilumin.smartapp.ui.components.VerticalDivider
 
 /**
@@ -10,6 +16,10 @@ import com.unilumin.smartapp.ui.components.VerticalDivider
  */
 @Composable
 fun PlayboxFeatureContent(lightDevice: LightDevice,onDetailClick: (LightDevice) -> Unit) {
+
+    var showDialog by remember { mutableStateOf(false) }
+    var showDeviceDataDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     FeatureContentContainer {
         DetailInfoScrollRow {
             InfoColumn(
@@ -29,5 +39,15 @@ fun PlayboxFeatureContent(lightDevice: LightDevice,onDetailClick: (LightDevice) 
             VerticalDivider()
             InfoColumn("节目分辨率", lightDevice.widthHeighProgram ?: "--")
         }
+        RemoteControlButtonGroup(
+            canClick = lightDevice.state == 1,
+            showRemoteCtlBtn = true,
+            onRemoteControlClick = { showDialog = true },
+            onHistoryClick = { showDeviceDataDialog = true })
+    }
+    if (showDialog) {
+    }
+    if (showDeviceDataDialog) {
+        onDetailClick(lightDevice)
     }
 }

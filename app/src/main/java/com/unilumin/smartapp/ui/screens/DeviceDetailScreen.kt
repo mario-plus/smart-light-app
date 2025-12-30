@@ -34,9 +34,11 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,7 +61,10 @@ import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
+import com.unilumin.smartapp.client.data.HistoryData
+import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.LightDevice
+import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.ui.components.DateRangePickerModern
 import com.unilumin.smartapp.ui.components.DetailCard
@@ -68,10 +73,12 @@ import com.unilumin.smartapp.ui.components.DeviceRealDataCardModern
 import com.unilumin.smartapp.ui.components.DeviceTag
 import com.unilumin.smartapp.ui.components.EmptyDataView
 import com.unilumin.smartapp.ui.components.FilterChip
+import com.unilumin.smartapp.ui.components.HistoryDataCard
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.theme.TextDark
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -89,7 +96,7 @@ fun DeviceDetailScreen(
         retrofitClient.getService(DeviceService::class.java)
     }
 
-
+    val scope = rememberCoroutineScope()
     // 状态管理
     var selectedLabel by remember { mutableStateOf(DETAIL) }
 
@@ -106,6 +113,48 @@ fun DeviceDetailScreen(
     val deviceEventsDataList = remember { mutableStateListOf<DeviceModelData>() }
     //遥测
     val deviceTelemetryDataList = remember { mutableStateListOf<DeviceModelData>() }
+
+    //历史数据
+    val historyDataList = remember { mutableStateListOf<HistoryData>() }
+
+    var pageIndex by remember { mutableIntStateOf(1) }
+    var hasMore by remember { mutableStateOf(true) }
+    var startDate by remember { mutableStateOf(LocalDate.now().minusDays(7).format(formatter)) }
+    var endDate by remember { mutableStateOf(LocalDate.now().format(formatter)) }
+
+    suspend fun loadHistoryData(isRefresh: Boolean = false, keys: List<String>) {
+        if (isRefresh) {
+            pageIndex = 1
+            historyDataList.clear()
+            hasMore = true
+        }
+        if (!hasMore) return
+        isLoading = true
+        try {
+            val response = UniCallbackService<PageResponse<HistoryData>>().parseDataNewSuspend(
+                deviceService.getDeviceHistoryData(
+                    HistoryDataReq(
+                        deviceIds = listOf(lightDevice.id.toString()),
+                        startTime = "$startDate 00:00:00",
+                        endTime = "$endDate 23:59:59",
+                        keys = keys,
+                        curPage = pageIndex,
+                        pageSize = 20
+                    )
+                ), context
+            )
+            val newList = response?.list ?: emptyList()
+            val totalCount = response?.total ?: 0
+            if (isRefresh) {
+                historyDataList.clear()
+            }
+            historyDataList.addAll(newList)
+            pageIndex++
+            hasMore = newList.isNotEmpty() && historyDataList.size < totalCount
+        } finally {
+            isLoading = false
+        }
+    }
 
     //解析元数据
     fun getDeviceModelData(jsonObject: JsonObject, type: String): List<DeviceModelData> {
@@ -153,73 +202,73 @@ fun DeviceDetailScreen(
 
     // 数据获取逻辑
     LaunchedEffect(selectedLabel) {
-        //详细信息
-        if (selectedLabel == DETAIL) {
-            isLoading = true
-            try {
-                val deviceDetail = UniCallbackService<DeviceDetail>().parseDataNewSuspend(
-                    deviceService.getDeviceDetail(lightDevice.id), context
-                )
-                val deviceConfig = UniCallbackService<List<DeviceConfig>>().parseDataNewSuspend(
-                    deviceService.getDeviceConfig(lightDevice.id), context
-                )
-
-                deviceDetail?.let { detail ->
-                    baseInfoList.clear()
-                    detail.productFactoryName?.let { baseInfoList.add("产品厂商" to it) }
-                    detail.deviceName?.let { baseInfoList.add("设备名称" to it) }
-                    detail.serialNum?.let { baseInfoList.add("序列码" to it) }
-                    detail.productTypeName?.let { baseInfoList.add("产品类型" to it) }
-                    detail.name?.let { baseInfoList.add("产品名称" to it) }
-                    detail.transportProtocol?.let { baseInfoList.add("传输协议" to it) }
-                    detail.messageProtocol?.let { baseInfoList.add("协议名称" to it) }
-                    detail.metadata?.let { metadataStr ->
-                        try {
-                            val jsonObject = JsonParser().parse(metadataStr).asJsonObject
-                            val services = getDeviceModelData(jsonObject, "services")
-                            val properties = getDeviceModelData(jsonObject, "properties")
-                            val telemetry = getDeviceModelData(jsonObject, "telemetry")
-                            val events = getDeviceModelData(jsonObject, "events")
-                            deviceServiceDataList.apply { clear(); addAll(services) }
-                            devicePropertiesDataList.apply { clear(); addAll(properties) }
-                            deviceTelemetryDataList.apply { clear(); addAll(telemetry) }
-                            deviceEventsDataList.apply { clear(); addAll(events) }
-                        } catch (e: Exception) {
-                            Log.e("DeviceDetail", "Metadata parse error", e)
+        when (selectedLabel) {
+            DETAIL -> {
+                isLoading = true
+                try {
+                    val deviceDetail = UniCallbackService<DeviceDetail>().parseDataNewSuspend(
+                        deviceService.getDeviceDetail(lightDevice.id), context
+                    )
+                    val deviceConfig = UniCallbackService<List<DeviceConfig>>().parseDataNewSuspend(
+                        deviceService.getDeviceConfig(lightDevice.id), context
+                    )
+                    deviceDetail?.let { detail ->
+                        baseInfoList.clear()
+                        detail.productFactoryName?.let { baseInfoList.add("产品厂商" to it) }
+                        detail.deviceName?.let { baseInfoList.add("设备名称" to it) }
+                        detail.serialNum?.let { baseInfoList.add("序列码" to it) }
+                        detail.productTypeName?.let { baseInfoList.add("产品类型" to it) }
+                        detail.name?.let { baseInfoList.add("产品名称" to it) }
+                        detail.transportProtocol?.let { baseInfoList.add("传输协议" to it) }
+                        detail.messageProtocol?.let { baseInfoList.add("协议名称" to it) }
+                        detail.metadata?.let { metadataStr ->
+                            try {
+                                val jsonObject = JsonParser().parse(metadataStr).asJsonObject
+                                val services = getDeviceModelData(jsonObject, "services")
+                                val properties = getDeviceModelData(jsonObject, "properties")
+                                val telemetry = getDeviceModelData(jsonObject, "telemetry")
+                                val events = getDeviceModelData(jsonObject, "events")
+                                deviceServiceDataList.apply { clear(); addAll(services) }
+                                devicePropertiesDataList.apply { clear(); addAll(properties) }
+                                deviceTelemetryDataList.apply { clear(); addAll(telemetry) }
+                                deviceEventsDataList.apply { clear(); addAll(events) }
+                            } catch (e: Exception) {
+                                Log.e("DeviceDetail", "Metadata parse error", e)
+                            }
                         }
                     }
+                    deviceConfig?.let { configs ->
+                        deviceConfigList.clear()
+                        configs.forEach { deviceConfigList.add(it.keyDes to it.value) }
+                    }
+                } catch (e: Exception) {
+                    Log.e("DeviceDetail", "Data fetch error", e)
+                } finally {
+                    isLoading = false
                 }
-                deviceConfig?.let { configs ->
-                    deviceConfigList.clear()
-                    configs.forEach { deviceConfigList.add(it.keyDes to it.value) }
+            }
+
+            PROPERTY -> {
+                if (devicePropertiesDataList.isNotEmpty()) {
+                    getDeviceRealData(devicePropertiesDataList)
                 }
-            } catch (e: Exception) {
-                Log.e("DeviceDetail", "Data fetch error", e)
-            } finally {
-                isLoading = false
-            }
-        }
-        //网络状态
-        else if (selectedLabel == NETWORK) {
-            var now = LocalDate.now()
-
-        }
-        //属性数据
-        else if (selectedLabel == PROPERTY) {
-            if (devicePropertiesDataList.isNotEmpty()) {
-                getDeviceRealData(devicePropertiesDataList)
-            }
-        }
-        //遥测数据
-        else if (selectedLabel == TELEMETRY) {
-            if (deviceTelemetryDataList.isNotEmpty()) {
-                getDeviceRealData(deviceTelemetryDataList)
             }
 
-        }
-        //事件数据
-        else if (selectedLabel == EVENT) {
+            TELEMETRY -> {
+                if (deviceTelemetryDataList.isNotEmpty()) {
+                    getDeviceRealData(deviceTelemetryDataList)
+                }
+            }
 
+            EVENT -> {
+                if (deviceEventsDataList.isNotEmpty()) {
+                    loadHistoryData(isRefresh = true, keys = deviceEventsDataList.map { it.key })
+                }
+            }
+
+            NETWORK -> {
+                loadHistoryData(isRefresh = true, keys = listOf("onLine", "offLine"))
+            }
         }
     }
 
@@ -371,14 +420,53 @@ fun DeviceDetailScreen(
                         }
                     }
                 } else {
-                    var now = LocalDate.now()
-                    var plusDays = now.plusDays(-7)
-                    var startDate = formatter.format(plusDays)
-                    var endDate = formatter.format(now)
-                    Box(modifier = Modifier.fillMaxWidth()) {
+                    var keys = if (selectedLabel == EVENT) {
+                        deviceEventsDataList.map { it.key }
+                    } else {
+                        listOf("onLine", "offLine")
+                    }
+
+                    Column(modifier = Modifier.fillMaxSize()) {
                         DateRangePickerModern { start, end ->
                             startDate = start
                             endDate = end
+                            scope.launch { loadHistoryData(isRefresh = true, keys = keys) }
+                        }
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
+                            if (historyDataList.isEmpty() && !isLoading) {
+                                item {
+                                    Box(
+                                        Modifier.fillParentMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) { EmptyDataView("暂无历史记录") }
+                                }
+                            } else {
+                                items(historyDataList) { data -> HistoryDataCard(data) }
+                                if (hasMore) {
+                                    item {
+                                        LaunchedEffect(Unit) {
+                                            loadHistoryData(
+                                                isRefresh = false,
+                                                keys = keys
+                                            )
+                                        }
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator(
+                                                Modifier.size(24.dp),
+                                                strokeWidth = 2.dp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

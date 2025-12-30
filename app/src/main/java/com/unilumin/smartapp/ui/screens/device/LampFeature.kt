@@ -147,11 +147,6 @@ fun LampFeatureContent(
     }
     if (showDeviceDataDialog) {
         onDetailClick(lightDevice)
-//        DeviceDetailDialog(
-//            lightDevice = lightDevice,
-//            retrofitClient = retrofitClient,
-//            onDismissRequest = { showDeviceDataDialog = false }
-//        )
     }
 }
 
