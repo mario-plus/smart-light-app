@@ -101,7 +101,7 @@ interface DeviceService {
     fun getDeviceConfig(@Query("deviceId") deviceId: Long): Call<NewResponseData<List<DeviceConfig>?>?>?
 
     @POST(RequestPathKey.KEY_GET_DEVICE_REAL_DATA)
-    fun getDeviceRealTimeData(@Body req: DeviceRealTimeDataReq): Call<NewResponseData<String?>?>?
+    fun getDeviceRealTimeData(@Body req: DeviceRealTimeDataReq): Call<NewResponseData<Map<String, Map<String, String>>?>?>?
 
     @POST(RequestPathKey.KEY_GET_DEVICE_HISTORY_DATA)
     fun getDeviceHistoryData(@Body req: HistoryDataReq): Call<NewResponseData<PageResponse<HistoryData>?>?>?

@@ -47,3 +47,7 @@ val Amber600 = Color(0xFFD97706)
  val TextDark = Color(0xFF1D1D1F)      // 深黑灰文本
  val TextGray = Color(0xFF86868B)      // 辅助灰色文本
  val LineColor = Color(0xFFF2F2F7)     // 极淡分割线
+// 定义现代化的颜色色值
+val accentColor = Color(0xFF3478F6) // 类似 Apple 的品牌蓝
+val bgColor = Color(0xFFFBFBFD)
+val borderColor = Color(0xFFE5E5EA)

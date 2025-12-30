@@ -28,6 +28,11 @@ object DeviceType {
 
     const val CAMERA = "camera"
 
+    const val DETAIL = "detail"
+    const val NETWORK = "network"
+    const val PROPERTY = "property"
+    const val TELEMETRY = "telemetry"
+    const val EVENT = "event"
 
     //设备列表选项
     val DataList = listOf(
@@ -37,6 +42,15 @@ object DeviceType {
         PLAY_BOX to "播放盒",
         ENV to "环境传感器",
         CAMERA to "摄像头"
+    )
+
+
+    val DeviceDetailTabs = listOf(
+        DETAIL to "详细信息",
+        NETWORK to "网络状态",
+        PROPERTY to "属性数据",
+        TELEMETRY to "遥测数据",
+        EVENT to "事件数据"
     )
 
     //双色温单灯产品id

@@ -277,3 +277,16 @@ data class HistoryDataReq(
     val deviceIds: List<String>,
     val keys: List<String>
 )
+
+data class DeviceModelData(
+    //物模型key
+    val key: String,
+    //名称
+    val name: String,
+    //描述
+    val keyDes: String,
+    //值
+    var value: String? = null,
+    //单位
+    val unit: String? = null
+)

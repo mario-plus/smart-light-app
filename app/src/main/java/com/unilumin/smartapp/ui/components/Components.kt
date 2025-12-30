@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.ui.components
 
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,6 +23,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.outlined.Dashboard
@@ -39,10 +45,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -52,25 +62,37 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.LoopInfo
 import com.unilumin.smartapp.ui.theme.Amber50
 import com.unilumin.smartapp.ui.theme.Amber500
@@ -98,6 +120,10 @@ import com.unilumin.smartapp.ui.theme.Red500
 import com.unilumin.smartapp.ui.theme.TextDark
 import com.unilumin.smartapp.ui.theme.TextGray
 import com.unilumin.smartapp.ui.theme.White
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun AppCard(
@@ -106,8 +132,7 @@ fun AppCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
-        modifier = modifier
-            .shadow(elevation = 1.dp, shape = RoundedCornerShape(16.dp))
+        modifier = modifier.shadow(elevation = 1.dp, shape = RoundedCornerShape(16.dp))
             .let { if (onClick != null) it.clickable { onClick() } else it },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -145,9 +170,7 @@ fun StatusBadge(status: String) {
 
 @Composable
 fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    query: String, onQueryChange: (String) -> Unit, modifier: Modifier = Modifier
 ) {
     BasicTextField(
         value = query,
@@ -184,12 +207,10 @@ fun SearchBar(
                         tint = Gray400,
                         modifier = Modifier
                             .size(18.dp)
-                            .clickable { onQueryChange("") }
-                    )
+                            .clickable { onQueryChange("") })
                 }
             }
-        }
-    )
+        })
 }
 
 @Composable
@@ -217,14 +238,12 @@ fun BottomNavBar(navController: NavController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     NavigationBar(
-        containerColor = Color.White.copy(alpha = 0.9f),
-        tonalElevation = 8.dp
+        containerColor = Color.White.copy(alpha = 0.9f), tonalElevation = 8.dp
     ) {
         val items = listOf(
             "dashboard" to Triple("概览", Icons.Rounded.Dashboard, Icons.Outlined.Dashboard),
             "devices" to Triple("设备", Icons.Rounded.List, Icons.Outlined.List),
             "sites" to Triple("站点", Icons.Rounded.LocationOn, Icons.Outlined.LocationOn),
-//            "monitor" to Triple("监控", Icons.Rounded.Videocam, Icons.Outlined.Videocam),
             "profile" to Triple("我的", Icons.Rounded.Person, Icons.Outlined.Person)
         )
 
@@ -232,11 +251,11 @@ fun BottomNavBar(navController: NavController) {
             val isSelected = currentRoute == route
             NavigationBarItem(
                 icon = {
-                    Icon(
-                        imageVector = if (isSelected) info.second else info.third,
-                        contentDescription = info.first
-                    )
-                },
+                Icon(
+                    imageVector = if (isSelected) info.second else info.third,
+                    contentDescription = info.first
+                )
+            },
                 label = { Text(info.first, fontSize = 10.sp) },
                 selected = isSelected,
                 onClick = {
@@ -261,7 +280,6 @@ fun BottomNavBar(navController: NavController) {
 }
 
 
-
 @Composable
 fun PageLoadingView() {
     Box(
@@ -283,9 +301,7 @@ fun PageAppendLoadingView() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         CircularProgressIndicator(
-            modifier = Modifier.size(16.dp),
-            color = Gray400,
-            strokeWidth = 2.dp
+            modifier = Modifier.size(16.dp), color = Gray400, strokeWidth = 2.dp
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text("正在加载更多...", color = Gray400, fontSize = 12.sp)
@@ -380,9 +396,7 @@ fun DeviceStatus(status: Int?) {
     }
 
     Surface(
-        color = bgColor,
-        shape = RoundedCornerShape(percent = 50),
-        modifier = Modifier.height(24.dp)
+        color = bgColor, shape = RoundedCornerShape(percent = 50), modifier = Modifier.height(24.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp),
@@ -415,8 +429,7 @@ fun LoopCircleItem(loop: LoopInfo) {
     }
     val tooltipState = rememberTooltipState()
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-        tooltip = {
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(), tooltip = {
             PlainTooltip(
                 containerColor = Color(0xFF333333).copy(alpha = 0.9f),
                 shape = RoundedCornerShape(8.dp)
@@ -430,21 +443,17 @@ fun LoopCircleItem(loop: LoopInfo) {
                     )
                 }
             }
-        },
-        state = tooltipState
+        }, state = tooltipState
     ) {
         Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
+            contentAlignment = Alignment.Center, modifier = Modifier
                 .size(36.dp) // 稍微加大尺寸，更易点击
                 .background(color = baseColor, shape = CircleShape)
                 .border(1.dp, contentColor.copy(alpha = 0.3f), CircleShape) // 添加同色系的浅色边框
         ) {
             Text(
-                text = "${loop.loopNum}",
-                color = contentColor, // 文字颜色与边框/状态保持一致
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
+                text = "${loop.loopNum}", color = contentColor, // 文字颜色与边框/状态保持一致
+                fontSize = 14.sp, fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -472,24 +481,17 @@ fun ProfileMenuItem(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 shape = RoundedCornerShape(14.dp), // 更圆润
-                color = iconBg,
-                modifier = Modifier.size(44.dp)
+                color = iconBg, modifier = Modifier.size(44.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        icon,
-                        null,
-                        tint = iconColor,
-                        modifier = Modifier.size(24.dp)
+                        icon, null, tint = iconColor, modifier = Modifier.size(24.dp)
                     )
                 }
             }
             Spacer(modifier = Modifier.width(18.dp))
             Text(
-                title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = Gray900
+                title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Gray900
             )
         }
         if (trailingText != null) {
@@ -509,10 +511,7 @@ fun ProfileMenuItem(
 
         } else if (showArrow) {
             Icon(
-                Icons.Rounded.ChevronRight,
-                null,
-                tint = Gray200,
-                modifier = Modifier.size(22.dp)
+                Icons.Rounded.ChevronRight, null, tint = Gray200, modifier = Modifier.size(22.dp)
             )
         }
     }
@@ -556,32 +555,25 @@ fun BrightnessControlCard(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = title,
-                    fontSize = 14.sp, // 稍微改小一点，显得精致
-                    color = Color(0xFF333333),
-                    fontWeight = FontWeight.Bold
+                    text = title, fontSize = 14.sp, // 稍微改小一点，显得精致
+                    color = Color(0xFF333333), fontWeight = FontWeight.Bold
                 )
             }
 
             // --- 2. 中间滑块区域 (自适应宽度) ---
             // 使用 weight(1f) 让它填满标题和数值中间的所有空间
             Slider(
-                value = initValue.toFloat(),
-                onValueChange = { newValue ->
-                    onValueChange(newValue.toInt())
-                },
-                onValueChangeFinished = {
-                    onValueChangeFinished(initValue)
-                },
-                valueRange = 0f..100f,
-                colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = ControlBlue,
-                    inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
-                ),
-                modifier = Modifier
+                value = initValue.toFloat(), onValueChange = { newValue ->
+                onValueChange(newValue.toInt())
+            }, onValueChangeFinished = {
+                onValueChangeFinished(initValue)
+            }, valueRange = 0f..100f, colors = SliderDefaults.colors(
+                thumbColor = Color.White,
+                activeTrackColor = ControlBlue,
+                inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
+            ), modifier = Modifier
                     .weight(1f) // 关键：占据剩余空间
-                    .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
+                .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
                 thumb = {
                     // 自定义小滑块，比之前那个版本要做得更小一点，适配单行
                     Surface(
@@ -600,16 +592,14 @@ fun BrightnessControlCard(
                             )
                         }
                     }
-                }
-            )
+                })
 
             // --- 3. 右侧数值区域 ---
             // 使用 Box 给定最小宽度，防止数字 9 -> 10 时宽度变化导致滑块抖动
             Box(
                 modifier = Modifier
                     .width(46.dp) // 给定一个固定宽度，足以容纳 "100%"
-                    .padding(start = 8.dp),
-                contentAlignment = Alignment.CenterEnd // 文字靠右对齐
+                    .padding(start = 8.dp), contentAlignment = Alignment.CenterEnd // 文字靠右对齐
             ) {
                 Text(
                     text = "${initValue}%",
@@ -624,40 +614,6 @@ fun BrightnessControlCard(
 }
 
 
-//远程控制按钮
-@Composable
-fun RemoteControlButton(
-    canClick: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    text: String = "远程控制"
-) {
-    FilledTonalButton(
-        onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .padding(horizontal = 4.dp)
-            .alpha(if (canClick) 1f else 0.6f),
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = if (canClick) ControlBlue.copy(alpha = 0.1f) else Gray50,
-            contentColor = if (canClick) ControlBlue else Color.DarkGray
-        )
-    ) {
-        Icon(
-            imageVector = Icons.Default.PowerSettingsNew,
-            contentDescription = null,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = text,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
 /**
  * @param canClick 远程控制是否可以点击
  * @param onHistoryClick 历史数据事件
@@ -666,9 +622,9 @@ fun RemoteControlButton(
 @Composable
 fun RemoteControlButtonGroup(
     canClick: Boolean,
-    showRemoteCtlBtn:Boolean,
+    showRemoteCtlBtn: Boolean,
     onRemoteControlClick: () -> Unit,
-    onHistoryClick:  () -> Unit,
+    onHistoryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -686,7 +642,7 @@ fun RemoteControlButtonGroup(
             modifier = Modifier.weight(1f),
             activeColor = Color(0xFF6750A4)
         )
-        if (showRemoteCtlBtn){
+        if (showRemoteCtlBtn) {
             ControlButton(
                 text = "远程控制",
                 icon = Icons.Default.PowerSettingsNew,
@@ -723,92 +679,14 @@ private fun ControlButton(
         enabled = canClick
     ) {
         Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp)
+            imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = text,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1
+            text = text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1
         )
     }
 }
-
-/**
- * 提取单个条目组件，方便优化样式
- */
-@Composable
-fun InfoRowItem(key: String, value: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = key, color = Color.Gray, fontSize = 14.sp
-            )
-            Text(
-                text = value,
-                color = Color(0xFF333333),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.End,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 24.dp)
-            )
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        HorizontalDivider(
-            thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.3f)
-        )
-    }
-}
-
-
-/**
- * 居中显示的分割线组件
- */
-@Composable
-fun DeviceConfigHeader(tip: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 左侧横线
-        HorizontalDivider(
-            modifier = Modifier.weight(1f),
-            thickness = 0.5.dp,
-            color = Color.LightGray
-        )
-
-        // 中间文字
-        Text(
-            text = tip,
-            modifier = Modifier.padding(horizontal = 8.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
-
-        // 右侧横线
-        HorizontalDivider(
-            modifier = Modifier.weight(1f),
-            thickness = 0.5.dp,
-            color = Color.LightGray
-        )
-    }
-}
-
 
 /**
  * 美观的标签组件
@@ -823,8 +701,7 @@ fun DeviceTag(text: String) {
             text = text,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.primary // 字体颜色
+                fontSize = 12.sp, color = MaterialTheme.colorScheme.primary // 字体颜色
             )
         )
     }
@@ -833,7 +710,9 @@ fun DeviceTag(text: String) {
 @Composable
 fun DetailCard(title: String, content: @Composable () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().shadow(elevation = 0.5.dp, shape = RoundedCornerShape(16.dp)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 0.5.dp, shape = RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CardWhite)
     ) {
@@ -857,13 +736,15 @@ fun DetailCard(title: String, content: @Composable () -> Unit) {
 fun DetailRow(label: String, value: String) {
     Column {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = label, color = TextGray, fontSize = 14.sp)
             Text(
-                text = value,
+                text = value ?: "--",
                 color = TextDark,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
@@ -871,5 +752,201 @@ fun DetailRow(label: String, value: String) {
             )
         }
         HorizontalDivider(thickness = 0.5.dp, color = LineColor)
+    }
+}
+
+@Composable
+fun DeviceRealDataCardModern(
+    data: DeviceModelData,
+    onHistoryClick: () -> Unit
+) {
+    // 淡淡的青蓝渐变
+    val gradientBrush = Brush.linearGradient(
+        colors = listOf(Color(0xFFF7F9FF), Color.White),
+        start = Offset(0f, 0f),
+        end = Offset(500f, 500f)
+    )
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(95.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .clickable { onHistoryClick() },
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, Color(0xFFF2F2F7))
+    ) {
+        Column(
+            modifier = Modifier.background(gradientBrush).padding(12.dp).fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = data.name,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E)),
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (!data.unit.isNullOrBlank()) {
+                    Text(text = " (${data.unit})", style = TextStyle(fontSize = 10.sp, color = Color(0xFF8E8E93)))
+                }
+            }
+            Text(
+                text = data.value?.ifEmpty { "--" } ?: "--",
+                style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF3478F6))
+            )
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, modifier = Modifier.size(12.dp), tint = Color(0xFFD1D1D6))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateRangePickerModern(
+    onRangeSelected: (String, String) -> Unit
+) {
+    val context = LocalContext.current
+    // 强制设置中文 Locale 确保 Picker 内部显示中文
+    val locale = Locale.CHINESE
+    val sdf = remember { SimpleDateFormat("yyyy-MM-dd", locale) }
+
+    // 1. 初始化时间状态
+    val calendar = Calendar.getInstance()
+    val todayMillis = calendar.timeInMillis
+    calendar.add(Calendar.DAY_OF_YEAR, -7)
+    val weekAgoMillis = calendar.timeInMillis
+
+    var startDateMillis by remember { mutableLongStateOf(weekAgoMillis) }
+    var endDateMillis by remember { mutableLongStateOf(todayMillis) }
+    var dateRangeDisplay by remember {
+        mutableStateOf("${sdf.format(weekAgoMillis)} ~ ${sdf.format(todayMillis)}")
+    }
+
+    var showPicker by remember { mutableStateOf(false) }
+    val state = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = startDateMillis,
+        initialSelectedEndDateMillis = endDateMillis
+    )
+
+    // 2. 外部展示卡片：带淡淡的渐变色
+    val gradientBrush = Brush.linearGradient(
+        colors = listOf(Color(0xFFF0F4FF), Color.White),
+        start = Offset(0f, 0f),
+        end = Offset(1000f, 1000f)
+    )
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent, // 透明以显示背景渐变
+        shadowElevation = 2.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .background(brush = gradientBrush)
+                .clickable { showPicker = true }
+                .padding(horizontal = 16.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "时间周期",
+                    style = TextStyle(fontSize = 13.sp, color = Color(0xFF8E8E93), fontWeight = FontWeight.Medium)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = dateRangeDisplay,
+                    style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E))
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.DateRange,
+                contentDescription = null,
+                tint = Color(0xFF3478F6),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+
+    // 3. 宽度铺满的日期选择器
+    if (showPicker) {
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val start = state.selectedStartDateMillis
+                    val end = state.selectedEndDateMillis
+                    if (start != null && end != null) {
+                        val sevenDaysMillis = 7L * 24 * 60 * 60 * 1000
+                        if (end - start > sevenDaysMillis) {
+                            Toast.makeText(context, "日期跨度不能超过7天", Toast.LENGTH_SHORT).show()
+                        } else {
+                            val startStr = sdf.format(Date(start))
+                            val endStr = sdf.format(Date(end))
+                            startDateMillis = start
+                            endDateMillis = end
+                            dateRangeDisplay = "$startStr ~ $endStr"
+                            onRangeSelected(startStr, endStr)
+                            showPicker = false
+                        }
+                    } else {
+                        Toast.makeText(context, "请选择完整的起止日期", Toast.LENGTH_SHORT).show()
+                    }
+                }) {
+                    Text("确认选择", fontWeight = FontWeight.Bold, color = Color(0xFF3478F6))
+                }
+            },
+            dismissButton = null,
+            properties = DialogProperties(usePlatformDefaultWidth = false) // 禁用默认宽度以实现铺满
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.85f) // 限制高度在 85% 以内，留出呼吸感
+                    .background(Color.White)
+            ) {
+                // 自定义 Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "选择查询范围",
+                            style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = "单次查询最大支持7天",
+                            style = TextStyle(fontSize = 12.sp, color = Color.Gray)
+                        )
+                    }
+                    IconButton(onClick = { showPicker = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "关闭", tint = Color(0xFF8E8E93))
+                    }
+                }
+
+                // 日期选择内容铺满
+                DateRangePicker(
+                    state = state,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    title = null,
+                    headline = null,
+                    showModeToggle = false,
+                    colors = DatePickerDefaults.colors(
+                        selectedDayContainerColor = Color(0xFF3478F6),
+                        todayContentColor = Color(0xFF3478F6)
+                    )
+                )
+            }
+        }
     }
 }
