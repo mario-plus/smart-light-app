@@ -1,11 +1,15 @@
 package com.unilumin.smartapp.ui.screens.device
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.ui.components.InfoColumn
 import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
@@ -39,6 +43,7 @@ fun PlayboxFeatureContent(lightDevice: LightDevice,onDetailClick: (LightDevice) 
             VerticalDivider()
             InfoColumn("节目分辨率", lightDevice.widthHeighProgram ?: "--")
         }
+        Spacer(modifier = Modifier.height(12.dp))
         RemoteControlButtonGroup(
             canClick = lightDevice.state == 1,
             showRemoteCtlBtn = true,
@@ -46,6 +51,7 @@ fun PlayboxFeatureContent(lightDevice: LightDevice,onDetailClick: (LightDevice) 
             onHistoryClick = { showDeviceDataDialog = true })
     }
     if (showDialog) {
+        //远程控制
     }
     if (showDeviceDataDialog) {
         onDetailClick(lightDevice)

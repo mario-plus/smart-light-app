@@ -36,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -44,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,14 +68,14 @@ import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.service.DeviceService
-import com.unilumin.smartapp.ui.components.DateRangePickerModern
 import com.unilumin.smartapp.ui.components.DetailCard
 import com.unilumin.smartapp.ui.components.DetailRow
 import com.unilumin.smartapp.ui.components.DeviceRealDataCardModern
 import com.unilumin.smartapp.ui.components.DeviceTag
 import com.unilumin.smartapp.ui.components.EmptyDataView
 import com.unilumin.smartapp.ui.components.FilterChip
-import com.unilumin.smartapp.ui.components.HistoryDataCard
+import com.unilumin.smartapp.ui.components.HistoryDataListView
+import com.unilumin.smartapp.ui.screens.dialog.DeviceHistoryDialog
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.PageBackground
@@ -89,10 +91,13 @@ import java.time.format.DateTimeFormatter
 fun DeviceDetailScreen(
     lightDevice: LightDevice, retrofitClient: RetrofitClient, onBack: () -> Unit
 ) {
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+    var currentKey by remember { mutableStateOf("") }
+
     val timeFormat = DateTimeFormatter.ofPattern("HH:mm:ss")
 
     val context = LocalContext.current
+
     val deviceService = remember(retrofitClient) {
         retrofitClient.getService(DeviceService::class.java)
     }
@@ -102,6 +107,8 @@ fun DeviceDetailScreen(
     var selectedLabel by remember { mutableStateOf(DETAIL) }
 
     var isLoading by remember { mutableStateOf(false) }
+
+    var showDialog by remember { mutableStateOf(false) }
     //基础信息
     val baseInfoList = remember { mutableStateListOf<Pair<String, String>>() }
     //设备认证配置
@@ -119,20 +126,28 @@ fun DeviceDetailScreen(
     val historyDataList = remember { mutableStateListOf<HistoryData>() }
 
     var pageIndex by remember { mutableIntStateOf(1) }
+
     var hasMore by remember { mutableStateOf(true) }
-    //历史数据-开始时间
-    var startDate by remember { mutableStateOf("") }
-    //历史数据-结束时间
-    var endDate by remember { mutableStateOf("") }
 
-    // 派生状态：标题根据日期自动变化
-    val title = if (startDate.isEmpty() || endDate.isEmpty()) {
-        "请选择日期"
-    } else {
-        "$startDate 至 $endDate"
-    }
 
-    suspend fun loadHistoryData(type: String, isRefresh: Boolean = false, keys: List<String>) {
+    val formatter = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd") }
+    // 默认日期范围：一周前到今天
+    val defaultStart = remember { java.time.LocalDate.now().minusDays(7).format(formatter) }
+    val defaultEnd = remember { java.time.LocalDate.now().format(formatter) }
+    // 用 Map 记录 NETWORK 和 EVENT 各自的日期
+    val tabDatesMap = remember { mutableStateMapOf<String, Pair<String, String>>() }
+    // 获取当前选中 Tab 的日期，如果没有则用默认值
+    val currentRange = tabDatesMap[selectedLabel] ?: ("" to "")
+    val currentStart = currentRange.first
+    val currentEnd = currentRange.second
+
+
+    suspend fun loadHistoryData(
+        startTime: String,
+        endTime: String,
+        isRefresh: Boolean = false,
+        keys: List<String>
+    ) {
         if (isRefresh) {
             pageIndex = 1
             historyDataList.clear()
@@ -144,11 +159,11 @@ fun DeviceDetailScreen(
             var format = LocalDateTime.now().format(timeFormat)
             var start: String? = null
             var end: String? = null
-            if (startDate.isNotBlank()) {
-                start = "$startDate $format"
+            if (startTime.isNotBlank()) {
+                start = "$startTime $format"
             }
-            if (endDate.isNotBlank()) {
-                end = "$endDate $format"
+            if (endTime.isNotBlank()) {
+                end = "$endTime $format"
             }
             val response = UniCallbackService<PageResponse<HistoryData>>().parseDataNewSuspend(
                 deviceService.getDeviceHistoryData(
@@ -280,18 +295,14 @@ fun DeviceDetailScreen(
             }
 
             EVENT -> {
-                startDate = ""
-                endDate = ""
                 if (deviceEventsDataList.isNotEmpty()) {
                     loadHistoryData(
-                        selectedLabel, isRefresh = true, keys = deviceEventsDataList.map { it.key })
+                        "", "", isRefresh = true, keys = deviceEventsDataList.map { it.key })
                 }
             }
 
             NETWORK -> {
-                startDate = ""
-                endDate = ""
-                loadHistoryData(selectedLabel, isRefresh = true, keys = listOf("onLine", "offLine"))
+                loadHistoryData("", "", isRefresh = true, keys = listOf("onLine", "offLine"))
             }
         }
     }
@@ -302,13 +313,13 @@ fun DeviceDetailScreen(
                 Column(modifier = Modifier.background(CardWhite)) {
                     CenterAlignedTopAppBar(
                         title = {
-                        Text(
-                            text = "${lightDevice.name}-详情",
-                            style = androidx.compose.ui.text.TextStyle(
-                                fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
+                            Text(
+                                text = "${lightDevice.name}-详情",
+                                style = TextStyle(
+                                    fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
+                                )
                             )
-                        )
-                    },
+                        },
                         navigationIcon = {
                             IconButton(onClick = onBack) {
                                 Icon(
@@ -397,14 +408,12 @@ fun DeviceDetailScreen(
                                         }
                                     }
                                 }
-                                //遥测，属性
                                 PROPERTY, TELEMETRY -> {
                                     val currentList = when (selectedLabel) {
                                         PROPERTY -> devicePropertiesDataList
                                         TELEMETRY -> deviceTelemetryDataList
                                         else -> emptyList()
                                     }
-
                                     if (currentList.isNotEmpty()) {
                                         item {
                                             FlowRow(
@@ -419,11 +428,13 @@ fun DeviceDetailScreen(
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(1f)
-                                                            .fillMaxHeight() // 强制填满行高
+                                                            .fillMaxHeight()
                                                     ) {
                                                         DeviceRealDataCardModern(
-                                                            data = data,
-                                                            onHistoryClick = { /*...*/ })
+                                                            data = data, onHistoryClick = {
+                                                                showDialog = true
+                                                                currentKey = data.key
+                                                            })
                                                     }
                                                 }
                                                 val itemFillCount = 3 - (currentList.size % 3)
@@ -443,59 +454,79 @@ fun DeviceDetailScreen(
                             }
                         }
                     }
-                } else {
-                    var keys = if (selectedLabel == EVENT) {
-                        deviceEventsDataList.map { it.key }
-                    } else {
-                        listOf("onLine", "offLine")
-                    }
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        DateRangePickerModern(tip = title, { start, end ->
-                            startDate = start
-                            endDate = end
+                }else if (selectedLabel==NETWORK){
+                    var keys =  listOf("onLine", "offLine")
+                    HistoryDataListView(
+                        startDate = currentStart,
+                        endDate = currentEnd,
+                        historyDataList,
+                        hasMore = hasMore,
+                        onRangeSelected = { start, end ->
+                            tabDatesMap[selectedLabel] = start to end
                             scope.launch {
                                 loadHistoryData(
-                                    selectedLabel, isRefresh = true, keys = keys
+                                    start,
+                                    end,
+                                    isRefresh = true,
+                                    keys = keys
                                 )
                             }
-                        })
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 16.dp)
-                        ) {
-                            if (historyDataList.isEmpty() && !isLoading) {
-                                item {
-                                    Box(
-                                        Modifier.fillParentMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) { EmptyDataView("暂无历史记录") }
-                                }
-                            } else {
-                                items(historyDataList) { data -> HistoryDataCard(data) }
-                                if (hasMore) {
-                                    item {
-                                        LaunchedEffect(Unit) {
-                                            loadHistoryData(
-                                                selectedLabel, isRefresh = false, keys = keys
-                                            )
-                                        }
-                                        Box(
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp), Alignment.Center
-                                        ) {
-                                            CircularProgressIndicator(
-                                                Modifier.size(24.dp), strokeWidth = 2.dp
-                                            )
-                                        }
-                                    }
-                                }
+                        },
+                        onLoadMore = { start, end ->
+                            scope.launch {
+                                loadHistoryData(
+                                    start,
+                                    end,
+                                    isRefresh = false,
+                                    keys = keys
+                                )
                             }
                         }
-                    }
+                    )
+                } else if (selectedLabel==EVENT){
+                    var  keys =  deviceEventsDataList.map { it.key }
+                    HistoryDataListView(
+                        startDate = currentStart,
+                        endDate = currentEnd,
+                        historyDataList,
+                        hasMore = hasMore,
+                        onRangeSelected = { start, end ->
+                            tabDatesMap[selectedLabel] = start to end
+                            scope.launch {
+                                loadHistoryData(
+                                    start,
+                                    end,
+                                    isRefresh = true,
+                                    keys = keys
+                                )
+                            }
+                        },
+                        onLoadMore = { start, end ->
+                            scope.launch {
+                                loadHistoryData(
+                                    start,
+                                    end,
+                                    isRefresh = false,
+                                    keys = keys
+                                )
+                            }
+                        }
+                    )
                 }
             }
         }
+    }
+
+    if (showDialog && currentKey.isNotEmpty()) {
+        DeviceHistoryDialog(
+            deviceId = lightDevice.id,
+            listOf(currentKey),
+            deviceService = deviceService,
+            onDismiss = {
+                showDialog = false
+                currentKey = ""
+            }
+        )
     }
 }
 

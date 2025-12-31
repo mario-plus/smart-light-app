@@ -1,6 +1,8 @@
 package com.unilumin.smartapp.ui.components
 
+import android.os.Build
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -19,6 +22,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -71,6 +76,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -828,8 +834,7 @@ fun DeviceRealDataCardModern(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateRangePickerModern(
-    tip: String,
-    onRangeSelected: (String, String) -> Unit
+    tip: String, onRangeSelected: (String, String) -> Unit
 ) {
     val context = LocalContext.current
     val locale = Locale.CHINESE
@@ -839,11 +844,11 @@ fun DateRangePickerModern(
 
     // 初始化时间状态（默认最近一周）
     val state = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }.timeInMillis,
+        initialSelectedStartDateMillis = Calendar.getInstance()
+            .apply { add(Calendar.DAY_OF_YEAR, -7) }.timeInMillis,
         initialSelectedEndDateMillis = Calendar.getInstance().timeInMillis
     )
 
-    // UI：外部展示卡片
     val gradientBrush = Brush.linearGradient(
         colors = listOf(Color(0xFFF0F4FF), Color.White),
         start = Offset(0f, 0f),
@@ -862,17 +867,17 @@ fun DateRangePickerModern(
                 .background(brush = gradientBrush)
                 .clickable { showPicker = true }
                 .padding(horizontal = 16.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+            verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "时间周期",
-                style = TextStyle(fontSize = 13.sp, color = Color(0xFF8E8E93), fontWeight = FontWeight.Medium)
+                text = "时间周期", style = TextStyle(
+                    fontSize = 13.sp, color = Color(0xFF8E8E93), fontWeight = FontWeight.Medium
+                )
             )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
-                text = tip,
-                modifier = Modifier.weight(1f),
-                style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E))
+                text = tip, modifier = Modifier.weight(1f), style = TextStyle(
+                    fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E)
+                )
             )
             Icon(
                 imageVector = Icons.Default.DateRange,
@@ -885,8 +890,7 @@ fun DateRangePickerModern(
 
     if (showPicker) {
         DatePickerDialog(
-            onDismissRequest = { showPicker = false },
-            confirmButton = {
+            onDismissRequest = { showPicker = false }, confirmButton = {
                 TextButton(onClick = {
                     val start = state.selectedStartDateMillis
                     val end = state.selectedEndDateMillis
@@ -894,7 +898,8 @@ fun DateRangePickerModern(
                         // 校验：不能超过7天 (7 * 24 * 60 * 60 * 1000)
                         val limit = 7 * 24 * 60 * 60 * 1000L
                         if (end - start > limit) {
-                            Toast.makeText(context, "日期跨度不能超过7天", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "日期跨度不能超过7天", Toast.LENGTH_SHORT)
+                                .show()
                         } else {
                             onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
                             showPicker = false
@@ -905,8 +910,7 @@ fun DateRangePickerModern(
                 }) {
                     Text("确认选择", fontWeight = FontWeight.Bold, color = Color(0xFF3478F6))
                 }
-            },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
+            }, properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Column(
                 modifier = Modifier
@@ -923,8 +927,14 @@ fun DateRangePickerModern(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("选择查询范围", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold))
-                        Text("单次查询最大支持7天", style = TextStyle(fontSize = 12.sp, color = Color.Gray))
+                        Text(
+                            "选择查询范围",
+                            style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            "单次查询最大支持7天",
+                            style = TextStyle(fontSize = 12.sp, color = Color.Gray)
+                        )
                     }
                     IconButton(onClick = { showPicker = false }) {
                         Icon(Icons.Default.Close, contentDescription = "关闭")
@@ -976,8 +986,7 @@ fun HistoryDataCard(data: HistoryData) {
         Column(
             modifier = Modifier
                 .clickable { isExpanded = !isExpanded }
-                .padding(16.dp)
-        ) {
+                .padding(16.dp)) {
             // 头部：时间戳与图标 (保持不变)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -985,13 +994,14 @@ fun HistoryDataCard(data: HistoryData) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier
-                        .size(8.dp)
-                        .background(accentColor, CircleShape))
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(accentColor, CircleShape)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = data.eventTs ?: "--",
-                        style = TextStyle(
+                        text = data.eventTs ?: "--", style = TextStyle(
                             fontSize = 12.sp,
                             color = Color(0xFF8E8E93),
                             fontFamily = FontFamily.Monospace
@@ -1010,11 +1020,8 @@ fun HistoryDataCard(data: HistoryData) {
 
             // 主标题
             Text(
-                text = data.name ?: "未知参数",
-                style = TextStyle(
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF1C1C1E)
+                text = data.name ?: "未知参数", style = TextStyle(
+                    fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C1C1E)
                 )
             )
 
@@ -1101,5 +1108,69 @@ fun formatJson(json: String?): String {
         gson.toJson(jsonElement)
     } catch (e: Exception) {
         json
+    }
+}
+
+
+/**
+ * 历史数据
+ * */
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun HistoryDataListView(
+    startDate: String,           // 外部传入：当前选中的开始时间
+    endDate: String,             // 外部传入：当前选中的结束时间
+    historyDataList: List<HistoryData>, // 数据源
+    hasMore: Boolean,            // 是否有更多
+    onRangeSelected: (String, String) -> Unit, // 日期切换回调
+    onLoadMore: (String, String) -> Unit // 分页加载回调
+) {
+
+    val title = if (startDate.isEmpty() || endDate.isEmpty()) "请选择日期" else "$startDate -- $endDate"
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // 1. 日期选择器
+        DateRangePickerModern(
+            tip = title, onRangeSelected = { start, end ->
+                onRangeSelected(start, end)
+            })
+        // 2. 列表内容
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)
+        ) {
+            if (historyDataList.isEmpty()) {
+                // 空状态
+                item {
+                    Box(
+                        Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center
+                    ) {
+                        EmptyDataView("暂无历史记录")
+                    }
+                }
+            } else {
+                // 数据列表
+                items(historyDataList) { data ->
+                    HistoryDataCard(data)
+                }
+                // 加载更多
+                if (hasMore) {
+                    item {
+                        LaunchedEffect(historyDataList.size) { // 监听列表长度变化
+                            onLoadMore(startDate, endDate)
+                        }
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                Modifier.size(24.dp), strokeWidth = 2.dp, color = ControlBlue
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
