@@ -33,8 +33,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
@@ -959,20 +957,15 @@ fun DateRangePickerModern(
 }
 
 /**
- * 设备物模型历史数据卡片
+ * 历史数据卡片
  * */
 @Composable
 fun HistoryDataCard(data: HistoryData) {
     var isExpanded by remember { mutableStateOf(false) }
-
-    // 颜色配置
-    val accentColor = Color(0xFF3478F6)   // 品牌蓝
-    val keyHighlightColor = Color(0xFF005FB8) // Key 的颜色（深蓝色）
+    val accentColor = Color(0xFF3478F6)
+    val keyHighlightColor = Color(0xFF005FB8)
     val jsonBgColor = Color(0xFFF8F9FA)
-
-    // 获取带颜色的格式化字符串
     val annotatedJson = rememberFormattedJson(data.value, keyColor = keyHighlightColor)
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -987,7 +980,6 @@ fun HistoryDataCard(data: HistoryData) {
             modifier = Modifier
                 .clickable { isExpanded = !isExpanded }
                 .padding(16.dp)) {
-            // 头部：时间戳与图标 (保持不变)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1008,26 +1000,14 @@ fun HistoryDataCard(data: HistoryData) {
                         )
                     )
                 }
-                Icon(
-                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = Color(0xFFC7C7CC)
-                )
             }
-
             Spacer(modifier = Modifier.height(10.dp))
-
-            // 主标题
             Text(
-                text = data.name ?: "未知参数", style = TextStyle(
+                text = (data.name ?: "") + "(${data.key})", style = TextStyle(
                     fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C1C1E)
                 )
             )
-
             Spacer(modifier = Modifier.height(8.dp))
-
-            // JSON 详情区域
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1037,7 +1017,6 @@ fun HistoryDataCard(data: HistoryData) {
             ) {
                 SelectionContainer {
                     Text(
-                        // 核心：展开时显示 AnnotatedString，收起时显示原始字符串预览
                         text = if (isExpanded) annotatedJson else AnnotatedString(
                             data.value ?: "--"
                         ),
@@ -1053,7 +1032,7 @@ fun HistoryDataCard(data: HistoryData) {
                 }
             }
 
-            if (!isExpanded) {
+            if (!isExpanded && isJsonValid(data.value)) {
                 Text(
                     text = "点击展开查看结构化详情",
                     modifier = Modifier
@@ -1073,31 +1052,24 @@ fun HistoryDataCard(data: HistoryData) {
 @Composable
 fun rememberFormattedJson(json: String?, keyColor: Color = Color(0xFFD32F2F)): AnnotatedString {
     return remember(json) {
-        val prettyJson = formatJson(json) // 使用之前定义的 formatJson 函数
-
+        val prettyJson = formatJson(json)
         buildAnnotatedString {
-            // 正则表达式匹配 JSON 的 Key 部分: "key":
             val pattern = Pattern.compile("\"(.*)\"\\s*:")
             val matcher = pattern.matcher(prettyJson)
-
             var lastIndex = 0
             while (matcher.find()) {
-                // 添加匹配项之前的普通文本（Value 或 标点）
                 append(prettyJson.substring(lastIndex, matcher.start()))
-
-                // 为 Key 应用颜色样式
                 withStyle(style = SpanStyle(color = keyColor, fontWeight = FontWeight.Bold)) {
                     append(matcher.group())
                 }
-
                 lastIndex = matcher.end()
             }
-            // 添加最后剩余的部分
             append(prettyJson.substring(lastIndex))
         }
     }
 }
 
+//格式化json
 fun formatJson(json: String?): String {
     if (json.isNullOrBlank()) return "--"
     return try {
@@ -1111,9 +1083,19 @@ fun formatJson(json: String?): String {
     }
 }
 
+fun isJsonValid(json: String?): Boolean {
+    if (json.isNullOrBlank()) return false
+    return try {
+        val element = JsonParser().parse(json)
+        // 只有当它是 JSON 对象或 JSON 数组时，才认为是我们需要的 "结构化 JSON"
+        element.isJsonObject || element.isJsonArray
+    } catch (e: Exception) {
+        false
+    }
+}
 
 /**
- * 历史数据
+ * 历史数据页面
  * */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -1126,7 +1108,8 @@ fun HistoryDataListView(
     onLoadMore: (String, String) -> Unit // 分页加载回调
 ) {
 
-    val title = if (startDate.isEmpty() || endDate.isEmpty()) "请选择日期" else "$startDate -- $endDate"
+    val title =
+        if (startDate.isEmpty() || endDate.isEmpty()) "请选择日期" else "$startDate -- $endDate"
 
     Column(modifier = Modifier.fillMaxSize()) {
         // 1. 日期选择器
