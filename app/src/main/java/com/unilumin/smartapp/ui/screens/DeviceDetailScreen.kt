@@ -79,7 +79,7 @@ import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.theme.TextDark
 import kotlinx.coroutines.launch
-import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 
@@ -90,6 +90,7 @@ fun DeviceDetailScreen(
     lightDevice: LightDevice, retrofitClient: RetrofitClient, onBack: () -> Unit
 ) {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val timeFormat = DateTimeFormatter.ofPattern("HH:mm:ss")
 
     val context = LocalContext.current
     val deviceService = remember(retrofitClient) {
@@ -119,9 +120,9 @@ fun DeviceDetailScreen(
 
     var pageIndex by remember { mutableIntStateOf(1) }
     var hasMore by remember { mutableStateOf(true) }
-    //
+    //历史数据-开始时间
     var startDate by remember { mutableStateOf("") }
-    //LocalDate.now().format(formatter)
+    //历史数据-结束时间
     var endDate by remember { mutableStateOf("") }
 
     // 派生状态：标题根据日期自动变化
@@ -131,7 +132,7 @@ fun DeviceDetailScreen(
         "$startDate 至 $endDate"
     }
 
-    suspend fun loadHistoryData(isRefresh: Boolean = false, keys: List<String>) {
+    suspend fun loadHistoryData(type: String, isRefresh: Boolean = false, keys: List<String>) {
         if (isRefresh) {
             pageIndex = 1
             historyDataList.clear()
@@ -140,12 +141,21 @@ fun DeviceDetailScreen(
         if (!hasMore) return
         isLoading = true
         try {
+            var format = LocalDateTime.now().format(timeFormat)
+            var start: String? = null
+            var end: String? = null
+            if (startDate.isNotBlank()) {
+                start = "$startDate $format"
+            }
+            if (endDate.isNotBlank()) {
+                end = "$endDate $format"
+            }
             val response = UniCallbackService<PageResponse<HistoryData>>().parseDataNewSuspend(
                 deviceService.getDeviceHistoryData(
                     HistoryDataReq(
                         deviceIds = listOf(lightDevice.id.toString()),
-                        startTime = "$startDate 00:00:00",
-                        endTime = "$endDate 23:59:59",
+                        startTime = start,
+                        endTime = end,
                         keys = keys,
                         curPage = pageIndex,
                         pageSize = 20
@@ -270,13 +280,18 @@ fun DeviceDetailScreen(
             }
 
             EVENT -> {
+                startDate = ""
+                endDate = ""
                 if (deviceEventsDataList.isNotEmpty()) {
-                    loadHistoryData(isRefresh = true, keys = deviceEventsDataList.map { it.key })
+                    loadHistoryData(
+                        selectedLabel, isRefresh = true, keys = deviceEventsDataList.map { it.key })
                 }
             }
 
             NETWORK -> {
-                loadHistoryData(isRefresh = true, keys = listOf("onLine", "offLine"))
+                startDate = ""
+                endDate = ""
+                loadHistoryData(selectedLabel, isRefresh = true, keys = listOf("onLine", "offLine"))
             }
         }
     }
@@ -287,13 +302,13 @@ fun DeviceDetailScreen(
                 Column(modifier = Modifier.background(CardWhite)) {
                     CenterAlignedTopAppBar(
                         title = {
-                            Text(
-                                text = "${lightDevice.name}-详情",
-                                style = androidx.compose.ui.text.TextStyle(
-                                    fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
-                                )
+                        Text(
+                            text = "${lightDevice.name}-详情",
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
                             )
-                        },
+                        )
+                    },
                         navigationIcon = {
                             IconButton(onClick = onBack) {
                                 Icon(
@@ -429,19 +444,20 @@ fun DeviceDetailScreen(
                         }
                     }
                 } else {
-                    startDate = LocalDate.now().minusDays(7).format(formatter)
-                    endDate = LocalDate.now().format(formatter)
                     var keys = if (selectedLabel == EVENT) {
                         deviceEventsDataList.map { it.key }
                     } else {
                         listOf("onLine", "offLine")
                     }
-
                     Column(modifier = Modifier.fillMaxSize()) {
                         DateRangePickerModern(tip = title, { start, end ->
                             startDate = start
                             endDate = end
-                            scope.launch { loadHistoryData(isRefresh = true, keys = keys) }
+                            scope.launch {
+                                loadHistoryData(
+                                    selectedLabel, isRefresh = true, keys = keys
+                                )
+                            }
                         })
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
@@ -460,7 +476,7 @@ fun DeviceDetailScreen(
                                     item {
                                         LaunchedEffect(Unit) {
                                             loadHistoryData(
-                                                isRefresh = false, keys = keys
+                                                selectedLabel, isRefresh = false, keys = keys
                                             )
                                         }
                                         Box(
