@@ -12,29 +12,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.HistoryData
-import com.unilumin.smartapp.client.data.HistoryDataReq
-import com.unilumin.smartapp.client.data.PageResponse
-import com.unilumin.smartapp.client.service.DeviceService
+import com.unilumin.smartapp.ui.components.EmptyDataView
 import com.unilumin.smartapp.ui.components.HeaderSection
 import com.unilumin.smartapp.ui.components.HistoryDataListView
 import com.unilumin.smartapp.ui.components.InfoRibbon
-import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /**
@@ -43,87 +34,26 @@ import java.time.format.DateTimeFormatter
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DeviceHistoryDialog(
-    deviceId: Long,
     selectedDeviceModelData: DeviceModelData?,
-    deviceService: DeviceService,
+    historyDataList: List<HistoryData>, // 接收外部传入的数据源
+    hasMore: Boolean,                   // 接收外部传入的分页状态
+    isLoading: Boolean,                 // 接收外部传入的加载状态
+    onLoadData: (String, String, Boolean, List<String>) -> Unit,
     onDismiss: () -> Unit
 ) {
-
-    var keys = listOf<String>(selectedDeviceModelData?.key.toString())
-    val scope = rememberCoroutineScope()
-    val timeFormat = DateTimeFormatter.ofPattern("HH:mm:ss")
     val formatter = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd") }
-    val context = LocalContext.current
-
-    var isLoading by remember { mutableStateOf(false) }
     var startDate by remember { mutableStateOf(LocalDate.now().plusDays(-7).format(formatter)) }
     var endDate by remember { mutableStateOf(LocalDate.now().format(formatter)) }
-    val historyDataList = remember { mutableStateListOf<HistoryData>() }
-    var pageIndex by remember { mutableIntStateOf(1) }
-    var hasMore by remember { mutableStateOf(true) }
 
-    suspend fun loadHistoryData(
-        startTime: String,
-        endTime: String,
-        isRefresh: Boolean = false,
-        keys: List<String>
-    ) {
-        if (isRefresh) {
-            pageIndex = 1
-            historyDataList.clear()
-            hasMore = true
-        }
-        if (!hasMore) return
-        isLoading = true
-        try {
-            var format = LocalDateTime.now().format(timeFormat)
-            var start: String? = null
-            var end: String? = null
-            if (startTime.isNotBlank()) {
-                start = "$startTime $format"
-            }
-            if (endTime.isNotBlank()) {
-                end = "$endTime $format"
-            }
-            val response = UniCallbackService<PageResponse<HistoryData>>().parseDataNewSuspend(
-                deviceService.getDeviceHistoryData(
-                    HistoryDataReq(
-                        deviceIds = listOf(deviceId.toString()),
-                        startTime = start,
-                        endTime = end,
-                        keys = keys,
-                        curPage = pageIndex,
-                        pageSize = 20
-                    )
-                ), context
-            )
-            val newList = response?.list ?: emptyList()
-            val totalCount = response?.total ?: 0
-            if (isRefresh) {
-                historyDataList.clear()
-            }
-            historyDataList.addAll(newList)
-            pageIndex++
-            hasMore = newList.isNotEmpty() && historyDataList.size < totalCount
-        } finally {
-            isLoading = false
-        }
-    }
-
+    // 弹窗启动时，根据选中的 key 触发加载
     LaunchedEffect(selectedDeviceModelData) {
-        loadHistoryData(
-            startTime = startDate,
-            endTime = endDate,
-            true,
-            keys
-        )
+        selectedDeviceModelData?.key?.let { key ->
+            onLoadData(startDate, endDate, true, listOf(key))
+        }
     }
-
     Dialog(
         onDismissRequest = onDismiss,
-        properties = androidx.compose.ui.window.DialogProperties(
-            usePlatformDefaultWidth = false
-        )
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
             shape = RoundedCornerShape(24.dp),
@@ -134,41 +64,35 @@ fun DeviceHistoryDialog(
                 .padding(vertical = 16.dp),
             tonalElevation = 8.dp
         ) {
-
             Column(modifier = Modifier.fillMaxSize()) {
                 HeaderSection(onDismiss)
                 if (selectedDeviceModelData != null) {
                     InfoRibbon(selectedDeviceModelData)
                 }
+                // 这里渲染的是父组件传入的共享列表
                 HistoryDataListView(
                     limitDays = 14,
                     startDate = startDate,
                     endDate = endDate,
-                    historyDataList,
+                    historyDataList = historyDataList,
                     hasMore = hasMore,
                     onRangeSelected = { start, end ->
                         startDate = start
                         endDate = end
-                        scope.launch {
-                            loadHistoryData(
-                                start,
-                                end,
-                                isRefresh = true,
-                                keys = keys
-                            )
+                        selectedDeviceModelData?.key?.let {
+                            onLoadData(start, end, true, listOf(it))
                         }
                     },
                     onLoadMore = { start, end ->
-                        scope.launch {
-                            loadHistoryData(
-                                start,
-                                end,
-                                isRefresh = false,
-                                keys = keys
-                            )
+                        selectedDeviceModelData?.key?.let {
+                            onLoadData(start, end, false, listOf(it))
                         }
                     }
                 )
+
+                if (isLoading && historyDataList.isEmpty()) {
+                    EmptyDataView("数据加载中")
+                }
             }
         }
     }

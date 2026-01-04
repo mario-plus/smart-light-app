@@ -108,7 +108,7 @@ fun DeviceDetailScreen(
 
     var isLoading by remember { mutableStateOf(false) }
 
-    var showDialog by remember { mutableStateOf(false) }
+    var listDataDialog by remember { mutableStateOf(false) }
     //基础信息
     val baseInfoList = remember { mutableStateListOf<Pair<String, String>>() }
     //设备认证配置
@@ -135,7 +135,6 @@ fun DeviceDetailScreen(
     val currentRange = tabDatesMap[selectedLabel] ?: ("" to "")
     val currentStart = currentRange.first
     val currentEnd = currentRange.second
-
 
     suspend fun loadHistoryData(
         startTime: String,
@@ -435,10 +434,14 @@ fun DeviceDetailScreen(
                                                             .fillMaxHeight()
                                                     ) {
                                                         DeviceRealDataCardModern(
-                                                            data = data, onHistoryClick = {
-                                                                showDialog = true
+                                                            data = data,
+                                                            onHistoryClick = {
+                                                                listDataDialog = true
                                                                 selectedDeviceModelData =
                                                                     data.copy()
+                                                            },
+                                                            onAnalysisClick = {
+                                                                //图表数据展示
                                                             })
                                                     }
                                                 }
@@ -524,13 +527,20 @@ fun DeviceDetailScreen(
         }
     }
 
-    if (showDialog && selectedDeviceModelData != null) {
+    if (listDataDialog && selectedDeviceModelData != null) {
         DeviceHistoryDialog(
-            deviceId = lightDevice.id,
-            selectedDeviceModelData,
-            deviceService = deviceService,
+            selectedDeviceModelData = selectedDeviceModelData,
+            historyDataList = historyDataList, // 传入弹窗专用列表
+            hasMore = hasMore,
+            isLoading = isLoading,
+            onLoadData = { start, end, refresh, keys ->
+                scope.launch {
+                    loadHistoryData(start, end, refresh, keys)
+                }
+            },
             onDismiss = {
-                showDialog = false
+                listDataDialog = false
+                historyDataList.clear() // 关闭弹窗时重置弹窗数据池
             }
         )
     }

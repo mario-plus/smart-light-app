@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,7 +30,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.History
@@ -84,10 +84,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -775,64 +772,113 @@ fun DetailRow(label: String, value: String) {
     }
 }
 
+
 @Composable
 fun DeviceRealDataCardModern(
-    data: DeviceModelData, onHistoryClick: () -> Unit
+    data: DeviceModelData,
+    onHistoryClick: () -> Unit,
+    onAnalysisClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(Color(0xFFF7F9FF), Color.White),
-        start = Offset(0f, 0f),
-        end = Offset(500f, 500f)
-    )
+    // 采用图片中的拟物化配色
+    val cardBg = Color(0xFFF2EFE9)       // 暖白色背景
+    val headerBg = Color(0xFFC2D1D9)     // 顶部标题栏淡蓝灰色
+    val bottomBarBg = Color(0xFFC2D1D9)  // 底部操作栏淡蓝灰色
+    val dividerColor = Color(0xFF9BAAB5) // 深一点的蓝灰分割线
+    val primaryText = Color(0xFF2D3436)  // 深灰色文字
+    val secondaryText = Color(0xFF4A5568) // 辅助文字
+
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(95.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .clickable { onHistoryClick() },
-        color = Color.Transparent,
-        border = BorderStroke(1.dp, Color(0xFFF2F2F7))
+        modifier = modifier
+            .padding(4.dp) // 【关键】减少外部间距，确保3列布局不拥挤
+            .height(120.dp), // 减小高度以适配3列布局
+        shape = RoundedCornerShape(12.dp),
+        color = cardBg,
+        // 使用 physical elevation 配合浅色边框模拟厚度
+        shadowElevation = 3.dp,
+        border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.8f))
     ) {
-        Column(
-            modifier = Modifier
-                .background(gradientBrush)
-                .padding(12.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column {
+            // --- 顶部标题栏 ---
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(28.dp)
+                    .background(headerBg)
+                    .padding(horizontal = 8.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
                 Text(
                     text = data.name,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                     style = TextStyle(
-                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E)
+                        fontSize = 11.sp,
+                        color = secondaryText,
+                        fontWeight = FontWeight.Bold
                     ),
-                    modifier = Modifier.weight(1f, fill = false)
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-                if (!data.unit.isNullOrBlank()) {
+            }
+
+            // --- 中间数据区 ---
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = " (${data.unit})",
-                        style = TextStyle(fontSize = 10.sp, color = Color(0xFF8E8E93))
+                        text = data.value ?: "--",
+                        style = TextStyle(
+                            fontSize = 22.sp, // 适配小卡片的字号
+                            fontWeight = FontWeight.Black,
+                            color = primaryText
+                        )
                     )
+                    if (!data.unit.isNullOrBlank()) {
+                        Text(
+                            text = data.unit,
+                            modifier = Modifier.padding(start = 1.dp, bottom = 3.dp),
+                            style = TextStyle(fontSize = 9.sp, color = secondaryText)
+                        )
+                    }
                 }
             }
-            Text(text = data.value?.ifEmpty { "--" } ?: "--", style = TextStyle(
-                fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF3478F6)
-            ))
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    null,
-                    modifier = Modifier.size(12.dp),
-                    tint = Color(0xFFD1D1D6)
-                )
+
+            // --- 底部操作栏 ---
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(32.dp)
+                    .background(bottomBarBg),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ActionButton("列表", onHistoryClick, Modifier.weight(1f), secondaryText)
+
+                // 细分割线
+                Box(modifier = Modifier.width(0.5.dp).height(12.dp).background(dividerColor))
+
+                ActionButton("图表", onAnalysisClick, Modifier.weight(1f), secondaryText)
             }
         }
     }
 }
 
-
+@Composable
+private fun ActionButton(text: String, onClick: () -> Unit, modifier: Modifier, color: Color) {
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            style = TextStyle(fontSize = 10.sp, color = color, fontWeight = FontWeight.Bold)
+        )
+    }
+}
 /**
  * 日期期间选择组件
  * @param tip 显示的时间区间

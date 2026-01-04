@@ -45,3 +45,6 @@ val BackgroundGray = Color(0xFFF7F8FA)
 val AccentBlue = Color(0xFF007AFF)
 val TextPrimary = Color(0xFF1C1C1E)
 val TextSecondary = Color(0xFF8E8E93)
+
+val cardBackground = Color(0xFF0D241B) // 深蓝色背景
+val dividerColor = Color(0xFF1F2937)   // 分割线颜色
