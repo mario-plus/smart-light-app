@@ -76,6 +76,7 @@ import com.unilumin.smartapp.ui.components.DeviceTag
 import com.unilumin.smartapp.ui.components.EmptyDataView
 import com.unilumin.smartapp.ui.components.FilterChip
 import com.unilumin.smartapp.ui.components.HistoryDataListView
+import com.unilumin.smartapp.ui.screens.dialog.ChartDataDialog
 import com.unilumin.smartapp.ui.screens.dialog.DeviceHistoryDialog
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.ControlBlue
@@ -146,10 +147,7 @@ fun DeviceDetailScreen(
 
     //历史数据
     suspend fun loadHistoryData(
-        startTime: String,
-        endTime: String,
-        isRefresh: Boolean = false,
-        keys: List<String>
+        startTime: String, endTime: String, isRefresh: Boolean = false, keys: List<String>
     ) {
         if (isRefresh) {
             pageIndex = 1
@@ -195,9 +193,7 @@ fun DeviceDetailScreen(
 
     //图表数据
     suspend fun loadChartData(
-        startTime: String,
-        endTime: String,
-        currentData: DeviceModelData
+        startTime: String, endTime: String, currentData: DeviceModelData
     ) {
         val response = UniCallbackService<List<SequenceTsl>>().parseDataNewSuspend(
             deviceService.getSequenceTsl(
@@ -209,7 +205,10 @@ fun DeviceDetailScreen(
                 isAggregation = false
             ), context
         )
-        chartDataList == response
+        if (response != null) {
+            chartDataList.clear()
+            chartDataList.addAll(response)
+        }
     }
 
     //解析元数据
@@ -328,10 +327,7 @@ fun DeviceDetailScreen(
 
             NETWORK -> {
                 loadHistoryData(
-                    currentStart,
-                    currentEnd,
-                    isRefresh = true,
-                    keys = listOf("onLine", "offLine")
+                    currentStart, currentEnd, isRefresh = true, keys = listOf("onLine", "offLine")
                 )
             }
         }
@@ -343,13 +339,12 @@ fun DeviceDetailScreen(
                 Column(modifier = Modifier.background(CardWhite)) {
                     CenterAlignedTopAppBar(
                         title = {
-                            Text(
-                                text = "${lightDevice.name}-详情",
-                                style = TextStyle(
-                                    fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
-                                )
+                        Text(
+                            text = "${lightDevice.name}-详情", style = TextStyle(
+                                fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
                             )
-                        },
+                        )
+                    },
                         navigationIcon = {
                             IconButton(onClick = onBack) {
                                 Icon(
@@ -472,13 +467,6 @@ fun DeviceDetailScreen(
                                                                 showChartDialog = true
                                                                 selectedDeviceModelData =
                                                                     data.copy()
-                                                                scope.launch {
-                                                                    loadChartData(
-                                                                        "2025-12-02 00:00:00",
-                                                                        "2025-12-09 23:59:59",
-                                                                        selectedDeviceModelData!!
-                                                                    )
-                                                                }
                                                             })
                                                     }
                                                 }
@@ -511,24 +499,17 @@ fun DeviceDetailScreen(
                             tabDatesMap[selectedLabel] = start to end
                             scope.launch {
                                 loadHistoryData(
-                                    start,
-                                    end,
-                                    isRefresh = true,
-                                    keys = keys
+                                    start, end, isRefresh = true, keys = keys
                                 )
                             }
                         },
                         onLoadMore = { start, end ->
                             scope.launch {
                                 loadHistoryData(
-                                    start,
-                                    end,
-                                    isRefresh = false,
-                                    keys = keys
+                                    start, end, isRefresh = false, keys = keys
                                 )
                             }
-                        }
-                    )
+                        })
                 } else if (selectedLabel == EVENT) {
                     var keys = deviceEventsDataList.map { it.key }
                     HistoryDataListView(
@@ -541,24 +522,17 @@ fun DeviceDetailScreen(
                             tabDatesMap[selectedLabel] = start to end
                             scope.launch {
                                 loadHistoryData(
-                                    start,
-                                    end,
-                                    isRefresh = true,
-                                    keys = keys
+                                    start, end, isRefresh = true, keys = keys
                                 )
                             }
                         },
                         onLoadMore = { start, end ->
                             scope.launch {
                                 loadHistoryData(
-                                    start,
-                                    end,
-                                    isRefresh = false,
-                                    keys = keys
+                                    start, end, isRefresh = false, keys = keys
                                 )
                             }
-                        }
-                    )
+                        })
                 }
             }
         }
@@ -578,12 +552,20 @@ fun DeviceDetailScreen(
             onDismiss = {
                 listDataDialog = false
                 historyDataList.clear() // 关闭弹窗时重置弹窗数据池
-            }
-        )
+            })
     }
 
     if (showChartDialog && selectedDeviceModelData != null) {
-
+        ChartDataDialog(selectedDeviceModelData = selectedDeviceModelData, onDismiss = {
+            showChartDialog = false
+            chartDataList.clear()
+        }, limitDays = 14, chartDataList, onLoadData = { start, end ->
+            scope.launch {
+                loadChartData(
+                    start, end, selectedDeviceModelData!!
+                )
+            }
+        })
     }
 }
 

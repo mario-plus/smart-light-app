@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,41 +21,35 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.unilumin.smartapp.client.data.DeviceModelData
-import com.unilumin.smartapp.client.data.HistoryData
-import com.unilumin.smartapp.ui.components.EmptyDataView
+import com.unilumin.smartapp.client.data.SequenceTsl
+import com.unilumin.smartapp.ui.components.ChartDataView
 import com.unilumin.smartapp.ui.components.HeaderSection
-import com.unilumin.smartapp.ui.components.HistoryDataListView
 import com.unilumin.smartapp.ui.components.InfoRibbon
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-/**
- * 遥测，属性的历史数据
- * */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun DeviceHistoryDialog(
+fun ChartDataDialog(
     selectedDeviceModelData: DeviceModelData?,
-    historyDataList: List<HistoryData>, // 接收外部传入的数据源
-    hasMore: Boolean,                   // 接收外部传入的分页状态
-    isLoading: Boolean,                 // 接收外部传入的加载状态
-    onLoadData: (String, String, Boolean, List<String>) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    limitDays: Int,
+    data: List<SequenceTsl>,
+    onLoadData: (String, String) -> Unit
 ) {
     val formatter = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd") }
     var startDate by remember { mutableStateOf(LocalDate.now().plusDays(-7).format(formatter)) }
     var endDate by remember { mutableStateOf(LocalDate.now().format(formatter)) }
 
-    // 弹窗启动时，根据选中的 key 触发加载
-    LaunchedEffect(selectedDeviceModelData) {
-        selectedDeviceModelData?.key?.let { key ->
-            onLoadData(startDate, endDate, true, listOf(key))
-        }
+    LaunchedEffect(Unit) {
+        onLoadData(startDate, endDate)
     }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
-    ) {
+    ){
+
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = Color.White,
@@ -65,34 +60,23 @@ fun DeviceHistoryDialog(
             tonalElevation = 8.dp
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                HeaderSection("历史数据详情",onDismiss)
+                HeaderSection("数据分析详情",onDismiss)
                 if (selectedDeviceModelData != null) {
                     InfoRibbon(selectedDeviceModelData)
                 }
-                // 这里渲染的是父组件传入的共享列表
-                HistoryDataListView(
-                    limitDays = 14,
+                Divider(thickness = 0.5.dp, color = Color(0xFFEEEEEE))
+                // 内容区域
+                ChartDataView(
+                    limitDays = limitDays,
                     startDate = startDate,
                     endDate = endDate,
-                    historyDataList = historyDataList,
-                    hasMore = hasMore,
+                    data = data,
                     onRangeSelected = { start, end ->
                         startDate = start
                         endDate = end
-                        selectedDeviceModelData?.key?.let {
-                            onLoadData(start, end, true, listOf(it))
-                        }
-                    },
-                    onLoadMore = { start, end ->
-                        selectedDeviceModelData?.key?.let {
-                            onLoadData(start, end, false, listOf(it))
-                        }
+                        onLoadData(start, end)
                     }
                 )
-
-                if (isLoading && historyDataList.isEmpty()) {
-                    EmptyDataView("数据加载中")
-                }
             }
         }
     }

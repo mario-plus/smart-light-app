@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -55,6 +57,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -84,17 +87,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -106,6 +120,7 @@ import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.LoopInfo
+import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.ui.theme.AccentBlue
 import com.unilumin.smartapp.ui.theme.Amber50
 import com.unilumin.smartapp.ui.theme.Amber500
@@ -137,6 +152,9 @@ import com.unilumin.smartapp.ui.theme.TextPrimary
 import com.unilumin.smartapp.ui.theme.TextSecondary
 import com.unilumin.smartapp.ui.theme.White
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -268,11 +286,11 @@ fun BottomNavBar(navController: NavController) {
             val isSelected = currentRoute == route
             NavigationBarItem(
                 icon = {
-                    Icon(
-                        imageVector = if (isSelected) info.second else info.third,
-                        contentDescription = info.first
-                    )
-                },
+                Icon(
+                    imageVector = if (isSelected) info.second else info.third,
+                    contentDescription = info.first
+                )
+            },
                 label = { Text(info.first, fontSize = 10.sp) },
                 selected = isSelected,
                 onClick = {
@@ -581,16 +599,16 @@ fun BrightnessControlCard(
             // 使用 weight(1f) 让它填满标题和数值中间的所有空间
             Slider(
                 value = initValue.toFloat(), onValueChange = { newValue ->
-                    onValueChange(newValue.toInt())
-                }, onValueChangeFinished = {
-                    onValueChangeFinished(initValue)
-                }, valueRange = 0f..100f, colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = ControlBlue,
-                    inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
-                ), modifier = Modifier
+                onValueChange(newValue.toInt())
+            }, onValueChangeFinished = {
+                onValueChangeFinished(initValue)
+            }, valueRange = 0f..100f, colors = SliderDefaults.colors(
+                thumbColor = Color.White,
+                activeTrackColor = ControlBlue,
+                inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
+            ), modifier = Modifier
                     .weight(1f) // 关键：占据剩余空间
-                    .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
+                .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
                 thumb = {
                     // 自定义小滑块，比之前那个版本要做得更小一点，适配单行
                     Surface(
@@ -792,11 +810,9 @@ fun DeviceRealDataCardModern(
         modifier = modifier
             .padding(4.dp) // 【关键】减少外部间距，确保3列布局不拥挤
             .height(120.dp), // 减小高度以适配3列布局
-        shape = RoundedCornerShape(12.dp),
-        color = cardBg,
+        shape = RoundedCornerShape(12.dp), color = cardBg,
         // 使用 physical elevation 配合浅色边框模拟厚度
-        shadowElevation = 3.dp,
-        border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.8f))
+        shadowElevation = 3.dp, border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.8f))
     ) {
         Column {
             // --- 顶部标题栏 ---
@@ -805,18 +821,12 @@ fun DeviceRealDataCardModern(
                     .fillMaxWidth()
                     .height(28.dp)
                     .background(headerBg)
-                    .padding(horizontal = 8.dp),
-                contentAlignment = Alignment.CenterStart
+                    .padding(horizontal = 8.dp), contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = data.name,
-                    style = TextStyle(
-                        fontSize = 11.sp,
-                        color = secondaryText,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    text = data.name, style = TextStyle(
+                        fontSize = 11.sp, color = secondaryText, fontWeight = FontWeight.Bold
+                    ), maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -824,16 +834,13 @@ fun DeviceRealDataCardModern(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth(), contentAlignment = Alignment.Center
             ) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = data.value ?: "--",
-                        style = TextStyle(
+                        text = data.value ?: "--", style = TextStyle(
                             fontSize = 22.sp, // 适配小卡片的字号
-                            fontWeight = FontWeight.Black,
-                            color = primaryText
+                            fontWeight = FontWeight.Black, color = primaryText
                         )
                     )
                     if (!data.unit.isNullOrBlank()) {
@@ -877,11 +884,7 @@ fun DeviceRealDataCardModern(
 
 @Composable
 private fun ActionButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier,
-    color: Color,
-    enabled: Boolean = true
+    text: String, onClick: () -> Unit, modifier: Modifier, color: Color, enabled: Boolean = true
 ) {
     Box(
         modifier = modifier
@@ -890,8 +893,7 @@ private fun ActionButton(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = text,
-            style = TextStyle(
+            text = text, style = TextStyle(
                 fontSize = 10.sp,
                 color = if (enabled) color else color.copy(alpha = 0.3f),
                 fontWeight = FontWeight.Bold
@@ -908,11 +910,8 @@ private fun ActionButton(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateRangePickerModern(
-    startDate: String,
-    endDate: String,
-    limitDays: Int, // 限制的总天数
-    tip: String,
-    onRangeSelected: (String, String) -> Unit
+    startDate: String, endDate: String, limitDays: Int, // 限制的总天数
+    tip: String, onRangeSelected: (String, String) -> Unit
 ) {
     var context = LocalContext.current
     var showPicker by remember { mutableStateOf(false) }
@@ -929,8 +928,7 @@ fun DateRangePickerModern(
         shape = RoundedCornerShape(12.dp),
         color = Color.White,
         shadowElevation = 2.dp,
-        onClick = { showPicker = true }
-    ) {
+        onClick = { showPicker = true }) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -968,46 +966,36 @@ fun DateRangePickerModern(
                 sdf.parse(startDate)?.time
             } catch (e: Exception) {
                 null
-            },
-            initialSelectedEndDateMillis = try {
+            }, initialSelectedEndDateMillis = try {
                 sdf.parse(endDate)?.time
             } catch (e: Exception) {
                 null
-            },
-            selectableDates = selectableDates
+            }, selectableDates = selectableDates
         )
-        DatePickerDialog(
-            onDismissRequest = { showPicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val start = state.selectedStartDateMillis
-                    val end = state.selectedEndDateMillis
-                    if (start != null && end != null) {
-                        val diffDays = (end - start) / (24 * 60 * 60 * 1000)
-                        if (diffDays > limitDays) {
-                            Toast.makeText(
-                                context,
-                                "选择范围不能超过${limitDays}天",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
-                            showPicker = false
-                        }
+        DatePickerDialog(onDismissRequest = { showPicker = false }, confirmButton = {
+            TextButton(onClick = {
+                val start = state.selectedStartDateMillis
+                val end = state.selectedEndDateMillis
+                if (start != null && end != null) {
+                    val diffDays = (end - start) / (24 * 60 * 60 * 1000)
+                    if (diffDays > limitDays) {
+                        Toast.makeText(
+                            context, "选择范围不能超过${limitDays}天", Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
+                        showPicker = false
                     }
-                }) { Text("确认", fontWeight = FontWeight.Bold) }
-            }
-        ) {
+                }
+            }) { Text("确认", fontWeight = FontWeight.Bold) }
+        }) {
             DateRangePicker(
-                state = state,
-                title = {
+                state = state, title = {
                     Text(
                         text = "选择日期范围 (最多${limitDays}天)",
                         modifier = Modifier.padding(16.dp)
                     )
-                },
-                headline = null,
-                showModeToggle = false
+                }, headline = null, showModeToggle = false
             )
         }
     }
@@ -1047,8 +1035,7 @@ fun HistoryDataCard(data: HistoryData) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = data.eventTs,
-                    style = TextStyle(fontSize = 12.sp, color = TextSecondary)
+                    text = data.eventTs, style = TextStyle(fontSize = 12.sp, color = TextSecondary)
                 )
             }
 
@@ -1060,9 +1047,7 @@ fun HistoryDataCard(data: HistoryData) {
                     // 主标题：名称
                     withStyle(
                         style = SpanStyle(
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary
+                            fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary
                         )
                     ) {
                         append(data.name)
@@ -1077,8 +1062,7 @@ fun HistoryDataCard(data: HistoryData) {
                     ) {
                         append(" [${data.key}]")
                     }
-                }
-            )
+                })
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -1109,9 +1093,7 @@ fun HistoryDataCard(data: HistoryData) {
                             text = if (isExpanded) "收起详情" else "点击展开详情",
                             modifier = Modifier.padding(top = 8.dp),
                             style = TextStyle(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AccentBlue
+                                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentBlue
                             )
                         )
                     }
@@ -1126,8 +1108,7 @@ fun HistoryDataCard(data: HistoryData) {
  * 将 JSON 字符串转换为带高亮的 AnnotatedString
  */
 fun getFormattedJsonAnnotatedString(
-    json: String?,
-    keyColor: Color = Color(0xFFD32F2F)
+    json: String?, keyColor: Color = Color(0xFFD32F2F)
 ): AnnotatedString {
     val prettyJson = formatJson(json) // 假设你的 formatJson 也是普通函数
     return buildAnnotatedString {
@@ -1169,6 +1150,238 @@ fun isJsonValid(json: String?): Boolean {
         false
     }
 }
+
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalTextApi::class)
+@Composable
+fun LineChartComponent(data: List<SequenceTsl>, modifier: Modifier = Modifier) {
+    val textMeasurer = rememberTextMeasurer()
+    val labelStyle = MaterialTheme.typography.labelSmall.copy(color = Color.Gray)
+    val sortedData = remember(data) { data.sortedBy { it.ts } }
+    val values = remember(sortedData) { sortedData.map { it.value.toFloatOrNull() ?: 0f } }
+    val maxVal = remember(values) { (values.maxOrNull() ?: 1f).coerceAtLeast(1f) }
+    val minVal = remember(values) { values.minOrNull() ?: 0f }
+    val range = (maxVal - minVal).coerceAtLeast(1f)
+
+    Canvas(modifier = modifier.padding(10.dp)) {
+        val leftPadding = 45.dp.toPx()
+        val bottomPadding = 30.dp.toPx()
+        val chartWidth = size.width - leftPadding
+        val chartHeight = size.height - bottomPadding
+        if (sortedData.size < 2) return@Canvas
+        // 2. 绘制纵轴 Y 轴标签和网格
+        val yTickCount = 4
+        for (i in 0..yTickCount) {
+            val yPos = chartHeight - (i * (chartHeight / yTickCount))
+            val yValue = minVal + (range / yTickCount) * i
+
+            drawLine(
+                color = Color.LightGray.copy(alpha = 0.5f),
+                start = Offset(leftPadding, yPos),
+                end = Offset(size.width, yPos),
+                strokeWidth = 1.dp.toPx()
+            )
+
+            // 绘制 Y 轴数值
+            drawText(
+                textMeasurer = textMeasurer,
+                text = String.format("%.1f", yValue),
+                style = labelStyle,
+                topLeft = Offset(0f, yPos - 15f)
+            )
+        }
+
+        // 3. 计算坐标点 (此时已基于排序后的数据)
+        val spacing = chartWidth / (sortedData.size - 1)
+        val points = values.indices.map { i ->
+            Offset(
+                x = leftPadding + (i * spacing),
+                y = chartHeight - ((values[i] - minVal) / range) * chartHeight
+            )
+        }
+
+        // 4. 绘制渐变填充
+        val fillPath = Path().apply {
+            moveTo(leftPadding, chartHeight)
+            points.forEach { lineTo(it.x, it.y) }
+            lineTo(size.width, chartHeight)
+            close()
+        }
+        drawPath(
+            path = fillPath, brush = Brush.verticalGradient(
+                colors = listOf(Color(0xFF3D7EFE).copy(alpha = 0.2f), Color.Transparent),
+                startY = 0f,
+                endY = chartHeight
+            )
+        )
+
+        // 5. 绘制折线
+        drawPath(
+            path = Path().apply {
+                moveTo(points.first().x, points.first().y)
+                points.forEach { lineTo(it.x, it.y) }
+            },
+            color = Color(0xFF3D7EFE),
+            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun formatTs(ts: Long, pattern: String = "yyyy-MM-dd HH:mm"): String {
+    return try {
+        val instant = Instant.ofEpochMilli(ts)
+        val formatter = DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
+        instant.atZone(ZoneId.systemDefault()).format(formatter)
+    } catch (e: Exception) {
+        ""
+    }
+}
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun ChartDataView(
+    limitDays: Int,
+    startDate: String,
+    endDate: String,
+    data: List<SequenceTsl>,
+    onRangeSelected: (String, String) -> Unit,
+) {
+    val title =
+        if (startDate.isEmpty() || endDate.isEmpty()) "选择日期范围" else "$startDate 至 $endDate"
+    val chartData = remember(data.size, data.lastOrNull()) {
+        data.sortedBy { it.ts }
+    }
+    val tableData = remember(data.size, data.firstOrNull()) {
+        data.sortedByDescending { it.ts }
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)
+    ) {
+        item {
+            DateRangePickerModern(
+                limitDays = limitDays,
+                startDate = startDate,
+                endDate = endDate,
+                tip = title,
+                onRangeSelected = onRangeSelected
+            )
+        }
+
+        item {
+            if (chartData.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("暂无趋势数据", color = Color.Gray)
+                }
+            } else {
+                ChartCard(chartData)
+                Spacer(modifier = Modifier.height(16.dp))
+                TableHeader()
+            }
+        }
+        itemsIndexed(tableData) { index, item ->
+            TableRow(item, isLast = index == tableData.size - 1)
+        }
+    }
+}
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun ChartCard(data: List<SequenceTsl>) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                "数值趋势",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            LineChartComponent(
+                data = data, modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun TableHeader() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+            .background(Color(0xFFE3E9F2))
+            .padding(16.dp)
+    ) {
+        Text(
+            "时间节点",
+            modifier = Modifier.weight(1.5f),
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp
+        )
+        Text(
+            "监控数值",
+            modifier = Modifier.weight(1f),
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.End,
+            fontSize = 14.sp
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun TableRow(item: SequenceTsl, isLast: Boolean) {
+    val shape = if (isLast) RoundedCornerShape(
+        bottomStart = 16.dp, bottomEnd = 16.dp
+    ) else RoundedCornerShape(0.dp)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .background(Color.White, shape = shape)
+            .padding(16.dp)
+    ) {
+        Text(
+            formatTs(item.ts),
+            modifier = Modifier.weight(1.5f),
+            fontSize = 14.sp,
+            color = Color.DarkGray
+        )
+        Text(
+            item.value,
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.End,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF3D7EFE)
+        )
+    }
+    if (!isLast) {
+        Divider(
+            modifier = Modifier.padding(horizontal = 32.dp),
+            thickness = 0.5.dp,
+            color = Color(0xFFF1F3F4)
+        )
+    }
+}
+
 
 /**
  * 历史数据页面
@@ -1245,14 +1458,14 @@ fun HistoryDataListView(
  * 顶部标题栏
  */
 @Composable
-fun HeaderSection(onDismiss: () -> Unit) {
+fun HeaderSection(text: String, onDismiss: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 18.dp)
     ) {
         Text(
-            text = "历史记录详情", style = TextStyle(
+            text = text, style = TextStyle(
                 fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C1C1E)
             )
         )
