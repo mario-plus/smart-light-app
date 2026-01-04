@@ -67,6 +67,7 @@ import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.client.data.PageResponse
+import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.ui.components.DetailCard
 import com.unilumin.smartapp.ui.components.DetailRow
@@ -92,7 +93,6 @@ fun DeviceDetailScreen(
     lightDevice: LightDevice, retrofitClient: RetrofitClient, onBack: () -> Unit
 ) {
 
-    var selectedDeviceModelData by remember { mutableStateOf<DeviceModelData?>(null) }
 
     val timeFormat = DateTimeFormatter.ofPattern("HH:mm:ss")
 
@@ -108,7 +108,15 @@ fun DeviceDetailScreen(
 
     var isLoading by remember { mutableStateOf(false) }
 
+    //卡片-历史数据弹窗
     var listDataDialog by remember { mutableStateOf(false) }
+    //选中的卡片信息
+    var selectedDeviceModelData by remember { mutableStateOf<DeviceModelData?>(null) }
+    //卡片-图片数据
+    var showChartDialog by remember { mutableStateOf(false) }
+    //服务
+    val chartDataList = remember { mutableStateListOf<SequenceTsl>() }
+
     //基础信息
     val baseInfoList = remember { mutableStateListOf<Pair<String, String>>() }
     //设备认证配置
@@ -136,6 +144,7 @@ fun DeviceDetailScreen(
     val currentStart = currentRange.first
     val currentEnd = currentRange.second
 
+    //历史数据
     suspend fun loadHistoryData(
         startTime: String,
         endTime: String,
@@ -182,6 +191,25 @@ fun DeviceDetailScreen(
         } finally {
             isLoading = false
         }
+    }
+
+    //图表数据
+    suspend fun loadChartData(
+        startTime: String,
+        endTime: String,
+        currentData: DeviceModelData
+    ) {
+        val response = UniCallbackService<List<SequenceTsl>>().parseDataNewSuspend(
+            deviceService.getSequenceTsl(
+                deviceId = lightDevice.id,
+                id = currentData.key,
+                type = 1,
+                startTime = "$startTime 00:00:00",
+                endTime = "$endTime 23:59:59",
+                isAggregation = false
+            ), context
+        )
+        chartDataList == response
     }
 
     //解析元数据
@@ -441,7 +469,16 @@ fun DeviceDetailScreen(
                                                                     data.copy()
                                                             },
                                                             onAnalysisClick = {
-                                                                //图表数据展示
+                                                                showChartDialog = true
+                                                                selectedDeviceModelData =
+                                                                    data.copy()
+                                                                scope.launch {
+                                                                    loadChartData(
+                                                                        "2025-12-02 00:00:00",
+                                                                        "2025-12-09 23:59:59",
+                                                                        selectedDeviceModelData!!
+                                                                    )
+                                                                }
                                                             })
                                                     }
                                                 }
@@ -543,6 +580,10 @@ fun DeviceDetailScreen(
                 historyDataList.clear() // 关闭弹窗时重置弹窗数据池
             }
         )
+    }
+
+    if (showChartDialog && selectedDeviceModelData != null) {
+
     }
 }
 

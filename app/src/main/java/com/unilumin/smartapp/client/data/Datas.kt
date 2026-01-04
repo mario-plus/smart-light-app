@@ -293,3 +293,8 @@ data class DeviceModelData(
     //类型(String,Long,double,float)
     val type: String
 )
+
+data class SequenceTsl(
+    val value: String,
+    val ts: Long
+)

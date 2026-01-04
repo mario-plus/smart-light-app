@@ -855,30 +855,51 @@ fun DeviceRealDataCardModern(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 ActionButton("列表", onHistoryClick, Modifier.weight(1f), secondaryText)
+                Box(
+                    modifier = Modifier
+                        .width(0.5.dp)
+                        .height(12.dp)
+                        .background(dividerColor)
+                )
+                val isChartEnabled = data.type == "long" || data.type == "double"
+                ActionButton(
+                    text = "图表",
+                    onClick = onAnalysisClick,
+                    modifier = Modifier.weight(1f),
+                    color = secondaryText,
+                    enabled = isChartEnabled
+                )
 
-                // 细分割线
-                Box(modifier = Modifier.width(0.5.dp).height(12.dp).background(dividerColor))
-
-                ActionButton("图表", onAnalysisClick, Modifier.weight(1f), secondaryText)
             }
         }
     }
 }
 
 @Composable
-private fun ActionButton(text: String, onClick: () -> Unit, modifier: Modifier, color: Color) {
+private fun ActionButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    color: Color,
+    enabled: Boolean = true
+) {
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .clickable { onClick() },
+            .clickable(enabled = enabled) { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            style = TextStyle(fontSize = 10.sp, color = color, fontWeight = FontWeight.Bold)
+            style = TextStyle(
+                fontSize = 10.sp,
+                color = if (enabled) color else color.copy(alpha = 0.3f),
+                fontWeight = FontWeight.Bold
+            )
         )
     }
 }
+
 /**
  * 日期期间选择组件
  * @param tip 显示的时间区间

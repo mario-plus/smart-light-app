@@ -14,6 +14,7 @@ import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
+import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.data.WebRTCResponse
 import retrofit2.Call
 import retrofit2.http.Body
@@ -106,5 +107,19 @@ interface DeviceService {
     @POST(RequestPathKey.KEY_GET_DEVICE_HISTORY_DATA)
     fun getDeviceHistoryData(@Body req: HistoryDataReq): Call<NewResponseData<PageResponse<HistoryData>?>?>?
 
-
+    /**
+     * @param id 服务模型key
+     * @param type long:1,double:2
+     * @param isAggregation 是否聚合，默认为true
+     * @param startTime 格式yyyy-MM-dd HH:mm:ss
+     * */
+    @GET(RequestPathKey.KEY_GET_DEVICE_SEQUENCE_TSL)
+    fun getSequenceTsl(
+        @Query("deviceId") deviceId: Long,
+        @Query("id") id: String,
+        @Query("type")  type: Int,
+        @Query("startTime")  startTime: String,
+        @Query("endTime")   endTime: String,
+        @Query("isAggregation")   isAggregation: Boolean,
+    ): Call<NewResponseData<List<SequenceTsl>?>?>?
 }

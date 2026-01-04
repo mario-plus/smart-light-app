@@ -53,5 +53,8 @@ object RequestPathKey {
     //设备历史数据
     const val KEY_GET_DEVICE_HISTORY_DATA: String = "$IOT_HUB_MANAGER/get_history_data_page"
 
+    //设备图表数据
+    const val KEY_GET_DEVICE_SEQUENCE_TSL: String = "$IOT_HUB_MANAGER/get_sequence_tsl"
+
 
 }
