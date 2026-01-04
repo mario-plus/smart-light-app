@@ -51,7 +51,6 @@ fun LampFeatureContent(
         retrofitClient.getService(DeviceService::class.java)
     }
     var showDialog by remember { mutableStateOf(false) }
-    var showDeviceDataDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -131,7 +130,7 @@ fun LampFeatureContent(
                 canClick = lightDevice.state == 1,
                 showRemoteCtlBtn = true,
                 onRemoteControlClick = { showDialog = true },
-                onHistoryClick = { showDeviceDataDialog = true })
+                onHistoryClick = { onDetailClick(lightDevice) })
         }
     }
     if (showDialog) {
@@ -144,9 +143,6 @@ fun LampFeatureContent(
             onClick = { a, b ->
                 scope.launch { lampCtl(a, b) }
             })
-    }
-    if (showDeviceDataDialog) {
-        onDetailClick(lightDevice)
     }
 }
 

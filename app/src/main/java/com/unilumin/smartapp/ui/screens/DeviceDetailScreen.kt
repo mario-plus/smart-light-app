@@ -292,13 +292,11 @@ fun DeviceDetailScreen(
             }
 
             EVENT -> {
-                if (deviceEventsDataList.isNotEmpty()) {
-                    loadHistoryData(
-                        currentStart,
-                        currentEnd,
-                        isRefresh = true,
-                        keys = deviceEventsDataList.map { it.key })
-                }
+                loadHistoryData(
+                    currentStart,
+                    currentEnd,
+                    isRefresh = true,
+                    keys = deviceEventsDataList.map { it.key })
             }
 
             NETWORK -> {

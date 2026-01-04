@@ -33,6 +33,8 @@ import com.unilumin.smartapp.ui.screens.device.FeatureContentContainer
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun EnvFeatureContent(lightDevice: LightDevice, onDetailClick: (LightDevice) -> Unit) {
+
+
     val displayItems = lightDevice.envData?.let { getDisplayItems(it) }
     if (displayItems.isNullOrEmpty()) return
     FeatureContentContainer {
@@ -58,10 +60,11 @@ fun EnvFeatureContent(lightDevice: LightDevice, onDetailClick: (LightDevice) -> 
                 canClick = lightDevice.state == 1,
                 showRemoteCtlBtn = false,
                 onRemoteControlClick = { },
-                onHistoryClick = {})
+                onHistoryClick = { onDetailClick(lightDevice) })
         }
     }
 }
+
 
 fun getDisplayItems(data: EnvData): List<EnvDisplayInfo> {
     val list = mutableListOf<EnvDisplayInfo>()

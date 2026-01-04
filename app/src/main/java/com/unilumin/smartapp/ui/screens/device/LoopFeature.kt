@@ -38,7 +38,11 @@ import retrofit2.Call
  * 回路 (Loop) 特有内容
  */
 @Composable
-fun LoopFeatureContent(lightDevice: LightDevice, retrofitClient: RetrofitClient,onDetailClick: (LightDevice) -> Unit) {
+fun LoopFeatureContent(
+    lightDevice: LightDevice,
+    retrofitClient: RetrofitClient,
+    onDetailClick: (LightDevice) -> Unit
+) {
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -83,7 +87,7 @@ fun LoopFeatureContent(lightDevice: LightDevice, retrofitClient: RetrofitClient,
                     onRemoteControlClick = {
                         showDialog = true
                     },
-                    onHistoryClick = {}
+                    onHistoryClick = { onDetailClick(lightDevice) }
                 )
             }
         } else {
