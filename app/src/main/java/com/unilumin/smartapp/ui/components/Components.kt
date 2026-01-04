@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.ui.components
 
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
@@ -64,6 +65,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -89,6 +91,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -480,7 +483,7 @@ fun LoopCircleItem(loop: LoopInfo) {
 @Composable
 fun ProfileMenuItem(
     title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     iconColor: Color,
     iconBg: Color,
     trailingText: String? = null,
@@ -840,10 +843,11 @@ fun DeviceRealDataCardModern(
 fun DateRangePickerModern(
     startDate: String,
     endDate: String,
-    limitDays: Int,
+    limitDays: Int, // 限制的总天数
     tip: String,
     onRangeSelected: (String, String) -> Unit
 ) {
+    var context = LocalContext.current
     var showPicker by remember { mutableStateOf(false) }
     val sdf = remember {
         SimpleDateFormat("yyyy-MM-dd", Locale.CHINESE).apply {
@@ -858,46 +862,86 @@ fun DateRangePickerModern(
         shape = RoundedCornerShape(12.dp),
         color = Color.White,
         shadowElevation = 2.dp,
-        onClick = { showPicker = true }) {
+        onClick = { showPicker = true }
+    ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.DateRange, null, tint = AccentBlue, modifier = Modifier.size(20.dp))
+            Icon(
+                Icons.Default.DateRange,
+                null,
+                tint = Color(0xFF3478F6),
+                modifier = Modifier.size(20.dp)
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = tip,
                 modifier = Modifier.weight(1f),
                 style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             )
-            Icon(Icons.Default.KeyboardArrowRight, null, tint = TextSecondary)
+            Icon(Icons.Default.KeyboardArrowRight, null, tint = Color.Gray)
         }
     }
 
     if (showPicker) {
+        val selectableDates = remember(limitDays) {
+            object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis <= System.currentTimeMillis()
+                }
+
+                override fun isSelectableYear(year: Int): Boolean {
+                    return true
+                }
+            }
+        }
         val state = rememberDateRangePickerState(
             initialSelectedStartDateMillis = try {
                 sdf.parse(startDate)?.time
             } catch (e: Exception) {
                 null
-            }, initialSelectedEndDateMillis = try {
+            },
+            initialSelectedEndDateMillis = try {
                 sdf.parse(endDate)?.time
             } catch (e: Exception) {
                 null
-            }
+            },
+            selectableDates = selectableDates
         )
-
-        DatePickerDialog(onDismissRequest = { showPicker = false }, confirmButton = {
-            TextButton(onClick = {
-                val start = state.selectedStartDateMillis
-                val end = state.selectedEndDateMillis
-                if (start != null && end != null) {
-                    onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
-                    showPicker = false
-                }
-            }) { Text("确认", fontWeight = FontWeight.Bold) }
-        }) {
-            DateRangePicker(state = state, title = null, headline = null, showModeToggle = false)
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val start = state.selectedStartDateMillis
+                    val end = state.selectedEndDateMillis
+                    if (start != null && end != null) {
+                        val diffDays = (end - start) / (24 * 60 * 60 * 1000)
+                        if (diffDays > limitDays) {
+                            Toast.makeText(
+                                context,
+                                "选择范围不能超过${limitDays}天",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
+                            showPicker = false
+                        }
+                    }
+                }) { Text("确认", fontWeight = FontWeight.Bold) }
+            }
+        ) {
+            DateRangePicker(
+                state = state,
+                title = {
+                    Text(
+                        text = "选择日期范围 (最多${limitDays}天)",
+                        modifier = Modifier.padding(16.dp)
+                    )
+                },
+                headline = null,
+                showModeToggle = false
+            )
         }
     }
 }
@@ -929,9 +973,11 @@ fun HistoryDataCard(data: HistoryData) {
         Column(modifier = Modifier.padding(16.dp)) {
             // 1. 时间轴头部
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier
-                    .size(6.dp)
-                    .background(AccentBlue, CircleShape))
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(AccentBlue, CircleShape)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = data.eventTs,
