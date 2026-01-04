@@ -4,7 +4,9 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,8 +29,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.outlined.Dashboard
@@ -54,6 +58,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -263,11 +268,11 @@ fun BottomNavBar(navController: NavController) {
             val isSelected = currentRoute == route
             NavigationBarItem(
                 icon = {
-                    Icon(
-                        imageVector = if (isSelected) info.second else info.third,
-                        contentDescription = info.first
-                    )
-                },
+                Icon(
+                    imageVector = if (isSelected) info.second else info.third,
+                    contentDescription = info.first
+                )
+            },
                 label = { Text(info.first, fontSize = 10.sp) },
                 selected = isSelected,
                 onClick = {
@@ -576,16 +581,16 @@ fun BrightnessControlCard(
             // 使用 weight(1f) 让它填满标题和数值中间的所有空间
             Slider(
                 value = initValue.toFloat(), onValueChange = { newValue ->
-                    onValueChange(newValue.toInt())
-                }, onValueChangeFinished = {
-                    onValueChangeFinished(initValue)
-                }, valueRange = 0f..100f, colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = ControlBlue,
-                    inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
-                ), modifier = Modifier
+                onValueChange(newValue.toInt())
+            }, onValueChangeFinished = {
+                onValueChangeFinished(initValue)
+            }, valueRange = 0f..100f, colors = SliderDefaults.colors(
+                thumbColor = Color.White,
+                activeTrackColor = ControlBlue,
+                inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
+            ), modifier = Modifier
                     .weight(1f) // 关键：占据剩余空间
-                    .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
+                .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
                 thumb = {
                     // 自定义小滑块，比之前那个版本要做得更小一点，适配单行
                     Surface(
@@ -840,7 +845,11 @@ fun DateRangePickerModern(
     onRangeSelected: (String, String) -> Unit
 ) {
     var showPicker by remember { mutableStateOf(false) }
-    val sdf = remember { SimpleDateFormat("yyyy-MM-dd", Locale.CHINESE).apply { timeZone = TimeZone.getTimeZone("UTC") } }
+    val sdf = remember {
+        SimpleDateFormat("yyyy-MM-dd", Locale.CHINESE).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+    }
 
     Surface(
         modifier = Modifier
@@ -849,8 +858,7 @@ fun DateRangePickerModern(
         shape = RoundedCornerShape(12.dp),
         color = Color.White,
         shadowElevation = 2.dp,
-        onClick = { showPicker = true }
-    ) {
+        onClick = { showPicker = true }) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -868,23 +876,27 @@ fun DateRangePickerModern(
 
     if (showPicker) {
         val state = rememberDateRangePickerState(
-            initialSelectedStartDateMillis = try { sdf.parse(startDate)?.time } catch (e: Exception) { null },
-            initialSelectedEndDateMillis = try { sdf.parse(endDate)?.time } catch (e: Exception) { null }
+            initialSelectedStartDateMillis = try {
+                sdf.parse(startDate)?.time
+            } catch (e: Exception) {
+                null
+            }, initialSelectedEndDateMillis = try {
+                sdf.parse(endDate)?.time
+            } catch (e: Exception) {
+                null
+            }
         )
 
-        DatePickerDialog(
-            onDismissRequest = { showPicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val start = state.selectedStartDateMillis
-                    val end = state.selectedEndDateMillis
-                    if (start != null && end != null) {
-                        onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
-                        showPicker = false
-                    }
-                }) { Text("确认", fontWeight = FontWeight.Bold) }
-            }
-        ) {
+        DatePickerDialog(onDismissRequest = { showPicker = false }, confirmButton = {
+            TextButton(onClick = {
+                val start = state.selectedStartDateMillis
+                val end = state.selectedEndDateMillis
+                if (start != null && end != null) {
+                    onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
+                    showPicker = false
+                }
+            }) { Text("确认", fontWeight = FontWeight.Bold) }
+        }) {
             DateRangePicker(state = state, title = null, headline = null, showModeToggle = false)
         }
     }
@@ -896,20 +908,22 @@ fun DateRangePickerModern(
 @Composable
 fun HistoryDataCard(data: HistoryData) {
     var isExpanded by remember { mutableStateOf(false) }
-    val isLongContent =isJsonValid(data.value)
-    if (isLongContent){
-        data.value = rememberFormattedJson(data.value).toString()
+    val isLongContent = isJsonValid(data.value)
+    val displayValue = remember(data.value) {
+        if (isLongContent) formatJson(data.value) else data.value
     }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
-        shadowElevation = 0.5.dp, // 极轻微的阴影
+        shadowElevation = 0.5.dp,
         border = BorderStroke(0.5.dp, Color(0xFFE5E5EA))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            // 1. 时间轴头部
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.size(6.dp).background(AccentBlue, CircleShape))
                 Spacer(modifier = Modifier.width(8.dp))
@@ -920,15 +934,32 @@ fun HistoryDataCard(data: HistoryData) {
             }
 
             Spacer(modifier = Modifier.height(10.dp))
+
+            // 2. 标题区域：使用 buildAnnotatedString 实现大小字拼接
             Text(
-                text = data.name,
-                style = TextStyle(
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
+                text = buildAnnotatedString {
+                    // 主标题：名称
+                    withStyle(style = SpanStyle(
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )) {
+                        append(data.name)
+                    }
+                    // 副标题：Key (小字)
+                    withStyle(style = SpanStyle(
+                        fontSize = 12.sp, // 较小的字号
+                        fontWeight = FontWeight.Normal, // 较细的字重
+                        color = TextSecondary // 较淡的颜色
+                    )) {
+                        append(" [${data.key}]")
+                    }
+                }
             )
+
             Spacer(modifier = Modifier.height(12.dp))
+
+            // 3. 内容区域
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -939,7 +970,7 @@ fun HistoryDataCard(data: HistoryData) {
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(
-                        text = data.value,
+                        text = displayValue,
                         style = TextStyle(
                             fontFamily = if (isLongContent) FontFamily.Monospace else FontFamily.Default,
                             fontSize = 14.sp,
@@ -1030,7 +1061,8 @@ fun HistoryDataListView(
     onRangeSelected: (String, String) -> Unit,
     onLoadMore: (String, String) -> Unit
 ) {
-    val title = if (startDate.isEmpty() || endDate.isEmpty()) "选择日期范围" else "$startDate 至 $endDate"
+    val title =
+        if (startDate.isEmpty() || endDate.isEmpty()) "选择日期范围" else "$startDate 至 $endDate"
 
     // 整个页面背景设为浅灰色
     Column(
@@ -1049,8 +1081,7 @@ fun HistoryDataListView(
 
         // 2. 列表内容
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 24.dp)
+            modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             if (historyDataList.isEmpty()) {
                 item {
@@ -1069,7 +1100,9 @@ fun HistoryDataListView(
                             onLoadMore(startDate, endDate)
                         }
                         Box(
-                            Modifier.fillMaxWidth().padding(24.dp),
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(
@@ -1079,6 +1112,88 @@ fun HistoryDataListView(
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 顶部标题栏
+ */
+@Composable
+fun HeaderSection(onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 18.dp)
+    ) {
+        Text(
+            text = "历史记录详情", style = TextStyle(
+                fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C1C1E)
+            )
+        )
+        IconButton(
+            onClick = onDismiss,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .background(Color(0xFFF2F2F7), RoundedCornerShape(12.dp))
+                .size(32.dp)
+        ) {
+            Icon(
+                Icons.Default.Close, "Close", tint = Color.DarkGray, modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+/**
+ * 新增：信息提示条 (包含滚动描述和单位)
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun InfoRibbon(data: DeviceModelData) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 8.dp),
+        color = Color(0xFFF0F7FF),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = Color(0xFF007AFF),
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            val description = data.keyDes.ifBlank { "暂无描述信息" }
+            Text(
+                text = description, modifier = Modifier
+                    .weight(1f)
+                    .basicMarquee(
+                        iterations = Int.MAX_VALUE, initialDelayMillis = 2000, velocity = 30.dp
+                    ), style = TextStyle(
+                    color = Color(0xFF007AFF), fontSize = 13.sp, fontWeight = FontWeight.Medium
+                ), maxLines = 1
+            )
+            if (!data.unit.isNullOrBlank()) {
+                Spacer(modifier = Modifier.width(12.dp))
+                Surface(
+                    color = Color(0xFF007AFF), shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "单位: ${data.unit}",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        style = TextStyle(
+                            color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold
+                        )
+                    )
                 }
             }
         }

@@ -2,17 +2,13 @@ package com.unilumin.smartapp.ui.screens.dialog
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,20 +18,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.unilumin.smartapp.client.UniCallbackService
+import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.service.DeviceService
+import com.unilumin.smartapp.ui.components.HeaderSection
 import com.unilumin.smartapp.ui.components.HistoryDataListView
+import com.unilumin.smartapp.ui.components.InfoRibbon
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -48,10 +44,12 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun DeviceHistoryDialog(
     deviceId: Long,
-    keys: List<String>,
+    selectedDeviceModelData: DeviceModelData?,
     deviceService: DeviceService,
-    onDismiss: () -> Unit // 补充关闭事件回调
+    onDismiss: () -> Unit
 ) {
+
+    var keys = listOf<String>(selectedDeviceModelData?.key.toString())
     val scope = rememberCoroutineScope()
     val timeFormat = DateTimeFormatter.ofPattern("HH:mm:ss")
     val formatter = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd") }
@@ -112,8 +110,13 @@ fun DeviceHistoryDialog(
         }
     }
 
-    LaunchedEffect(keys) {
-        loadHistoryData(startTime = startDate, endTime = endDate, true, keys)
+    LaunchedEffect(selectedDeviceModelData) {
+        loadHistoryData(
+            startTime = startDate,
+            endTime = endDate,
+            true,
+            keys
+        )
     }
 
     Dialog(
@@ -133,34 +136,38 @@ fun DeviceHistoryDialog(
         ) {
 
             Column(modifier = Modifier.fillMaxSize()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    Text(
-                        text = "历史记录查询",
-                        modifier = Modifier.align(Alignment.CenterStart),
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1C1C1E)
-                        )
-                    )
-                    androidx.compose.material3.IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .size(24.dp)
-                    ) {
-                        androidx.compose.material3.Icon(
-                            imageVector = androidx.compose.material.icons.Icons.Default.Close,
-                            contentDescription = "关闭",
-                            tint = Color.Gray
-                        )
-                    }
-                }
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(horizontal = 16.dp, vertical = 12.dp)
+//                ) {
+//                    Text(
+//                        text = "历史记录查询",
+//                        modifier = Modifier.align(Alignment.CenterStart),
+//                        style = androidx.compose.ui.text.TextStyle(
+//                            fontSize = 18.sp,
+//                            fontWeight = FontWeight.Bold,
+//                            color = Color(0xFF1C1C1E)
+//                        )
+//                    )
+//                    androidx.compose.material3.IconButton(
+//                        onClick = onDismiss,
+//                        modifier = Modifier
+//                            .align(Alignment.CenterEnd)
+//                            .size(24.dp)
+//                    ) {
+//                        androidx.compose.material3.Icon(
+//                            imageVector = androidx.compose.material.icons.Icons.Default.Close,
+//                            contentDescription = "关闭",
+//                            tint = Color.Gray
+//                        )
+//                    }
+//                }
 
+                HeaderSection(onDismiss)
+                if (selectedDeviceModelData != null) {
+                    InfoRibbon(selectedDeviceModelData)
+                }
                 HistoryDataListView(
                     limitDays = 14,
                     startDate = startDate,

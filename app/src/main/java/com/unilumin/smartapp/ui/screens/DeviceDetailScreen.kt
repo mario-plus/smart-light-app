@@ -92,7 +92,7 @@ fun DeviceDetailScreen(
     lightDevice: LightDevice, retrofitClient: RetrofitClient, onBack: () -> Unit
 ) {
 
-    var currentKey by remember { mutableStateOf("") }
+    var selectedDeviceModelData by remember { mutableStateOf<DeviceModelData?>(null) }
 
     val timeFormat = DateTimeFormatter.ofPattern("HH:mm:ss")
 
@@ -436,7 +436,8 @@ fun DeviceDetailScreen(
                                                         DeviceRealDataCardModern(
                                                             data = data, onHistoryClick = {
                                                                 showDialog = true
-                                                                currentKey = data.key
+                                                                selectedDeviceModelData =
+                                                                    data.copy()
                                                             })
                                                     }
                                                 }
@@ -522,14 +523,13 @@ fun DeviceDetailScreen(
         }
     }
 
-    if (showDialog && currentKey.isNotEmpty()) {
+    if (showDialog && selectedDeviceModelData != null) {
         DeviceHistoryDialog(
             deviceId = lightDevice.id,
-            listOf(currentKey),
+            selectedDeviceModelData,
             deviceService = deviceService,
             onDismiss = {
                 showDialog = false
-                currentKey = ""
             }
         )
     }
