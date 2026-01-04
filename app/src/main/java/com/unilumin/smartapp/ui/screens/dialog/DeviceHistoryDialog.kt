@@ -111,29 +111,27 @@ fun DeviceHistoryDialog(
         }
     }
 
-    // 首次进入自动加载
     LaunchedEffect(keys) {
         loadHistoryData("", "", true, keys)
     }
 
     Dialog(
-        onDismissRequest = onDismiss, // 点击外部关闭
+        onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(
-            usePlatformDefaultWidth = false // 允许我们自定义宽度，不强制铺满
+            usePlatformDefaultWidth = false
         )
     ) {
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = Color.White,
             modifier = Modifier
-                .fillMaxWidth(0.9f)    // 宽度占据屏幕 90%
-                .fillMaxHeight(0.8f)   // 高度占据屏幕 80%，避免铺满
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.8f)
                 .padding(vertical = 16.dp),
             tonalElevation = 8.dp
         ) {
 
             Column(modifier = Modifier.fillMaxSize()) {
-                // --- 1. 自定义标题栏 (包含右上角 X) ---
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -163,6 +161,7 @@ fun DeviceHistoryDialog(
                 }
 
                 HistoryDataListView(
+                    limitDays = 14,
                     startDate = startDate,
                     endDate = endDate,
                     historyDataList,

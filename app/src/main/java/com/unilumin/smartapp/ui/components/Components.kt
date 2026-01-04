@@ -51,7 +51,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,6 +75,7 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -774,13 +774,11 @@ fun DetailRow(label: String, value: String) {
 fun DeviceRealDataCardModern(
     data: DeviceModelData, onHistoryClick: () -> Unit
 ) {
-    // 淡淡的青蓝渐变
     val gradientBrush = Brush.linearGradient(
         colors = listOf(Color(0xFFF7F9FF), Color.White),
         start = Offset(0f, 0f),
         end = Offset(500f, 500f)
     )
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -829,30 +827,54 @@ fun DeviceRealDataCardModern(
     }
 }
 
+
+/**
+ * 日期期间选择组件
+ * @param tip 显示的时间区间
+ * @return 返回开始时间和结束时间
+ * */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateRangePickerModern(
-    tip: String, onRangeSelected: (String, String) -> Unit
+    startDate: String,
+    endDate: String,
+    limitDays: Int,
+    tip: String,
+    onRangeSelected: (String, String) -> Unit
 ) {
     val context = LocalContext.current
     val locale = Locale.CHINESE
     val sdf = remember { SimpleDateFormat("yyyy-MM-dd", locale) }
-
     var showPicker by remember { mutableStateOf(false) }
+    val state = key("$startDate-$endDate") {
+        rememberDateRangePickerState(
+            initialSelectedStartDateMillis = remember(startDate) {
+                if (startDate.isNotBlank()) {
+                    try {
+                        sdf.parse(startDate)?.time
+                    } catch (e: Exception) {
+                        null
+                    }
+                } else {
+                    Calendar.getInstance()
+                        .apply { add(Calendar.DAY_OF_YEAR, -limitDays) }.timeInMillis
+                }
+            },
+            initialSelectedEndDateMillis = remember(endDate) {
+                if (endDate.isNotBlank()) {
+                    try {
+                        sdf.parse(endDate)?.time
+                    } catch (e: Exception) {
+                        null
+                    }
+                } else {
+                    Calendar.getInstance().timeInMillis
+                }
+            }
+        )
+    }
 
-    // 初始化时间状态（默认最近一周）
-    val state = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = Calendar.getInstance()
-            .apply { add(Calendar.DAY_OF_YEAR, -7) }.timeInMillis,
-        initialSelectedEndDateMillis = Calendar.getInstance().timeInMillis
-    )
-
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(Color(0xFFF0F4FF), Color.White),
-        start = Offset(0f, 0f),
-        end = Offset(1000f, 1000f)
-    )
-
+    // UI 部分 (保持原有 Surface 和 Row 逻辑)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -862,24 +884,28 @@ fun DateRangePickerModern(
     ) {
         Row(
             modifier = Modifier
-                .background(brush = gradientBrush)
+                .background(
+                    brush = Brush.linearGradient(
+                        listOf(
+                            Color(0xFFF0F4FF),
+                            Color.White
+                        )
+                    )
+                )
                 .clickable { showPicker = true }
                 .padding(horizontal = 16.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "时间周期", style = TextStyle(
-                    fontSize = 13.sp, color = Color(0xFF8E8E93), fontWeight = FontWeight.Medium
-                )
-            )
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = "时间周期", style = TextStyle(fontSize = 13.sp, color = Color(0xFF8E8E93)))
             Spacer(modifier = Modifier.width(16.dp))
             Text(
-                text = tip, modifier = Modifier.weight(1f), style = TextStyle(
-                    fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C1C1E)
-                )
+                text = tip,
+                modifier = Modifier.weight(1f),
+                style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold)
             )
             Icon(
-                imageVector = Icons.Default.DateRange,
-                contentDescription = null,
+                Icons.Default.DateRange,
+                null,
                 tint = Color(0xFF3478F6),
                 modifier = Modifier.size(20.dp)
             )
@@ -888,27 +914,27 @@ fun DateRangePickerModern(
 
     if (showPicker) {
         DatePickerDialog(
-            onDismissRequest = { showPicker = false }, confirmButton = {
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
                 TextButton(onClick = {
                     val start = state.selectedStartDateMillis
                     val end = state.selectedEndDateMillis
                     if (start != null && end != null) {
-                        // 校验：不能超过7天 (7 * 24 * 60 * 60 * 1000)
-                        val limit = 7 * 24 * 60 * 60 * 1000L
+                        val limit = limitDays * 24 * 60 * 60 * 1000L
                         if (end - start > limit) {
-                            Toast.makeText(context, "日期跨度不能超过7天", Toast.LENGTH_SHORT)
-                                .show()
+                            Toast.makeText(
+                                context,
+                                "日期跨度不能超过${limitDays}天",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         } else {
                             onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
                             showPicker = false
                         }
-                    } else {
-                        Toast.makeText(context, "请选择完整的起止日期", Toast.LENGTH_SHORT).show()
                     }
-                }) {
-                    Text("确认选择", fontWeight = FontWeight.Bold, color = Color(0xFF3478F6))
-                }
-            }, properties = DialogProperties(usePlatformDefaultWidth = false)
+                }) { Text("确认选择", fontWeight = FontWeight.Bold, color = Color(0xFF3478F6)) }
+            },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Column(
                 modifier = Modifier
@@ -916,13 +942,12 @@ fun DateRangePickerModern(
                     .fillMaxHeight(0.85f)
                     .background(Color.White)
             ) {
-                // 自定义 Header
+                // Header 逻辑
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
                         Text(
@@ -930,26 +955,18 @@ fun DateRangePickerModern(
                             style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            "单次查询最大支持7天",
+                            "单次查询最大支持${limitDays}天",
                             style = TextStyle(fontSize = 12.sp, color = Color.Gray)
                         )
                     }
-                    IconButton(onClick = { showPicker = false }) {
-                        Icon(Icons.Default.Close, contentDescription = "关闭")
-                    }
+                    IconButton(onClick = { showPicker = false }) { Icon(Icons.Default.Close, null) }
                 }
-
                 DateRangePicker(
                     state = state,
                     modifier = Modifier.weight(1f),
                     title = null,
                     headline = null,
-                    showModeToggle = false,
-                    colors = DatePickerDefaults.colors(
-                        selectedDayContainerColor = Color(0xFF3478F6),
-                        todayContentColor = Color(0xFF3478F6),
-                        dayInSelectionRangeContainerColor = Color(0xFF3478F6).copy(alpha = 0.1f)
-                    )
+                    showModeToggle = false
                 )
             }
         }
@@ -1100,6 +1117,7 @@ fun isJsonValid(json: String?): Boolean {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HistoryDataListView(
+    limitDays: Int,
     startDate: String,           // 外部传入：当前选中的开始时间
     endDate: String,             // 外部传入：当前选中的结束时间
     historyDataList: List<HistoryData>, // 数据源
@@ -1114,6 +1132,9 @@ fun HistoryDataListView(
     Column(modifier = Modifier.fillMaxSize()) {
         // 1. 日期选择器
         DateRangePickerModern(
+            limitDays = limitDays,
+            startDate = startDate,
+            endDate = endDate,
             tip = title, onRangeSelected = { start, end ->
                 onRangeSelected(start, end)
             })

@@ -195,8 +195,9 @@ fun DeviceDetailScreen(
         val list = mutableListOf<DeviceModelData>()
         jsonObject.getAsJsonArray(type)?.forEach { element ->
             var asJsonObject = element.asJsonObject
-            val unit = asJsonObject.get("specs")?.asJsonObject?.get("unit")
-                ?.takeIf { it.isJsonPrimitive }?.asString ?: ""
+
+            var specsObject = asJsonObject.get("specs")?.asJsonObject
+            val unit = specsObject?.get("unit")?.takeIf { it.isJsonPrimitive }?.asString ?: ""
             list.add(
                 DeviceModelData(
                     key = asJsonObject.get(
@@ -204,7 +205,8 @@ fun DeviceDetailScreen(
                     ).asString,
                     name = asJsonObject.get("name").asString,
                     keyDes = asJsonObject.get("description").asString,
-                    unit = unit
+                    unit = unit,
+                    type = asJsonObject.get("type")?.asString ?: ""
                 )
             )
         }
@@ -408,6 +410,7 @@ fun DeviceDetailScreen(
                                         }
                                     }
                                 }
+
                                 PROPERTY, TELEMETRY -> {
                                     val currentList = when (selectedLabel) {
                                         PROPERTY -> devicePropertiesDataList
@@ -454,9 +457,10 @@ fun DeviceDetailScreen(
                             }
                         }
                     }
-                }else if (selectedLabel==NETWORK){
-                    var keys =  listOf("onLine", "offLine")
+                } else if (selectedLabel == NETWORK) {
+                    var keys = listOf("onLine", "offLine")
                     HistoryDataListView(
+                        limitDays = 14,
                         startDate = currentStart,
                         endDate = currentEnd,
                         historyDataList,
@@ -483,9 +487,10 @@ fun DeviceDetailScreen(
                             }
                         }
                     )
-                } else if (selectedLabel==EVENT){
-                    var  keys =  deviceEventsDataList.map { it.key }
+                } else if (selectedLabel == EVENT) {
+                    var keys = deviceEventsDataList.map { it.key }
                     HistoryDataListView(
+                        limitDays = 14,
                         startDate = currentStart,
                         endDate = currentEnd,
                         historyDataList,

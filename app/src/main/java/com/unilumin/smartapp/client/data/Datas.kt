@@ -289,5 +289,7 @@ data class DeviceModelData(
     //值
     var value: String? = null,
     //单位
-    val unit: String? = null
+    val unit: String? = null,
+    //类型(String,Long,double,float)
+    val type: String
 )
