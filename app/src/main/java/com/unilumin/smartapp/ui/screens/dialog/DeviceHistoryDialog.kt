@@ -136,34 +136,6 @@ fun DeviceHistoryDialog(
         ) {
 
             Column(modifier = Modifier.fillMaxSize()) {
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(horizontal = 16.dp, vertical = 12.dp)
-//                ) {
-//                    Text(
-//                        text = "历史记录查询",
-//                        modifier = Modifier.align(Alignment.CenterStart),
-//                        style = androidx.compose.ui.text.TextStyle(
-//                            fontSize = 18.sp,
-//                            fontWeight = FontWeight.Bold,
-//                            color = Color(0xFF1C1C1E)
-//                        )
-//                    )
-//                    androidx.compose.material3.IconButton(
-//                        onClick = onDismiss,
-//                        modifier = Modifier
-//                            .align(Alignment.CenterEnd)
-//                            .size(24.dp)
-//                    ) {
-//                        androidx.compose.material3.Icon(
-//                            imageVector = androidx.compose.material.icons.Icons.Default.Close,
-//                            contentDescription = "关闭",
-//                            tint = Color.Gray
-//                        )
-//                    }
-//                }
-
                 HeaderSection(onDismiss)
                 if (selectedDeviceModelData != null) {
                     InfoRibbon(selectedDeviceModelData)

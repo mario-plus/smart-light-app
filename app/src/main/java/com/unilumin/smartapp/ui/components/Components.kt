@@ -268,11 +268,11 @@ fun BottomNavBar(navController: NavController) {
             val isSelected = currentRoute == route
             NavigationBarItem(
                 icon = {
-                Icon(
-                    imageVector = if (isSelected) info.second else info.third,
-                    contentDescription = info.first
-                )
-            },
+                    Icon(
+                        imageVector = if (isSelected) info.second else info.third,
+                        contentDescription = info.first
+                    )
+                },
                 label = { Text(info.first, fontSize = 10.sp) },
                 selected = isSelected,
                 onClick = {
@@ -581,16 +581,16 @@ fun BrightnessControlCard(
             // 使用 weight(1f) 让它填满标题和数值中间的所有空间
             Slider(
                 value = initValue.toFloat(), onValueChange = { newValue ->
-                onValueChange(newValue.toInt())
-            }, onValueChangeFinished = {
-                onValueChangeFinished(initValue)
-            }, valueRange = 0f..100f, colors = SliderDefaults.colors(
-                thumbColor = Color.White,
-                activeTrackColor = ControlBlue,
-                inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
-            ), modifier = Modifier
+                    onValueChange(newValue.toInt())
+                }, onValueChangeFinished = {
+                    onValueChangeFinished(initValue)
+                }, valueRange = 0f..100f, colors = SliderDefaults.colors(
+                    thumbColor = Color.White,
+                    activeTrackColor = ControlBlue,
+                    inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
+                ), modifier = Modifier
                     .weight(1f) // 关键：占据剩余空间
-                .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
+                    .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
                 thumb = {
                     // 自定义小滑块，比之前那个版本要做得更小一点，适配单行
                     Surface(
@@ -910,7 +910,11 @@ fun HistoryDataCard(data: HistoryData) {
     var isExpanded by remember { mutableStateOf(false) }
     val isLongContent = isJsonValid(data.value)
     val displayValue = remember(data.value) {
-        if (isLongContent) formatJson(data.value) else data.value
+        if (isLongContent) {
+            getFormattedJsonAnnotatedString(data.value)
+        } else {
+            AnnotatedString(data.value)
+        }
     }
 
     Surface(
@@ -925,7 +929,9 @@ fun HistoryDataCard(data: HistoryData) {
         Column(modifier = Modifier.padding(16.dp)) {
             // 1. 时间轴头部
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(6.dp).background(AccentBlue, CircleShape))
+                Box(modifier = Modifier
+                    .size(6.dp)
+                    .background(AccentBlue, CircleShape))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = data.eventTs,
@@ -939,19 +945,23 @@ fun HistoryDataCard(data: HistoryData) {
             Text(
                 text = buildAnnotatedString {
                     // 主标题：名称
-                    withStyle(style = SpanStyle(
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )) {
+                    withStyle(
+                        style = SpanStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    ) {
                         append(data.name)
                     }
                     // 副标题：Key (小字)
-                    withStyle(style = SpanStyle(
-                        fontSize = 12.sp, // 较小的字号
-                        fontWeight = FontWeight.Normal, // 较细的字重
-                        color = TextSecondary // 较淡的颜色
-                    )) {
+                    withStyle(
+                        style = SpanStyle(
+                            fontSize = 12.sp, // 较小的字号
+                            fontWeight = FontWeight.Normal, // 较细的字重
+                            color = TextSecondary // 较淡的颜色
+                        )
+                    ) {
                         append(" [${data.key}]")
                     }
                 }
@@ -1002,23 +1012,23 @@ fun HistoryDataCard(data: HistoryData) {
 /**
  * 将 JSON 字符串转换为带高亮的 AnnotatedString
  */
-@Composable
-fun rememberFormattedJson(json: String?, keyColor: Color = Color(0xFFD32F2F)): AnnotatedString {
-    return remember(json) {
-        val prettyJson = formatJson(json)
-        buildAnnotatedString {
-            val pattern = Pattern.compile("\"(.*)\"\\s*:")
-            val matcher = pattern.matcher(prettyJson)
-            var lastIndex = 0
-            while (matcher.find()) {
-                append(prettyJson.substring(lastIndex, matcher.start()))
-                withStyle(style = SpanStyle(color = keyColor, fontWeight = FontWeight.Bold)) {
-                    append(matcher.group())
-                }
-                lastIndex = matcher.end()
+fun getFormattedJsonAnnotatedString(
+    json: String?,
+    keyColor: Color = Color(0xFFD32F2F)
+): AnnotatedString {
+    val prettyJson = formatJson(json) // 假设你的 formatJson 也是普通函数
+    return buildAnnotatedString {
+        val pattern = Pattern.compile("\"(.*)\"\\s*:")
+        val matcher = pattern.matcher(prettyJson)
+        var lastIndex = 0
+        while (matcher.find()) {
+            append(prettyJson.substring(lastIndex, matcher.start()))
+            withStyle(style = SpanStyle(color = keyColor, fontWeight = FontWeight.Bold)) {
+                append(matcher.group())
             }
-            append(prettyJson.substring(lastIndex))
+            lastIndex = matcher.end()
         }
+        append(prettyJson.substring(lastIndex))
     }
 }
 

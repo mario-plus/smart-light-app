@@ -129,11 +129,6 @@ fun DeviceDetailScreen(
 
     var hasMore by remember { mutableStateOf(true) }
 
-
-    val formatter = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd") }
-    // 默认日期范围：一周前到今天
-    val defaultStart = remember { java.time.LocalDate.now().minusDays(7).format(formatter) }
-    val defaultEnd = remember { java.time.LocalDate.now().format(formatter) }
     // 用 Map 记录 NETWORK 和 EVENT 各自的日期
     val tabDatesMap = remember { mutableStateMapOf<String, Pair<String, String>>() }
     // 获取当前选中 Tab 的日期，如果没有则用默认值
@@ -299,12 +294,20 @@ fun DeviceDetailScreen(
             EVENT -> {
                 if (deviceEventsDataList.isNotEmpty()) {
                     loadHistoryData(
-                        "", "", isRefresh = true, keys = deviceEventsDataList.map { it.key })
+                        currentStart,
+                        currentEnd,
+                        isRefresh = true,
+                        keys = deviceEventsDataList.map { it.key })
                 }
             }
 
             NETWORK -> {
-                loadHistoryData("", "", isRefresh = true, keys = listOf("onLine", "offLine"))
+                loadHistoryData(
+                    currentStart,
+                    currentEnd,
+                    isRefresh = true,
+                    keys = listOf("onLine", "offLine")
+                )
             }
         }
     }
