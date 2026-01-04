@@ -37,6 +37,7 @@ import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.ui.components.HistoryDataListView
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -53,12 +54,12 @@ fun DeviceHistoryDialog(
 ) {
     val scope = rememberCoroutineScope()
     val timeFormat = DateTimeFormatter.ofPattern("HH:mm:ss")
+    val formatter = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd") }
     val context = LocalContext.current
 
-    // 状态管理
     var isLoading by remember { mutableStateOf(false) }
-    var startDate by remember { mutableStateOf("") }
-    var endDate by remember { mutableStateOf("") }
+    var startDate by remember { mutableStateOf(LocalDate.now().plusDays(-7).format(formatter)) }
+    var endDate by remember { mutableStateOf(LocalDate.now().format(formatter)) }
     val historyDataList = remember { mutableStateListOf<HistoryData>() }
     var pageIndex by remember { mutableIntStateOf(1) }
     var hasMore by remember { mutableStateOf(true) }
@@ -112,7 +113,7 @@ fun DeviceHistoryDialog(
     }
 
     LaunchedEffect(keys) {
-        loadHistoryData("", "", true, keys)
+        loadHistoryData(startTime = startDate, endTime = endDate, true, keys)
     }
 
     Dialog(

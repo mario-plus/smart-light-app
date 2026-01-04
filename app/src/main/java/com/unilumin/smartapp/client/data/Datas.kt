@@ -267,7 +267,7 @@ data class DeviceRealTimeDataReq(
 )
 
 data class HistoryData(
-    val deviceId: String, val eventTs: String, val key: String, val name: String, val value: String
+    val deviceId: String, val eventTs: String, val key: String, val name: String, var value: String
 )
 
 data class HistoryDataReq(

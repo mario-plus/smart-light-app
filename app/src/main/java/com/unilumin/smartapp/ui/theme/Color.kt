@@ -1,5 +1,4 @@
 package com.unilumin.smartapp.ui.theme
-
 import androidx.compose.ui.graphics.Color
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
@@ -23,18 +22,12 @@ val Amber50 = Color(0xFFFFFBEB)
 val Amber500 = Color(0xFFF59E0B)
 val Red50 = Color(0xFFFEF2F2)
 val Red500 = Color(0xFFEF4444)
-val Green500 = Color(0xFF10B981) // text-green-600 (近似)
+val Green500 = Color(0xFF10B981)
 val Green50 = Color(0xFFF0FDF4)
-val Amber700 = Color(0xFFB45309)
 val White = Color.White
-val Blue100 = Color(0xFFDBEAFE)
-val Orange400 = Color(0xFFFB923C)
 val Gray600 = Color(0xFF4B5563)
 val Orange50 = Color(0xFFFFF3E0)
 val Orange500 = Color(0xFFFF9800)
-val Blue200 = Color(0xFF90CAF9)
-val Blue700 = Color(0xFF1976D2)
-// --- 颜色定义 (如果你的项目中 theme 已经定义，请删除这些并导入你的 theme) ---
 val Gray700 = Color(0xFF374151)
 val Amber600 = Color(0xFFD97706)
  val ControlBlue = Color(0xFF2196F3)
@@ -42,12 +35,13 @@ val Amber600 = Color(0xFFD97706)
  val BgLightGray = Color(0xFFF5F5F5)
 
 
- val PageBackground = Color(0xFFF6F8FA) // 浅灰蓝底色
+ val PageBackground = Color(0xFFF6F8FA)
  val CardWhite = Color.White
- val TextDark = Color(0xFF1D1D1F)      // 深黑灰文本
- val TextGray = Color(0xFF86868B)      // 辅助灰色文本
- val LineColor = Color(0xFFF2F2F7)     // 极淡分割线
-// 定义现代化的颜色色值
-val accentColor = Color(0xFF3478F6) // 类似 Apple 的品牌蓝
-val bgColor = Color(0xFFFBFBFD)
-val borderColor = Color(0xFFE5E5EA)
+ val TextDark = Color(0xFF1D1D1F)
+ val TextGray = Color(0xFF86868B)
+ val LineColor = Color(0xFFF2F2F7)
+
+val BackgroundGray = Color(0xFFF7F8FA)
+val AccentBlue = Color(0xFF007AFF)
+val TextPrimary = Color(0xFF1C1C1E)
+val TextSecondary = Color(0xFF8E8E93)

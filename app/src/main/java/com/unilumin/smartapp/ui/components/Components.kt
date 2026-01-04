@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.ui.components
 
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,12 +25,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
@@ -57,7 +54,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -75,7 +71,6 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -89,7 +84,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -100,7 +94,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.google.gson.GsonBuilder
@@ -108,8 +101,10 @@ import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.LoopInfo
+import com.unilumin.smartapp.ui.theme.AccentBlue
 import com.unilumin.smartapp.ui.theme.Amber50
 import com.unilumin.smartapp.ui.theme.Amber500
+import com.unilumin.smartapp.ui.theme.BackgroundGray
 import com.unilumin.smartapp.ui.theme.BgLightGray
 import com.unilumin.smartapp.ui.theme.Blue50
 import com.unilumin.smartapp.ui.theme.Blue600
@@ -133,11 +128,13 @@ import com.unilumin.smartapp.ui.theme.Red50
 import com.unilumin.smartapp.ui.theme.Red500
 import com.unilumin.smartapp.ui.theme.TextDark
 import com.unilumin.smartapp.ui.theme.TextGray
+import com.unilumin.smartapp.ui.theme.TextPrimary
+import com.unilumin.smartapp.ui.theme.TextSecondary
 import com.unilumin.smartapp.ui.theme.White
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import java.util.regex.Pattern
 
 @Composable
@@ -842,77 +839,39 @@ fun DateRangePickerModern(
     tip: String,
     onRangeSelected: (String, String) -> Unit
 ) {
-    val context = LocalContext.current
-    val locale = Locale.CHINESE
-    val sdf = remember { SimpleDateFormat("yyyy-MM-dd", locale) }
     var showPicker by remember { mutableStateOf(false) }
-    val state = key("$startDate-$endDate") {
-        rememberDateRangePickerState(
-            initialSelectedStartDateMillis = remember(startDate) {
-                if (startDate.isNotBlank()) {
-                    try {
-                        sdf.parse(startDate)?.time
-                    } catch (e: Exception) {
-                        null
-                    }
-                } else {
-                    Calendar.getInstance()
-                        .apply { add(Calendar.DAY_OF_YEAR, -limitDays) }.timeInMillis
-                }
-            },
-            initialSelectedEndDateMillis = remember(endDate) {
-                if (endDate.isNotBlank()) {
-                    try {
-                        sdf.parse(endDate)?.time
-                    } catch (e: Exception) {
-                        null
-                    }
-                } else {
-                    Calendar.getInstance().timeInMillis
-                }
-            }
-        )
-    }
+    val sdf = remember { SimpleDateFormat("yyyy-MM-dd", Locale.CHINESE).apply { timeZone = TimeZone.getTimeZone("UTC") } }
 
-    // UI 部分 (保持原有 Surface 和 Row 逻辑)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        shadowElevation = 2.dp
+            .padding(16.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        shadowElevation = 2.dp,
+        onClick = { showPicker = true }
     ) {
         Row(
-            modifier = Modifier
-                .background(
-                    brush = Brush.linearGradient(
-                        listOf(
-                            Color(0xFFF0F4FF),
-                            Color.White
-                        )
-                    )
-                )
-                .clickable { showPicker = true }
-                .padding(horizontal = 16.dp, vertical = 18.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "时间周期", style = TextStyle(fontSize = 13.sp, color = Color(0xFF8E8E93)))
-            Spacer(modifier = Modifier.width(16.dp))
+            Icon(Icons.Default.DateRange, null, tint = AccentBlue, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = tip,
                 modifier = Modifier.weight(1f),
-                style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             )
-            Icon(
-                Icons.Default.DateRange,
-                null,
-                tint = Color(0xFF3478F6),
-                modifier = Modifier.size(20.dp)
-            )
+            Icon(Icons.Default.KeyboardArrowRight, null, tint = TextSecondary)
         }
     }
 
     if (showPicker) {
+        val state = rememberDateRangePickerState(
+            initialSelectedStartDateMillis = try { sdf.parse(startDate)?.time } catch (e: Exception) { null },
+            initialSelectedEndDateMillis = try { sdf.parse(endDate)?.time } catch (e: Exception) { null }
+        )
+
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             confirmButton = {
@@ -920,55 +879,13 @@ fun DateRangePickerModern(
                     val start = state.selectedStartDateMillis
                     val end = state.selectedEndDateMillis
                     if (start != null && end != null) {
-                        val limit = limitDays * 24 * 60 * 60 * 1000L
-                        if (end - start > limit) {
-                            Toast.makeText(
-                                context,
-                                "日期跨度不能超过${limitDays}天",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
-                            showPicker = false
-                        }
+                        onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
+                        showPicker = false
                     }
-                }) { Text("确认选择", fontWeight = FontWeight.Bold, color = Color(0xFF3478F6)) }
-            },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.85f)
-                    .background(Color.White)
-            ) {
-                // Header 逻辑
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(
-                            "选择查询范围",
-                            style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        )
-                        Text(
-                            "单次查询最大支持${limitDays}天",
-                            style = TextStyle(fontSize = 12.sp, color = Color.Gray)
-                        )
-                    }
-                    IconButton(onClick = { showPicker = false }) { Icon(Icons.Default.Close, null) }
-                }
-                DateRangePicker(
-                    state = state,
-                    modifier = Modifier.weight(1f),
-                    title = null,
-                    headline = null,
-                    showModeToggle = false
-                )
+                }) { Text("确认", fontWeight = FontWeight.Bold) }
             }
+        ) {
+            DateRangePicker(state = state, title = null, headline = null, showModeToggle = false)
         }
     }
 }
@@ -979,84 +896,72 @@ fun DateRangePickerModern(
 @Composable
 fun HistoryDataCard(data: HistoryData) {
     var isExpanded by remember { mutableStateOf(false) }
-    val accentColor = Color(0xFF3478F6)
-    val keyHighlightColor = Color(0xFF005FB8)
-    val jsonBgColor = Color(0xFFF8F9FA)
-    val annotatedJson = rememberFormattedJson(data.value, keyColor = keyHighlightColor)
+    val isLongContent =isJsonValid(data.value)
+    if (isLongContent){
+        data.value = rememberFormattedJson(data.value).toString()
+    }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-            .animateContentSize(),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
-        border = BorderStroke(1.dp, Color(0xFFF2F2F7)),
-        shadowElevation = 0.5.dp
+        shadowElevation = 0.5.dp, // 极轻微的阴影
+        border = BorderStroke(0.5.dp, Color(0xFFE5E5EA))
     ) {
-        Column(
-            modifier = Modifier
-                .clickable { isExpanded = !isExpanded }
-                .padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .background(accentColor, CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = data.eventTs ?: "--", style = TextStyle(
-                            fontSize = 12.sp,
-                            color = Color(0xFF8E8E93),
-                            fontFamily = FontFamily.Monospace
-                        )
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = (data.name ?: "") + "(${data.key})", style = TextStyle(
-                    fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1C1C1E)
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(6.dp).background(AccentBlue, CircleShape))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = data.eventTs,
+                    style = TextStyle(fontSize = 12.sp, color = TextSecondary)
                 )
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(jsonBgColor)
-                    .padding(12.dp)
-            ) {
-                SelectionContainer {
-                    Text(
-                        text = if (isExpanded) annotatedJson else AnnotatedString(
-                            data.value ?: "--"
-                        ),
-                        style = TextStyle(
-                            fontSize = 13.sp,
-                            color = Color(0xFF48484A),
-                            fontFamily = FontFamily.Monospace,
-                            lineHeight = 18.sp
-                        ),
-                        maxLines = if (isExpanded) Int.MAX_VALUE else 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
             }
 
-            if (!isExpanded && isJsonValid(data.value)) {
-                Text(
-                    text = "点击展开查看结构化详情",
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .align(Alignment.CenterHorizontally),
-                    style = TextStyle(fontSize = 11.sp, color = accentColor.copy(alpha = 0.8f))
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = data.name,
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
                 )
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateContentSize()
+                    .clickable(enabled = isLongContent) { isExpanded = !isExpanded },
+                color = Color(0xFFF9F9FB),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = data.value,
+                        style = TextStyle(
+                            fontFamily = if (isLongContent) FontFamily.Monospace else FontFamily.Default,
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp,
+                            color = Color(0xFF3A3A3C)
+                        ),
+                        maxLines = if (isExpanded) Int.MAX_VALUE else 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    if (isLongContent) {
+                        Text(
+                            text = if (isExpanded) "收起详情" else "点击展开详情",
+                            modifier = Modifier.padding(top = 8.dp),
+                            style = TextStyle(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AccentBlue
+                            )
+                        )
+                    }
+                }
             }
         }
     }
@@ -1118,58 +1023,59 @@ fun isJsonValid(json: String?): Boolean {
 @Composable
 fun HistoryDataListView(
     limitDays: Int,
-    startDate: String,           // 外部传入：当前选中的开始时间
-    endDate: String,             // 外部传入：当前选中的结束时间
-    historyDataList: List<HistoryData>, // 数据源
-    hasMore: Boolean,            // 是否有更多
-    onRangeSelected: (String, String) -> Unit, // 日期切换回调
-    onLoadMore: (String, String) -> Unit // 分页加载回调
+    startDate: String,
+    endDate: String,
+    historyDataList: List<HistoryData>,
+    hasMore: Boolean,
+    onRangeSelected: (String, String) -> Unit,
+    onLoadMore: (String, String) -> Unit
 ) {
+    val title = if (startDate.isEmpty() || endDate.isEmpty()) "选择日期范围" else "$startDate 至 $endDate"
 
-    val title =
-        if (startDate.isEmpty() || endDate.isEmpty()) "请选择日期" else "$startDate -- $endDate"
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        // 1. 日期选择器
+    // 整个页面背景设为浅灰色
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BackgroundGray)
+    ) {
+        // 1. 顶部日期选择条 (现在它是悬浮感设计的)
         DateRangePickerModern(
             limitDays = limitDays,
             startDate = startDate,
             endDate = endDate,
-            tip = title, onRangeSelected = { start, end ->
-                onRangeSelected(start, end)
-            })
+            tip = title,
+            onRangeSelected = onRangeSelected
+        )
+
         // 2. 列表内容
         LazyColumn(
-            modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             if (historyDataList.isEmpty()) {
-                // 空状态
                 item {
-                    Box(
-                        Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center
-                    ) {
+                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
                         EmptyDataView("暂无历史记录")
                     }
                 }
             } else {
-                // 数据列表
                 items(historyDataList) { data ->
                     HistoryDataCard(data)
                 }
-                // 加载更多
+
                 if (hasMore) {
                     item {
-                        LaunchedEffect(historyDataList.size) { // 监听列表长度变化
+                        LaunchedEffect(historyDataList.size) {
                             onLoadMore(startDate, endDate)
                         }
                         Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
+                            Modifier.fillMaxWidth().padding(24.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(
-                                Modifier.size(24.dp), strokeWidth = 2.dp, color = ControlBlue
+                                modifier = Modifier.size(28.dp),
+                                strokeWidth = 3.dp,
+                                color = AccentBlue
                             )
                         }
                     }
