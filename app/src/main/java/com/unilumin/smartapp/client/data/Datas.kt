@@ -354,3 +354,8 @@ data class SystemInfo(
     val system: SystemBaseInfo,
     val sysFiles: List<SystemFileInfo>
 )
+
+data class PagingState(
+    var pageIndex: Int = 1,
+    var hasMore: Boolean = true
+)

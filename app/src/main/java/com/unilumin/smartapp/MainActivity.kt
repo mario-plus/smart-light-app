@@ -29,9 +29,9 @@ import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.mock.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
 import com.unilumin.smartapp.ui.screens.DashboardScreen
-import com.unilumin.smartapp.ui.screens.DeviceDetailScreen
 import com.unilumin.smartapp.ui.screens.LoginScreen
 import com.unilumin.smartapp.ui.screens.ProfileScreen
+import com.unilumin.smartapp.ui.screens.device.DeviceDetailScreen
 import com.unilumin.smartapp.ui.screens.device.DevicesScreen
 import com.unilumin.smartapp.ui.screens.site.SitesScreen
 import com.unilumin.smartapp.ui.theme.Blue600
@@ -108,6 +108,7 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                             val deviceJson = java.net.URLDecoder.decode(encodedJson, "UTF-8")
                             val lightDevice =
                                 com.google.gson.Gson().fromJson(deviceJson, LightDevice::class.java)
+
                             DeviceDetailScreen(
                                 lightDevice = lightDevice,
                                 retrofitClient = retrofitClient,

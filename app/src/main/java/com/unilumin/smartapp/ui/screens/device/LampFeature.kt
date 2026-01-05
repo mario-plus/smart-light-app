@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +33,7 @@ import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
 import com.unilumin.smartapp.ui.theme.Gray100
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
+import kotlinx.coroutines.launch
 
 @SuppressLint("DefaultLocale", "UnusedBoxWithConstraintsScope")
 @Composable
@@ -40,6 +42,8 @@ fun LampFeatureContent(
     lightDevice: LightDevice,
     onDetailClick: (LightDevice) -> Unit
 ) {
+
+    val scope = rememberCoroutineScope()
     var showDialog by remember { mutableStateOf(false) }
     FeatureContentContainer {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -109,7 +113,9 @@ fun LampFeatureContent(
             initColorT = lightDevice.bright2,
             onDismiss = { showDialog = false },
             onClick = { a, b ->
-                deviceViewModel.lampCtl(lightDevice.id, a, b)
+                scope.launch {
+                    deviceViewModel.lampCtl(lightDevice.id, a, b)
+                }
             })
     }
 }

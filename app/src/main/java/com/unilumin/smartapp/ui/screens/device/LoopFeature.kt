@@ -25,6 +25,7 @@ import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
 import com.unilumin.smartapp.ui.screens.dialog.LoopControlDialog
 import com.unilumin.smartapp.ui.theme.Gray400
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
+import kotlinx.coroutines.launch
 
 /**
  * 回路 (Loop) 特有内容
@@ -38,12 +39,6 @@ fun LoopFeatureContent(
 
     val scope = rememberCoroutineScope()
     var showDialog by remember { mutableStateOf(false) }
-
-
-
-
-
-
     FeatureContentContainer {
         val loops = lightDevice.loops ?: emptyList()
         if (loops.isNotEmpty()) {
@@ -83,8 +78,10 @@ fun LoopFeatureContent(
             deviceName = lightDevice.name,
             loopInfos = lightDevice.loops,
             onDismiss = { showDialog = false }, onConfirm = { action, loops ->
-                deviceViewModel.loopCtl(lightDevice.id, loops, action)
-                showDialog = false
+              scope.launch {
+                  deviceViewModel.loopCtl(lightDevice.id, loops, action)
+                  showDialog = false
+              }
             })
     }
 }

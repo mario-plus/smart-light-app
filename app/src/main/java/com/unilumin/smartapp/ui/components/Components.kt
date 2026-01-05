@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -1622,6 +1624,63 @@ fun InfoRibbon(data: DeviceModelData) {
                         )
                     )
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun DeviceDataGrid(
+    dataList: List<DeviceModelData>,
+    onHistoryClick: (DeviceModelData) -> Unit,
+    onAnalysisClick: (DeviceModelData) -> Unit
+) {
+    if (dataList.isEmpty()) return
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        maxItemsInEachRow = 3,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        dataList.forEach { data ->
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                DeviceRealDataCardModern(
+                    data = data,
+                    onHistoryClick = { onHistoryClick(data) },
+                    onAnalysisClick = { onAnalysisClick(data) }
+                )
+            }
+        }
+        val itemFillCount = (3 - (dataList.size % 3)) % 3
+        repeat(itemFillCount) {
+            Spacer(modifier = Modifier.weight(1f))
+        }
+    }
+
+}
+
+/**
+ * 缓冲加载
+ * */
+@Composable
+fun LoadingContent(isLoading: Boolean, content: @Composable () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        content()
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(0.05f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = ControlBlue)
             }
         }
     }
