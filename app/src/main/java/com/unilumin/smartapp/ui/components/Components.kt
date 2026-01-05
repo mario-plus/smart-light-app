@@ -846,7 +846,8 @@ fun DeviceRealDataCardModern(
             ) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = data.value ?: "--", style = TextStyle(
+                        text = (if (data.value.isNullOrBlank()) "--" else data.value).toString(),
+                        style = TextStyle(
                             fontSize = 22.sp, // 适配小卡片的字号
                             fontWeight = FontWeight.Black, color = primaryText
                         )
@@ -1508,41 +1509,44 @@ fun HistoryDataListView(
             onRangeSelected = onRangeSelected
         )
 
-        // 2. 列表内容
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)
-        ) {
-            if (historyDataList.isEmpty()) {
-                item {
-                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                        EmptyDataView("暂无数据")
-                    }
-                }
-            } else {
-                items(historyDataList) { data ->
-                    HistoryDataCard(data)
-                }
-
-                if (hasMore) {
+        if (historyDataList.isNotEmpty()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)
+            ) {
+                if (historyDataList.isEmpty()) {
                     item {
-                        LaunchedEffect(historyDataList.size) {
-                            onLoadMore(startDate, endDate)
+                        Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                            EmptyDataView("暂无数据")
                         }
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(28.dp),
-                                strokeWidth = 3.dp,
-                                color = AccentBlue
-                            )
+                    }
+                } else {
+                    items(historyDataList) { data ->
+                        HistoryDataCard(data)
+                    }
+
+                    if (hasMore) {
+                        item {
+                            LaunchedEffect(historyDataList.size) {
+                                onLoadMore(startDate, endDate)
+                            }
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(28.dp),
+                                    strokeWidth = 3.dp,
+                                    color = AccentBlue
+                                )
+                            }
                         }
                     }
                 }
             }
+        } else {
+            EmptyDataView("暂未找到数据")
         }
     }
 }

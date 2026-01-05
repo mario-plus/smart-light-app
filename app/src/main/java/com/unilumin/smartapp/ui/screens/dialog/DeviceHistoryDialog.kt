@@ -37,7 +37,6 @@ fun DeviceHistoryDialog(
     selectedDeviceModelData: DeviceModelData?,
     historyDataList: List<HistoryData>, // 接收外部传入的数据源
     hasMore: Boolean,                   // 接收外部传入的分页状态
-    isLoading: Boolean,                 // 接收外部传入的加载状态
     onLoadData: (String, String, Boolean, List<String>) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -90,8 +89,8 @@ fun DeviceHistoryDialog(
                     }
                 )
 
-                if (isLoading && historyDataList.isEmpty()) {
-                    EmptyDataView("数据加载中")
+                if (historyDataList.isEmpty()) {
+                    EmptyDataView("暂无数据")
                 }
             }
         }

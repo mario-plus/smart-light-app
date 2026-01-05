@@ -58,6 +58,7 @@ import com.unilumin.smartapp.ui.components.DetailCard
 import com.unilumin.smartapp.ui.components.DetailRow
 import com.unilumin.smartapp.ui.components.DeviceDataGrid
 import com.unilumin.smartapp.ui.components.DeviceTag
+import com.unilumin.smartapp.ui.components.EmptyDataView
 import com.unilumin.smartapp.ui.components.FilterChip
 import com.unilumin.smartapp.ui.components.HistoryDataListView
 import com.unilumin.smartapp.ui.components.LoadingContent
@@ -153,12 +154,12 @@ fun DeviceDetailScreen(
                 Column(modifier = Modifier.background(CardWhite)) {
                     CenterAlignedTopAppBar(
                         title = {
-                            Text(
-                                text = "${lightDevice.name}-详情", style = TextStyle(
-                                    fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
-                                )
+                        Text(
+                            text = "${lightDevice.name}-详情", style = TextStyle(
+                                fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
                             )
-                        },
+                        )
+                    },
                         navigationIcon = {
                             IconButton(onClick = onBack) {
                                 Icon(
@@ -197,8 +198,8 @@ fun DeviceDetailScreen(
                 .padding(innerPadding)
         ) {
             LoadingContent(isLoading = isLoading) {
-                when(selectedLabel){
-                    DETAIL,TELEMETRY,PROPERTY->{
+                when (selectedLabel) {
+                    DETAIL, TELEMETRY, PROPERTY -> {
                         SelectionContainer {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
@@ -207,8 +208,9 @@ fun DeviceDetailScreen(
                             ) {
                                 when (selectedLabel) {
                                     DETAIL -> {
-                                        item {
-                                            if (baseInfoList.isNotEmpty()) {
+
+                                        if (baseInfoList.isNotEmpty()) {
+                                            item {
                                                 DetailCard(title = "基础信息") {
                                                     baseInfoList.forEach { (key, value) ->
                                                         DetailRow(
@@ -236,10 +238,18 @@ fun DeviceDetailScreen(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
                                                             .padding(top = 8.dp),
-                                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                                        horizontalArrangement = Arrangement.spacedBy(
+                                                            8.dp
+                                                        ),
+                                                        verticalArrangement = Arrangement.spacedBy(
+                                                            10.dp
+                                                        )
                                                     ) {
-                                                        deviceServiceDataList.forEach { e -> DeviceTag(e.name) }
+                                                        deviceServiceDataList.forEach { e ->
+                                                            DeviceTag(
+                                                                e.name
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
@@ -258,9 +268,13 @@ fun DeviceDetailScreen(
                                                     onAnalysisClick = { data ->
                                                         showChartDialog = true
                                                         selectedDeviceModelData = data.copy()
-                                                    }
-                                                )
+                                                    })
                                             }
+                                        } else {
+                                            item {
+                                                EmptyDataView("暂无属性数据")
+                                            }
+
                                         }
                                     }
 
@@ -276,8 +290,11 @@ fun DeviceDetailScreen(
                                                     onAnalysisClick = { data ->
                                                         showChartDialog = true
                                                         selectedDeviceModelData = data.copy()
-                                                    }
-                                                )
+                                                    })
+                                            }
+                                        } else {
+                                            item {
+                                                EmptyDataView("暂无遥测数据")
                                             }
                                         }
                                     }
@@ -285,49 +302,52 @@ fun DeviceDetailScreen(
                             }
                         }
                     }
-                    NETWORK->{
+
+                    NETWORK -> {
                         var keys = listOf("onLine", "offLine")
-                        HistoryDataListView(
-                            limitDays = 14,
-                            startDate = currentStart,
-                            endDate = currentEnd,
-                            historyDataList,
-                            hasMore = pagingState.hasMore,
-                            onRangeSelected = { start, end ->
-                                tabDatesMap[selectedLabel] = start to end
-                                deviceViewModel.loadHistoryData(
-                                    lightDevice.id, start, end, isRefresh = true, keys = keys
-                                )
-                            },
-                            onLoadMore = { start, end ->
-                                deviceViewModel.loadHistoryData(
-                                    lightDevice.id, start, end, isRefresh = false, keys = keys
-                                )
-                            })
+                            HistoryDataListView(
+                                limitDays = 14,
+                                startDate = currentStart,
+                                endDate = currentEnd,
+                                historyDataList,
+                                hasMore = pagingState.hasMore,
+                                onRangeSelected = { start, end ->
+                                    tabDatesMap[selectedLabel] = start to end
+                                    deviceViewModel.loadHistoryData(
+                                        lightDevice.id, start, end, isRefresh = true, keys = keys
+                                    )
+                                },
+                                onLoadMore = { start, end ->
+                                    deviceViewModel.loadHistoryData(
+                                        lightDevice.id, start, end, isRefresh = false, keys = keys
+                                    )
+                                })
                     }
-                    EVENT->{
+
+                    EVENT -> {
                         var keys = deviceEventsDataList.map { it.key }
-                        HistoryDataListView(
-                            limitDays = 14,
-                            startDate = currentStart,
-                            endDate = currentEnd,
-                            historyDataList,
-                            hasMore = pagingState.hasMore,
-                            onRangeSelected = { start, end ->
-                                tabDatesMap[selectedLabel] = start to end
-                                deviceViewModel.loadHistoryData(
-                                    lightDevice.id, start, end, isRefresh = true, keys = keys
-                                )
+                            HistoryDataListView(
+                                limitDays = 14,
+                                startDate = currentStart,
+                                endDate = currentEnd,
+                                historyDataList,
+                                hasMore = pagingState.hasMore,
+                                onRangeSelected = { start, end ->
+                                    tabDatesMap[selectedLabel] = start to end
+                                    deviceViewModel.loadHistoryData(
+                                        lightDevice.id, start, end, isRefresh = true, keys = keys
+                                    )
 
-                            },
-                            onLoadMore = { start, end ->
-                                deviceViewModel.loadHistoryData(
-                                    lightDevice.id, start, end, isRefresh = false, keys = keys
-                                )
+                                },
+                                onLoadMore = { start, end ->
+                                    deviceViewModel.loadHistoryData(
+                                        lightDevice.id, start, end, isRefresh = false, keys = keys
+                                    )
 
-                            })
+                                })
                     }
                 }
+
             }
         }
     }
@@ -337,7 +357,6 @@ fun DeviceDetailScreen(
             selectedDeviceModelData = selectedDeviceModelData,
             historyDataList = historyDataList,
             hasMore = pagingState.hasMore,
-            isLoading = isLoading,
             onLoadData = { start, end, refresh, keys ->
                 deviceViewModel.loadHistoryData(lightDevice.id, start, end, refresh, keys)
             },
