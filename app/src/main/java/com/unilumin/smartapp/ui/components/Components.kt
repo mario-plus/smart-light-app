@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,15 +90,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -159,6 +164,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import java.util.regex.Pattern
+import kotlin.math.roundToInt
 
 @Composable
 fun AppCard(
@@ -286,11 +292,11 @@ fun BottomNavBar(navController: NavController) {
             val isSelected = currentRoute == route
             NavigationBarItem(
                 icon = {
-                Icon(
-                    imageVector = if (isSelected) info.second else info.third,
-                    contentDescription = info.first
-                )
-            },
+                    Icon(
+                        imageVector = if (isSelected) info.second else info.third,
+                        contentDescription = info.first
+                    )
+                },
                 label = { Text(info.first, fontSize = 10.sp) },
                 selected = isSelected,
                 onClick = {
@@ -599,16 +605,16 @@ fun BrightnessControlCard(
             // 使用 weight(1f) 让它填满标题和数值中间的所有空间
             Slider(
                 value = initValue.toFloat(), onValueChange = { newValue ->
-                onValueChange(newValue.toInt())
-            }, onValueChangeFinished = {
-                onValueChangeFinished(initValue)
-            }, valueRange = 0f..100f, colors = SliderDefaults.colors(
-                thumbColor = Color.White,
-                activeTrackColor = ControlBlue,
-                inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
-            ), modifier = Modifier
+                    onValueChange(newValue.toInt())
+                }, onValueChangeFinished = {
+                    onValueChangeFinished(initValue)
+                }, valueRange = 0f..100f, colors = SliderDefaults.colors(
+                    thumbColor = Color.White,
+                    activeTrackColor = ControlBlue,
+                    inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
+                ), modifier = Modifier
                     .weight(1f) // 关键：占据剩余空间
-                .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
+                    .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
                 thumb = {
                     // 自定义小滑块，比之前那个版本要做得更小一点，适配单行
                     Surface(
@@ -1157,41 +1163,69 @@ fun isJsonValid(json: String?): Boolean {
 fun LineChartComponent(data: List<SequenceTsl>, modifier: Modifier = Modifier) {
     val textMeasurer = rememberTextMeasurer()
     val labelStyle = MaterialTheme.typography.labelSmall.copy(color = Color.Gray)
+    val tooltipStyle = MaterialTheme.typography.labelMedium.copy(color = Color.White)
+
+    // 1. 数据预处理
     val sortedData = remember(data) { data.sortedBy { it.ts } }
     val values = remember(sortedData) { sortedData.map { it.value.toFloatOrNull() ?: 0f } }
     val maxVal = remember(values) { (values.maxOrNull() ?: 1f).coerceAtLeast(1f) }
     val minVal = remember(values) { values.minOrNull() ?: 0f }
     val range = (maxVal - minVal).coerceAtLeast(1f)
 
-    Canvas(modifier = modifier.padding(10.dp)) {
+    // 交互状态：记录当前触摸的索引
+    var selectedIndex by remember(data) { mutableStateOf(-1) }
+
+    Canvas(
+        modifier = modifier
+            .padding(10.dp)
+            .pointerInput(sortedData) {
+                detectTapGestures(
+                    onPress = { offset ->
+                        val leftPaddingPx = 45.dp.toPx()
+                        val chartWidthPx = size.width - leftPaddingPx
+                        if (offset.x >= leftPaddingPx) {
+                            val relativeX = offset.x - leftPaddingPx
+                            val index =
+                                (relativeX / (chartWidthPx / (sortedData.size - 1).coerceAtLeast(1)))
+                                    .roundToInt()
+                                    .coerceIn(0, sortedData.size - 1)
+                            selectedIndex = index
+                        }
+                    }
+                )
+            }
+    ) {
         val leftPadding = 45.dp.toPx()
         val bottomPadding = 30.dp.toPx()
         val chartWidth = size.width - leftPadding
         val chartHeight = size.height - bottomPadding
+
         if (sortedData.size < 2) return@Canvas
-        // 2. 绘制纵轴 Y 轴标签和网格
+
+        // 2. 绘制纵轴 Y 轴标签和网格 (补全了数值绘制)
         val yTickCount = 4
         for (i in 0..yTickCount) {
-            val yPos = chartHeight - (i * (chartHeight / yTickCount))
             val yValue = minVal + (range / yTickCount) * i
+            val yPos = chartHeight - (i * (chartHeight / yTickCount))
 
+            // 绘制水平辅助线
             drawLine(
-                color = Color.LightGray.copy(alpha = 0.5f),
+                color = Color.LightGray.copy(alpha = 0.4f),
                 start = Offset(leftPadding, yPos),
                 end = Offset(size.width, yPos),
                 strokeWidth = 1.dp.toPx()
             )
 
-            // 绘制 Y 轴数值
+            // 绘制 Y 轴数值标签
             drawText(
                 textMeasurer = textMeasurer,
                 text = String.format("%.1f", yValue),
                 style = labelStyle,
-                topLeft = Offset(0f, yPos - 15f)
+                topLeft = Offset(0f, yPos - 15f) // 放在刻度线左上方
             )
         }
 
-        // 3. 计算坐标点 (此时已基于排序后的数据)
+        // 3. 计算坐标点
         val spacing = chartWidth / (sortedData.size - 1)
         val points = values.indices.map { i ->
             Offset(
@@ -1200,7 +1234,7 @@ fun LineChartComponent(data: List<SequenceTsl>, modifier: Modifier = Modifier) {
             )
         }
 
-        // 4. 绘制渐变填充
+        // 4. 绘制填充渐变和折线
         val fillPath = Path().apply {
             moveTo(leftPadding, chartHeight)
             points.forEach { lineTo(it.x, it.y) }
@@ -1208,14 +1242,12 @@ fun LineChartComponent(data: List<SequenceTsl>, modifier: Modifier = Modifier) {
             close()
         }
         drawPath(
-            path = fillPath, brush = Brush.verticalGradient(
-                colors = listOf(Color(0xFF3D7EFE).copy(alpha = 0.2f), Color.Transparent),
-                startY = 0f,
-                endY = chartHeight
+            fillPath, Brush.verticalGradient(
+                listOf(Color(0xFF3D7EFE).copy(alpha = 0.2f), Color.Transparent),
+                startY = 0f, endY = chartHeight
             )
         )
 
-        // 5. 绘制折线
         drawPath(
             path = Path().apply {
                 moveTo(points.first().x, points.first().y)
@@ -1224,6 +1256,70 @@ fun LineChartComponent(data: List<SequenceTsl>, modifier: Modifier = Modifier) {
             color = Color(0xFF3D7EFE),
             style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
+
+        // 5. 绘制横轴 X 轴标签 (仅首尾两点)
+        val xEndpoints = listOf(0, sortedData.size - 1)
+        xEndpoints.forEachIndexed { i, index ->
+            val timestamp = formatTs(sortedData[index].ts, "MM-dd HH:mm")
+            val textLayout = textMeasurer.measure(timestamp, labelStyle)
+            val xPos = points[index].x
+
+            // 第一个左对齐，最后一个右对齐
+            val xOffset = if (i == 0) 0f else -textLayout.size.width.toFloat()
+
+            drawText(
+                textMeasurer = textMeasurer,
+                text = timestamp,
+                style = labelStyle,
+                topLeft = Offset(xPos + xOffset, chartHeight + 10f)
+            )
+        }
+
+        // 6. 绘制交互十字线与 Tooltip (点击后显示)
+        if (selectedIndex != -1 && selectedIndex < points.size) {
+            val selectedPoint = points[selectedIndex]
+            val dataItem = sortedData[selectedIndex]
+
+            // 垂直虚线
+            drawLine(
+                color = Color(0xFF3D7EFE),
+                start = Offset(selectedPoint.x, 0f),
+                end = Offset(selectedPoint.x, chartHeight),
+                strokeWidth = 1.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+            )
+
+            // 高亮圆点
+            drawCircle(Color(0xFF3D7EFE), radius = 6.dp.toPx(), center = selectedPoint)
+            drawCircle(Color.White, radius = 3.dp.toPx(), center = selectedPoint)
+
+            // Tooltip 文字：显示完整日期时间
+            val tooltipText =
+                "${formatTs(dataItem.ts, "yyyy-MM-dd HH:mm:ss")}\n数值: ${dataItem.value}"
+            val tooltipResult = textMeasurer.measure(tooltipText, tooltipStyle)
+
+            val rectWidth = tooltipResult.size.width + 24f
+            val rectHeight = tooltipResult.size.height + 24f
+
+            // 自动计算 Tooltip 坐标，确保不遮挡且不出界
+            val tooltipX =
+                (selectedPoint.x - rectWidth / 2).coerceIn(leftPadding, size.width - rectWidth)
+            val tooltipY = (selectedPoint.y - rectHeight - 30f).coerceAtLeast(0f)
+
+            drawRoundRect(
+                color = Color.Black.copy(alpha = 0.8f),
+                topLeft = Offset(tooltipX, tooltipY),
+                size = Size(rectWidth, rectHeight),
+                cornerRadius = CornerRadius(8.dp.toPx())
+            )
+
+            drawText(
+                textMeasurer = textMeasurer,
+                text = tooltipText,
+                style = tooltipStyle,
+                topLeft = Offset(tooltipX + 12f, tooltipY + 12f)
+            )
+        }
     }
 }
 
@@ -1238,7 +1334,9 @@ fun formatTs(ts: Long, pattern: String = "yyyy-MM-dd HH:mm"): String {
     }
 }
 
-
+/**
+ * 设备历史数据图表分析
+ * */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ChartDataView(
@@ -1271,14 +1369,7 @@ fun ChartDataView(
 
         item {
             if (chartData.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("暂无趋势数据", color = Color.Gray)
-                }
+                EmptyDataView("暂无数据")
             } else {
                 ChartCard(chartData)
                 Spacer(modifier = Modifier.height(16.dp))
@@ -1422,7 +1513,7 @@ fun HistoryDataListView(
             if (historyDataList.isEmpty()) {
                 item {
                     Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                        EmptyDataView("暂无历史记录")
+                        EmptyDataView("暂无数据")
                     }
                 }
             } else {
