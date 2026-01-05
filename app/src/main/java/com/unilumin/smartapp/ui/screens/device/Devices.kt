@@ -67,14 +67,14 @@ fun DevicesScreen(
     onDetailClick: (LightDevice) -> Unit
 ) {
     val context = LocalContext.current
-    val viewModel: DeviceViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+    val deviceViewModel: DeviceViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return DeviceViewModel(retrofitClient, context) as T
         }
     })
-    val activeFilter by viewModel.currentFilter.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val lazyPagingItems = viewModel.devicePagingFlow.collectAsLazyPagingItems()
+    val activeFilter by deviceViewModel.currentFilter.collectAsState()
+    val searchQuery by deviceViewModel.searchQuery.collectAsState()
+    val lazyPagingItems = deviceViewModel.devicePagingFlow.collectAsLazyPagingItems()
     val isRefreshing =
         lazyPagingItems.loadState.refresh is LoadState.Loading && lazyPagingItems.itemCount > 0
     Column(
@@ -121,7 +121,7 @@ fun DevicesScreen(
                 // 2. 搜索框
                 SearchBar(
                     query = searchQuery,
-                    onQueryChange = { viewModel.updateSearch(it) },
+                    onQueryChange = { deviceViewModel.updateSearch(it) },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
 
@@ -137,7 +137,7 @@ fun DevicesScreen(
                         FilterChip(
                             label = label,
                             isActive = isActive,
-                            onClick = { viewModel.updateFilter(id) })
+                            onClick = { deviceViewModel.updateFilter(id) })
                     }
                 }
             }
@@ -158,9 +158,9 @@ fun DevicesScreen(
                     val device = lazyPagingItems[index]
                     if (device != null) {
                         DeviceCardItem(
-                            retrofitClient,
+                            deviceViewModel,
                             device,
-                            viewModel.currentFilter.value,
+                            deviceViewModel.currentFilter.value,
                             onDetailClick
                         )
                     }

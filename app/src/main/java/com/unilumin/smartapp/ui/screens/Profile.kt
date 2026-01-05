@@ -79,15 +79,11 @@ import kotlinx.coroutines.launch
 fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
-    // 初始化 ViewModel
     val profileViewModel: ProfileViewModel = viewModel(
         factory = ViewModelFactory {
             ProfileViewModel(retrofitClient, context)
         }
     )
-
-    // 监听状态
     val currentProject by profileViewModel.currentProject.collectAsState()
     val projectList by profileViewModel.projectList.collectAsState()
     val userInfo by profileViewModel.userInfo.collectAsState()
@@ -95,12 +91,6 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
 
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-
-    // 初始加载
-//    LaunchedEffect(Unit) {
-//        profileViewModel.fetchProjects()
-//        profileViewModel.fetchUserInfo() // 如果 ViewModel init 中没调用，这里需要调用
-//    }
 
     // --- 底部抽屉 (切换项目) ---
     if (showBottomSheet) {
@@ -339,10 +329,7 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
                 Column(modifier = Modifier.padding(vertical = 12.dp)) {
                     val unifiedIconBg = Color(0xFFEFF6FF)
                     val unifiedIconTint = Blue600
-
                     val menuItems = listOf(
-                        // Triple("个人资料", Icons.Rounded.Person, null),
-                        // Triple("账号安全", Icons.Rounded.Security, null),
                         Triple("系统设置", Icons.Rounded.Settings, null),
                         Triple("服务器地址", Icons.Rounded.Dns, ServerConfig.getBaseUrl())
                     )
@@ -355,7 +342,8 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
                             iconBg = unifiedIconBg,
                             trailingText = item.third,
                             showArrow = !isServerItem,
-                            onClick = { if (!isServerItem) { /* Handle Click */ } }
+                            onClick = { if (!isServerItem) {
+                            /* Handle Click */ } }
                         )
                         if (index < menuItems.size - 1) {
                             Divider(

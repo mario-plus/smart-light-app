@@ -28,6 +28,8 @@ object RequestPathKey {
     const val KEY_PROJECT_LIST: String = "$CAS/uc/list-projects"
     const val KEY_SWITCH_PROJECT: String = "$CAS/uc/switch-project"
     const val KEY_GET_MINIO_PATH: String = "$CAS/sys/file/get-whole-object-url"
+    //获取系统信息
+    const val KEY_GET_SYSTEM_INFO: String = "$CAS/monitor/server/get"
 
     const val KEY_GET_LIGHT_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getLightList"
     const val KEY_GET_GW_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getLightGatewayList"

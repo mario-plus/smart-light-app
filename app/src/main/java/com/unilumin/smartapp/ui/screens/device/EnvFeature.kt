@@ -29,10 +29,15 @@ import com.unilumin.smartapp.client.data.EnvDisplayInfo
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
 import com.unilumin.smartapp.ui.screens.device.FeatureContentContainer
+import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun EnvFeatureContent(lightDevice: LightDevice, onDetailClick: (LightDevice) -> Unit) {
+fun EnvFeatureContent(
+    deviceViewModel: DeviceViewModel,
+    lightDevice: LightDevice,
+    onDetailClick: (LightDevice) -> Unit
+) {
 
 
     val displayItems = lightDevice.envData?.let { getDisplayItems(it) }

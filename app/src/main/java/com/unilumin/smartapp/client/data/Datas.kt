@@ -298,3 +298,59 @@ data class SequenceTsl(
     val value: String,
     val ts: Long
 )
+
+data class SystemCpu(
+    val cpuName: Int,
+    val total: Double,
+    val sys: Double,
+    val used: Double,
+    val wait: Double,
+    val free: Double
+)
+
+data class SystemMemory(
+    val total: Double,
+    val used: Double,
+    val free: Double,
+    val usage: Double,
+)
+
+data class SystemJvm(
+    val total: Double,
+    val max: Long,
+    val used: Double,
+    val name: String,
+    val free: Double,
+    val usage: Double,
+    val version: String,
+    val home: String,
+    val startTime: String,
+    val runTime: String,
+    val inputArgs: String,
+)
+
+data class SystemBaseInfo(
+    val computerName: String,
+    val computerIp: String,
+    val userDir: String,
+    val osName: String,
+    val osArch: String
+)
+
+data class SystemFileInfo(
+    val dirName: String,
+    val sysTypeName: String,
+    val typeName: String,
+    val total: String,
+    val free: String,
+    val used: String,
+    val usage: Double
+)
+
+data class SystemInfo(
+    val cpu: SystemCpu,
+    val memory: SystemMemory,
+    val jvm: SystemJvm,
+    val system: SystemBaseInfo,
+    val sysFiles: List<SystemFileInfo>
+)

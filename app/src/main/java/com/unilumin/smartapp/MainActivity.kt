@@ -41,6 +41,7 @@ import com.unilumin.smartapp.ui.theme.Gray900
 
 class MainActivity : ComponentActivity() {
     val retrofitClient = RetrofitClient()
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         // 1. 确认已展示隐私政策 (第一个参数 context, 第二个 isShow: true, 第三个 isContain: true)
         MapsInitializer.updatePrivacyShow(this, true, true)

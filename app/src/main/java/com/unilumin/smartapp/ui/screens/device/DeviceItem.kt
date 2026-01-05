@@ -30,7 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceType
 import com.unilumin.smartapp.client.constant.DeviceType.getDeviceIcon
 import com.unilumin.smartapp.client.data.LightDevice
@@ -44,11 +43,12 @@ import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.Orange50
 import com.unilumin.smartapp.ui.theme.Orange500
 import com.unilumin.smartapp.ui.theme.White
+import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 
 @SuppressLint("DefaultLocale")
 @Composable
 fun DeviceCardItem(
-    retrofitClient: RetrofitClient,
+    deviceViewModel: DeviceViewModel,
     lightDevice: LightDevice,
     type: String,
     onDetailClick: (LightDevice) -> Unit
@@ -70,10 +70,25 @@ fun DeviceCardItem(
 
             DeviceHeader(lightDevice, type, iconBg, iconTint)
             when (type) {
-                DeviceType.LAMP -> LampFeatureContent(lightDevice, retrofitClient, onDetailClick)
-                DeviceType.LOOP -> LoopFeatureContent(lightDevice, retrofitClient, onDetailClick)
-                DeviceType.PLAY_BOX -> PlayboxFeatureContent(lightDevice, onDetailClick)
-                DeviceType.ENV -> EnvFeatureContent(lightDevice, onDetailClick)
+                DeviceType.LAMP -> LampFeatureContent(
+                    deviceViewModel,
+                    lightDevice,
+                    onDetailClick
+                )
+
+                DeviceType.LOOP -> LoopFeatureContent(
+                    deviceViewModel,
+                    lightDevice,
+                    onDetailClick
+                )
+
+                DeviceType.PLAY_BOX -> PlayboxFeatureContent(
+                    deviceViewModel,
+                    lightDevice,
+                    onDetailClick
+                )
+
+                DeviceType.ENV -> EnvFeatureContent(deviceViewModel, lightDevice, onDetailClick)
             }
         }
     }

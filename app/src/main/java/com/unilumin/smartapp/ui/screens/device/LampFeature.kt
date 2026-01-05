@@ -2,7 +2,6 @@ package com.unilumin.smartapp.ui.screens.device
 
 
 import android.annotation.SuppressLint
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -20,59 +19,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.constant.DeviceType.colorTempSupportedList
-import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LightDevice
-import com.unilumin.smartapp.client.data.NewResponseData
-import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.ui.components.InfoColumn
 import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
 import com.unilumin.smartapp.ui.components.VerticalDivider
 import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
 import com.unilumin.smartapp.ui.theme.Gray100
 import com.unilumin.smartapp.ui.theme.Gray50
-import kotlinx.coroutines.launch
-import retrofit2.Call
+import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 
 @SuppressLint("DefaultLocale", "UnusedBoxWithConstraintsScope")
 @Composable
 fun LampFeatureContent(
-    lightDevice: LightDevice, retrofitClient: RetrofitClient, onDetailClick: (LightDevice) -> Unit
+    deviceViewModel: DeviceViewModel,
+    lightDevice: LightDevice,
+    onDetailClick: (LightDevice) -> Unit
 ) {
-    val deviceService = remember(retrofitClient) {
-        retrofitClient.getService(DeviceService::class.java)
-    }
     var showDialog by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-
-
-    //设备控制按钮
-    suspend fun lampCtl(cmdType: Int, cmdValue: Int) {
-        try {
-            val call: Call<NewResponseData<String?>?>? = deviceService.lampCtl(
-                LampCtlReq(
-                    cmdType = cmdType,
-                    cmdValue = cmdValue,
-                    ids = listOf(lightDevice.id),
-                    subSystemType = 1
-                )
-            )
-            UniCallbackService<String>().parseDataNewSuspend(call, context)
-            Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     FeatureContentContainer {
         Column(modifier = Modifier.fillMaxWidth()) {
             BoxWithConstraints {
@@ -141,7 +109,7 @@ fun LampFeatureContent(
             initColorT = lightDevice.bright2,
             onDismiss = { showDialog = false },
             onClick = { a, b ->
-                scope.launch { lampCtl(a, b) }
+                deviceViewModel.lampCtl(lightDevice.id, a, b)
             })
     }
 }

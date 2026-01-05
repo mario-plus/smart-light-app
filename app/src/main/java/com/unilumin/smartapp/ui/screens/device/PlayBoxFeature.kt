@@ -13,12 +13,17 @@ import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.ui.components.InfoColumn
 import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
 import com.unilumin.smartapp.ui.components.VerticalDivider
+import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 
 /**
  * 播放盒 (Playbox) 特有内容
  */
 @Composable
-fun PlayboxFeatureContent(lightDevice: LightDevice,onDetailClick: (LightDevice) -> Unit) {
+fun PlayboxFeatureContent(
+    deviceViewModel: DeviceViewModel,
+    lightDevice: LightDevice,
+    onDetailClick: (LightDevice) -> Unit
+) {
 
     var showDialog by remember { mutableStateOf(false) }
     var showDeviceDataDialog by remember { mutableStateOf(false) }
