@@ -1,4 +1,4 @@
-package com.unilumin.smartapp.ui.screens
+package com.unilumin.smartapp.ui.screens.profile
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -23,10 +23,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Business
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -48,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -60,7 +59,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.mock.ServerConfig
+import com.unilumin.smartapp.client.constant.DeviceType.menuItems
 import com.unilumin.smartapp.ui.components.ProfileMenuItem
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Emerald500
@@ -76,14 +75,20 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
+fun ProfileScreen(
+    retrofitClient: RetrofitClient,
+    onLogout: () -> Unit,
+    onItemClick: (name: String, profileViewModel: ProfileViewModel) -> Unit
+) {
     val context = LocalContext.current
+
     val scope = rememberCoroutineScope()
     val profileViewModel: ProfileViewModel = viewModel(
         factory = ViewModelFactory {
             ProfileViewModel(retrofitClient, context)
         }
     )
+
     val currentProject by profileViewModel.currentProject.collectAsState()
     val projectList by profileViewModel.projectList.collectAsState()
     val userInfo by profileViewModel.userInfo.collectAsState()
@@ -132,23 +137,30 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
                                 )
                             }
                             if (isSelected) {
-                                Icon(Icons.Rounded.CheckCircle, null, tint = Blue600, modifier = Modifier.size(24.dp))
+                                Icon(
+                                    Icons.Rounded.CheckCircle,
+                                    null,
+                                    tint = Blue600,
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
                         }
-                        Divider(color = Gray50, thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 24.dp))
+                        Divider(
+                            color = Gray50,
+                            thickness = 0.5.dp,
+                            modifier = Modifier.padding(horizontal = 24.dp)
+                        )
                     }
                 }
             }
         }
     }
 
-    // --- 主界面 ---
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Gray50)
     ) {
-        // 顶部渐变背景装饰
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -170,9 +182,7 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 1. 头部用户信息区域
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // 头像容器
                 Box {
                     Surface(
                         shape = CircleShape,
@@ -204,7 +214,6 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
                             }
                         }
                     }
-                    // 在线状态小绿点
                     Box(
                         modifier = Modifier
                             .size(20.dp)
@@ -216,7 +225,6 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
 
                 Spacer(modifier = Modifier.width(24.dp))
 
-                // 用户文字信息
                 Column {
                     Text(
                         text = userInfo?.nickname ?: "加载中...",
@@ -227,7 +235,10 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(color = Color(0xFFDBEAFE), shape = RoundedCornerShape(8.dp)) { // Blue100
+                        Surface(
+                            color = Color(0xFFDBEAFE),
+                            shape = RoundedCornerShape(8.dp)
+                        ) { // Blue100
                             Text(
                                 text = userInfo?.username ?: "--",
                                 fontSize = 12.sp,
@@ -236,19 +247,22 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                             )
                         }
-                        // 移除了之前用于调试的 URL 文本显示
+
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(36.dp))
 
-            // 2. 当前项目切换卡片
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(12.dp, RoundedCornerShape(24.dp), spotColor = Color(0xFFBFDBFE).copy(alpha = 0.6f))
+                    .shadow(
+                        12.dp,
+                        RoundedCornerShape(24.dp),
+                        spotColor = Color(0xFFBFDBFE).copy(alpha = 0.6f)
+                    )
                     .clickable { showBottomSheet = true }
             ) {
                 Box(
@@ -256,8 +270,8 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
                         .background(
                             Brush.linearGradient(
                                 colors = listOf(Color(0xFFEFF6FF), Color(0xFFDBEAFE)),
-                                start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                                end = androidx.compose.ui.geometry.Offset(1000f, 1000f)
+                                start = Offset(0f, 0f),
+                                end = Offset(1000f, 1000f)
                             )
                         )
                         .padding(24.dp)
@@ -319,7 +333,6 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // 3. 菜单列表
             Surface(
                 color = Color.White,
                 shape = RoundedCornerShape(24.dp),
@@ -329,21 +342,20 @@ fun ProfileScreen(retrofitClient: RetrofitClient, onLogout: () -> Unit) {
                 Column(modifier = Modifier.padding(vertical = 12.dp)) {
                     val unifiedIconBg = Color(0xFFEFF6FF)
                     val unifiedIconTint = Blue600
-                    val menuItems = listOf(
-                        Triple("系统设置", Icons.Rounded.Settings, null),
-                        Triple("服务器地址", Icons.Rounded.Dns, ServerConfig.getBaseUrl())
-                    )
                     menuItems.forEachIndexed { index, item ->
-                        val isServerItem = item.third != null
+                        val canClick = item.third != null
                         ProfileMenuItem(
                             title = item.first,
                             icon = item.second,
                             iconColor = unifiedIconTint,
                             iconBg = unifiedIconBg,
                             trailingText = item.third,
-                            showArrow = !isServerItem,
-                            onClick = { if (!isServerItem) {
-                            /* Handle Click */ } }
+                            showArrow = !canClick,
+                            onClick = {
+                                if (!canClick) {
+                                    onItemClick(item.first, profileViewModel)
+                                }
+                            }
                         )
                         if (index < menuItems.size - 1) {
                             Divider(

@@ -8,27 +8,47 @@ import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.data.MinioUrl
 import com.unilumin.smartapp.client.data.ProjectInfo
+import com.unilumin.smartapp.client.data.ResponseData
+import com.unilumin.smartapp.client.data.SystemInfo
 import com.unilumin.smartapp.client.data.UserInfo
 import com.unilumin.smartapp.client.service.ProjectService
+import com.unilumin.smartapp.client.service.SystemService
 import com.unilumin.smartapp.client.service.UserService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.Call
 
 class ProfileViewModel(
     val retrofitClient: RetrofitClient, val context: Context
 ) : ViewModel() {
+
     val userService = retrofitClient.getService(UserService::class.java)
     val projectService = retrofitClient.getService(ProjectService::class.java)
+
+    private val systemService = retrofitClient.getService(SystemService::class.java)
+
+    // --- 状态管理 ---
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+
+    //系统信息
+    private val _systemInfo = MutableStateFlow<SystemInfo>(SystemInfo())
+    val systemInfo = _systemInfo.asStateFlow()
+
+    //项目列表
     private val _projectList = MutableStateFlow<List<ProjectInfo>>(emptyList())
     val projectList = _projectList.asStateFlow()
+
+    //当前项目
     private val _currentProject = MutableStateFlow<ProjectInfo?>(null)
     val currentProject = _currentProject.asStateFlow()
 
+    //用户信息
     private val _userInfo = MutableStateFlow<UserInfo?>(null)
     val userInfo = _userInfo.asStateFlow()
 
-
+    //用户头像地址
     private val _userAvatarUrl = MutableStateFlow<String?>(null)
     val userAvatarUrl = _userAvatarUrl.asStateFlow()
 
@@ -61,7 +81,7 @@ class ProfileViewModel(
 
     // --- 新增：获取用户信息请求 ---
     fun fetchUserInfo() {
-        viewModelScope.launch {
+        launchWithLoading {
             try {
                 val user = UniCallbackService<UserInfo>().parseDataSuspend(
                     userService.getUserInfo(),
@@ -84,13 +104,41 @@ class ProfileViewModel(
     }
 
     fun switchProject(project: ProjectInfo) {
-        viewModelScope.launch {
+        launchWithLoading {
             UniCallbackService<String>().parseDataSuspend(
                 projectService.switchProject(project.id),
                 context
             )
             _currentProject.value = project
         }
+    }
 
+    fun getSystemInfo() {
+        launchWithLoading {
+            try {
+                val call: Call<ResponseData<SystemInfo?>?>? = systemService.getSystemInfo()
+                var parseDataSuspend =
+                    UniCallbackService<SystemInfo>().parseDataSuspend(call, context)
+                if (parseDataSuspend != null) {
+                    _systemInfo.value = parseDataSuspend
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+
+    fun launchWithLoading(consumer: suspend () -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                consumer()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 }

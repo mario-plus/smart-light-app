@@ -25,7 +25,6 @@ import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
 import com.unilumin.smartapp.ui.screens.dialog.LoopControlDialog
 import com.unilumin.smartapp.ui.theme.Gray400
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
-import kotlinx.coroutines.launch
 
 /**
  * 回路 (Loop) 特有内容
@@ -78,10 +77,8 @@ fun LoopFeatureContent(
             deviceName = lightDevice.name,
             loopInfos = lightDevice.loops,
             onDismiss = { showDialog = false }, onConfirm = { action, loops ->
-              scope.launch {
                   deviceViewModel.loopCtl(lightDevice.id, loops, action)
                   showDialog = false
-              }
             })
     }
 }

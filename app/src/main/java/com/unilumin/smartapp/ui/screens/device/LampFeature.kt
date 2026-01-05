@@ -33,7 +33,6 @@ import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
 import com.unilumin.smartapp.ui.theme.Gray100
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
-import kotlinx.coroutines.launch
 
 @SuppressLint("DefaultLocale", "UnusedBoxWithConstraintsScope")
 @Composable
@@ -113,9 +112,9 @@ fun LampFeatureContent(
             initColorT = lightDevice.bright2,
             onDismiss = { showDialog = false },
             onClick = { a, b ->
-                scope.launch {
-                    deviceViewModel.lampCtl(lightDevice.id, a, b)
-                }
+                deviceViewModel.lampCtl(lightDevice.id, a, b)
+                //控制后关闭dialog，如果不需要关闭，移除即可
+                showDialog = false
             })
     }
 }

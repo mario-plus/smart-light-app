@@ -9,7 +9,7 @@ import retrofit2.http.GET
 interface SystemService {
 
 
-    @GET(RequestPathKey.KEY_LOGIN)
+    @GET(RequestPathKey.KEY_GET_SYSTEM_INFO)
     fun getSystemInfo(): Call<ResponseData<SystemInfo?>?>?
 
 }

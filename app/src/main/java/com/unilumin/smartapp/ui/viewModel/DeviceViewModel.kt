@@ -114,7 +114,7 @@ class DeviceViewModel(
     }
 
 
-    private fun launchWithLoading(consumer: suspend () -> Unit) {
+     fun launchWithLoading(consumer: suspend () -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -128,33 +128,37 @@ class DeviceViewModel(
     }
 
     //设备控制按钮
-    suspend fun lampCtl(deviceId: Long, cmdType: Int, cmdValue: Int) {
-        try {
-            val call: Call<NewResponseData<String?>?>? = deviceService.lampCtl(
-                LampCtlReq(
-                    cmdType = cmdType,
-                    cmdValue = cmdValue,
-                    ids = listOf(deviceId),
-                    subSystemType = 1
+    fun lampCtl(deviceId: Long, cmdType: Int, cmdValue: Int) {
+        launchWithLoading {
+            try {
+                val call: Call<NewResponseData<String?>?>? = deviceService.lampCtl(
+                    LampCtlReq(
+                        cmdType = cmdType,
+                        cmdValue = cmdValue,
+                        ids = listOf(deviceId),
+                        subSystemType = 1
+                    )
                 )
-            )
-            UniCallbackService<String>().parseDataNewSuspend(call, context)
-            Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            e.printStackTrace()
+                UniCallbackService<String>().parseDataNewSuspend(call, context)
+                Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     //设备控制按钮
-    suspend fun loopCtl(id: Long, numList: List<Int>, onOff: Int) {
-        try {
-            val call: Call<NewResponseData<String?>?>? = deviceService.loopCtl(
-                LoopCtlReq(listOf(id), numList, onOff)
-            )
-            UniCallbackService<String>().parseDataNewSuspend(call, context)
-            Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            e.printStackTrace()
+    fun loopCtl(id: Long, numList: List<Int>, onOff: Int) {
+        launchWithLoading {
+            try {
+                val call: Call<NewResponseData<String?>?>? = deviceService.loopCtl(
+                    LoopCtlReq(listOf(id), numList, onOff)
+                )
+                UniCallbackService<String>().parseDataNewSuspend(call, context)
+                Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -266,7 +270,7 @@ class DeviceViewModel(
      * 历史数据
      * */
     @RequiresApi(Build.VERSION_CODES.O)
-     fun loadHistoryData(
+    fun loadHistoryData(
         deviceId: Long,
         startTime: String, endTime: String, isRefresh: Boolean = false, keys: List<String>
     ) {

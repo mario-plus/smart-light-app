@@ -3,12 +3,15 @@ package com.unilumin.smartapp.client.constant
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Compress
 import androidx.compose.material.icons.rounded.DeviceUnknown
+import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Thermostat
 import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.unilumin.smartapp.mock.ServerConfig
 
 object DeviceType {
     //单灯
@@ -55,6 +58,15 @@ object DeviceType {
 
     //双色温单灯产品id
     val colorTempSupportedList = listOf("107", "125")
+
+
+    const val SYSTEM_INFO = "系统信息"
+    const val SERVER_ADDRESS = "服务器地址"
+
+    val menuItems = listOf(
+        Triple(SYSTEM_INFO, Icons.Rounded.Settings, null),
+        Triple(SERVER_ADDRESS, Icons.Rounded.Dns, ServerConfig.getBaseUrl())
+    )
 
     fun getDeviceProductTypeId(type: String): Int {
         return when (type) {

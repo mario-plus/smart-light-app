@@ -1,5 +1,6 @@
 package com.unilumin.smartapp
 
+import SystemInfoScreen
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -25,14 +26,15 @@ import androidx.navigation.compose.rememberNavController
 import com.amap.api.maps.MapsInitializer
 import com.unilumin.smartapp.auth.TokenManagerFactory
 import com.unilumin.smartapp.client.RetrofitClient
+import com.unilumin.smartapp.client.constant.DeviceType
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.mock.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
 import com.unilumin.smartapp.ui.screens.DashboardScreen
-import com.unilumin.smartapp.ui.screens.LoginScreen
-import com.unilumin.smartapp.ui.screens.ProfileScreen
 import com.unilumin.smartapp.ui.screens.device.DeviceDetailScreen
 import com.unilumin.smartapp.ui.screens.device.DevicesScreen
+import com.unilumin.smartapp.ui.screens.login.LoginScreen
+import com.unilumin.smartapp.ui.screens.profile.ProfileScreen
 import com.unilumin.smartapp.ui.screens.site.SitesScreen
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray50
@@ -41,6 +43,7 @@ import com.unilumin.smartapp.ui.theme.Gray900
 
 class MainActivity : ComponentActivity() {
     val retrofitClient = RetrofitClient()
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         // 1. 确认已展示隐私政策 (第一个参数 context, 第二个 isShow: true, 第三个 isContain: true)
@@ -75,16 +78,13 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
             val navController = rememberNavController()
             if (!isLoggedIn) {
                 LoginScreen(
-                    retrofitClient = retrofitClient,
-                    onLogin = {
+                    retrofitClient = retrofitClient, onLogin = {
                         isLoggedIn = true
                         sessionKey++
-                    }
-                )
+                    })
             } else {
                 Scaffold(
-                    bottomBar = { BottomNavBar(navController) }
-                ) { innerPadding ->
+                    bottomBar = { BottomNavBar(navController) }) { innerPadding ->
                     NavHost(
                         navController = navController,
                         startDestination = "dashboard",
@@ -93,38 +93,42 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         composable("dashboard") { DashboardScreen(retrofitClient) }
                         composable("devices") {
                             DevicesScreen(
-                                retrofitClient,
-                                onDetailClick = { lightDevice ->
+                                retrofitClient, onDetailClick = { lightDevice ->
                                     val deviceJson = com.google.gson.Gson().toJson(lightDevice)
                                     val encodedJson =
                                         java.net.URLEncoder.encode(deviceJson, "UTF-8")
                                     navController.navigate("deviceDetail/$encodedJson")
-                                }
-                            )
+                                })
                         }
                         //设备详情页面
                         composable("deviceDetail/{deviceJson}") { backStackEntry ->
+                            //如果此处的json过大，可以改成deviceId，deviceName进行传递
                             val encodedJson = backStackEntry.arguments?.getString("deviceJson")
                             val deviceJson = java.net.URLDecoder.decode(encodedJson, "UTF-8")
                             val lightDevice =
                                 com.google.gson.Gson().fromJson(deviceJson, LightDevice::class.java)
-
                             DeviceDetailScreen(
                                 lightDevice = lightDevice,
                                 retrofitClient = retrofitClient,
-                                onBack = { navController.popBackStack() }
-                            )
+                                onBack = { navController.popBackStack() })
                         }
                         composable("sites") { SitesScreen(retrofitClient) }
                         composable("profile") {
-                            ProfileScreen(
-                                retrofitClient = retrofitClient,
-                                onLogout = {
-                                    TokenManagerFactory.getInstance(context).clear()
-                                    isLoggedIn = false
-                                    sessionKey++
+                            ProfileScreen(retrofitClient = retrofitClient, onLogout = {
+                                TokenManagerFactory.getInstance(context).clear()
+                                isLoggedIn = false
+                                sessionKey++
+                            }, onItemClick = { name, profileViewModel ->
+                                if (name == DeviceType.SYSTEM_INFO) {
+                                    navController.navigate("systemInfo")
                                 }
-                            )
+                            })
+                        }
+                        //系统信息
+                        composable("systemInfo") { backStackEntry ->
+                            SystemInfoScreen(
+                                retrofitClient = retrofitClient,
+                                onBack = { navController.popBackStack() })
                         }
                     }
                 }

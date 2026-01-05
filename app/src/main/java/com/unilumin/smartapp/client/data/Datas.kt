@@ -348,11 +348,11 @@ data class SystemFileInfo(
 )
 
 data class SystemInfo(
-    val cpu: SystemCpu,
-    val memory: SystemMemory,
-    val jvm: SystemJvm,
-    val system: SystemBaseInfo,
-    val sysFiles: List<SystemFileInfo>
+    val cpu: SystemCpu? = null,
+    val memory: SystemMemory? = null,
+    val jvm: SystemJvm? = null,
+    val system: SystemBaseInfo? = null,
+    val sysFiles: List<SystemFileInfo>? = null
 )
 
 data class PagingState(
