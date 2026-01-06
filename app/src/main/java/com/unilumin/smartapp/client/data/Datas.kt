@@ -300,7 +300,7 @@ data class SequenceTsl(
 )
 
 data class SystemCpu(
-    val cpuName: Int,
+    val cpuNum: Int,
     val total: Double,
     val sys: Double,
     val used: Double,

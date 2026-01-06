@@ -1689,3 +1689,49 @@ fun LoadingContent(isLoading: Boolean, content: @Composable () -> Unit) {
         }
     }
 }
+
+/**
+ * 进度条
+ * */
+@Composable
+fun UsageLinearBar(label: String, usage: Double) {
+    val progressValue = (usage / 100.0).coerceIn(0.0, 1.0).toFloat()
+    val progressColor = if (usage > 90) Color(0xFFE57373) else MaterialTheme.colorScheme.primary
+    val trackColor = progressColor.copy(alpha = 0.15f)
+
+    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "${usage.toInt()}%",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = progressColor
+            )
+        }
+
+        // --- 自定义进度条，解决断裂问题 ---
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(14.dp) // 足够粗
+                .background(trackColor, CircleShape) // 轨道背景
+        ) {
+            // 进度部分
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progressValue) // 根据比例占据宽度
+                    .fillMaxHeight()
+                    .background(progressColor, CircleShape) // 进度条圆角
+            )
+        }
+    }
+}

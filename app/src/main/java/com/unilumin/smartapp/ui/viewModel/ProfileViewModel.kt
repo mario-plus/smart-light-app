@@ -114,7 +114,7 @@ class ProfileViewModel(
     }
 
     fun getSystemInfo() {
-        launchWithLoading {
+        viewModelScope.launch {
             try {
                 val call: Call<ResponseData<SystemInfo?>?>? = systemService.getSystemInfo()
                 var parseDataSuspend =

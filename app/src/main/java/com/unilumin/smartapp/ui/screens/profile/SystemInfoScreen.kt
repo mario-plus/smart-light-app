@@ -1,15 +1,12 @@
-
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,7 +24,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -55,13 +51,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.data.SystemFileInfo
+import com.unilumin.smartapp.ui.components.DetailCard
 import com.unilumin.smartapp.ui.components.DetailRow
 import com.unilumin.smartapp.ui.components.LoadingContent
+import com.unilumin.smartapp.ui.components.UsageLinearBar
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.theme.TextDark
 import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
 import com.unilumin.smartapp.ui.viewModel.ViewModelFactory
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,7 +82,10 @@ fun SystemInfoScreen(
 
 
     LaunchedEffect(Unit) {
-        profileViewModel.getSystemInfo()
+        while (true) {
+            profileViewModel.getSystemInfo()
+            delay(5000) // 每 5 秒刷新一次
+        }
     }
 
     Scaffold(
@@ -124,27 +126,42 @@ fun SystemInfoScreen(
             ) {
                 if (systemInfo.system != null) {
                     item {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            DashboardPieCard(
-                                "CPU 使用率",
-                                systemInfo.cpu?.used ?: 0.0,
-                                MaterialTheme.colorScheme.primary,
-                                Modifier.weight(1f)
+                            // CPU 监控
+                            val cpuDetails = listOf(
+                                "核心数" to "${systemInfo.cpu?.cpuNum ?: 0}",
+                                "系统" to "${systemInfo.cpu?.sys ?: 0.0}%",
+                                "用户" to "${systemInfo.cpu?.used ?: 0.0}%"
                             )
                             DashboardPieCard(
-                                "内存使用率",
-                                systemInfo.memory?.usage ?: 0.0,
-                                Color(0xFF4CAF50),
-                                Modifier.weight(1f)
+                                title = "CPU空闲率",
+                                usage = systemInfo.cpu?.free ?: 0.0,
+                                color = MaterialTheme.colorScheme.primary,
+                                details = cpuDetails,
+                                modifier = Modifier.fillMaxWidth() // 改为 fillMaxWidth
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            // 内存监控
+                            val memDetails = listOf(
+                                "总量" to "${systemInfo.memory?.total ?: 0.0}G",
+                                "已用" to "${systemInfo.memory?.used ?: 0.0}G",
+                                "剩余" to "${systemInfo.memory?.free ?: 0.0}G"
+                            )
+                            DashboardPieCard(
+                                title = "内存使用率",
+                                usage = systemInfo.memory?.usage ?: 0.0,
+                                color = Color(0xFF4CAF50),
+                                details = memDetails,
+                                modifier = Modifier.fillMaxWidth() // 改为 fillMaxWidth
                             )
                         }
                     }
                     // 2. 基础系统信息
                     item {
-                        InfoSectionCard("基础信息") {
+                        DetailCard("基础信息") {
                             systemInfo.system?.let {
                                 DetailRow("计算机名", it.computerName)
                                 DetailRow("IP 地址", it.computerIp)
@@ -155,12 +172,13 @@ fun SystemInfoScreen(
                     }
                     // 3. JVM 运行状态
                     item {
-                        InfoSectionCard("JVM 状态") {
+                        DetailCard("JVM 状态") {
                             systemInfo.jvm?.let {
                                 DetailRow("JVM 名称", it.name)
                                 DetailRow("Java 版本", it.version)
                                 DetailRow("已用堆内存", "${it.used} MB")
                                 DetailRow("空闲堆内存", "${it.free} MB")
+                                DetailRow("启动时间", it.startTime)
                                 DetailRow("运行时间", it.runTime)
                                 Spacer(Modifier.height(8.dp))
                                 UsageLinearBar("JVM 内存占用率", it.usage)
@@ -185,116 +203,96 @@ fun SystemInfoScreen(
     }
 }
 
-// --- 漂亮的辅助组件 ---
 
 @Composable
-fun DashboardPieCard(title: String, usage: Double, color: Color, modifier: Modifier = Modifier) {
-    val animatedProgress by animateFloatAsState(targetValue = usage.toFloat())
+fun DashboardPieCard(
+    title: String,
+    usage: Double, // 建议确保传入的是 0-100 之间的数值
+    color: Color,
+    details: List<Pair<String, String>>,
+    modifier: Modifier = Modifier
+) {
+    // 自动判断：如果传入的是 0.71 这种小数，自动转为 71
+    val normalizedUsage = if (usage > 0 && usage <= 1.0) usage * 100.0 else usage
+    val animatedProgress by animateFloatAsState(targetValue = normalizedUsage.toFloat())
 
     Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
-                alpha = 0.3f
-            )
+            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
         )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(100.dp)) {
-                Canvas(modifier = Modifier.size(80.dp)) {
-                    drawArc(
-                        color = color.copy(alpha = 0.2f),
-                        startAngle = 0f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        style = Stroke(width = 10.dp.toPx())
-                    )
-                    drawArc(
-                        color = if (usage > 85) Color.Red else color,
-                        startAngle = -90f,
-                        sweepAngle = animatedProgress * 3.6f,
-                        useCenter = false,
-                        style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round)
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = TextDark
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 左侧圆环
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        // 底色圆环
+                        drawArc(
+                            color = color.copy(alpha = 0.1f),
+                            startAngle = 0f,
+                            sweepAngle = 360f,
+                            useCenter = false,
+                            style = Stroke(width = 8.dp.toPx())
+                        )
+                        // 进度圆环
+                        drawArc(
+                            color = if (normalizedUsage > 85) Color.Red else color,
+                            startAngle = -90f,
+                            sweepAngle = animatedProgress * 3.6f,
+                            useCenter = false,
+                            style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round)
+                        )
+                    }
+                    Text(
+                        text = "${normalizedUsage.toInt()}%",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
                     )
                 }
-                Text("${usage.toInt()}%", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+
+                Spacer(Modifier.width(24.dp))
+
+                // 右侧详情
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    details.forEach { (label, value) ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.width(80.dp)
+                            )
+                            Text(
+                                text = value,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextDark
+                            )
+                        }
+                    }
+                }
             }
-            Text(
-                title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
 
-@Composable
-fun InfoSectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(
-                title,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-            HorizontalDivider(Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
-            content()
-        }
-    }
-}
-
-
-@Composable
-fun UsageLinearBar(label: String, usage: Double) {
-    val progressValue = (usage / 100.0).coerceIn(0.0, 1.0).toFloat()
-    val progressColor = if (usage > 90) Color(0xFFE57373) else MaterialTheme.colorScheme.primary
-    val trackColor = progressColor.copy(alpha = 0.15f)
-
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "${usage.toInt()}%",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = progressColor
-            )
-        }
-
-        // --- 自定义进度条，解决断裂问题 ---
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(14.dp) // 足够粗
-                .background(trackColor, CircleShape) // 轨道背景
-        ) {
-            // 进度部分
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progressValue) // 根据比例占据宽度
-                    .fillMaxHeight()
-                    .background(progressColor, CircleShape) // 进度条圆角
-            )
-        }
-    }
-}
-
+/**
+ * 磁盘卡片
+ * */
 @Composable
 fun DiskCard(file: SystemFileInfo) {
     Card(
