@@ -3,29 +3,42 @@ package com.unilumin.smartapp.ui.screens.site
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.SearchOff
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,28 +46,19 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.itemContentType
-import androidx.paging.compose.itemKey
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.client.data.SiteDevice
 import com.unilumin.smartapp.client.data.SiteInfo
 import com.unilumin.smartapp.client.data.SiteRoadInfo
-import com.unilumin.smartapp.ui.components.ErrorRetryView
+import com.unilumin.smartapp.ui.components.PagingList
+import com.unilumin.smartapp.ui.theme.Blue600
+import com.unilumin.smartapp.ui.theme.Gray200
+import com.unilumin.smartapp.ui.theme.Gray400
+import com.unilumin.smartapp.ui.theme.Gray50
+import com.unilumin.smartapp.ui.theme.Gray500
+import com.unilumin.smartapp.ui.theme.Gray700
+import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.viewModel.SiteViewModel
 import com.unilumin.smartapp.ui.viewModel.ViewModelFactory
-import com.unilumin.smartapp.ui.theme.*
-import android.os.Bundle
-import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.amap.api.maps.CameraUpdateFactory
-import com.amap.api.maps.MapView
-import com.amap.api.maps.model.LatLng
-import com.amap.api.maps.model.LatLngBounds
-import com.amap.api.maps.model.MarkerOptions
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,7 +74,11 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
         }
     )
 
+    /**
+     * 站点数据
+     * */
     val pagingItems = siteViewModel.sitePagingFlow.collectAsLazyPagingItems()
+
     val siteRoadInfo by siteViewModel.siteRoadInfo.collectAsState()
     val searchKeyword by siteViewModel.searchKeyword.collectAsState()
 
@@ -84,7 +92,6 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
     var selectedRoad by remember { mutableStateOf<SiteRoadInfo?>(null) }
     var isRoadDropdownExpanded by remember { mutableStateOf(false) }
 
-    val isRefreshing = pagingItems.loadState.refresh is LoadState.Loading
 
     // 返回键处理逻辑
     BackHandler(enabled = currentView != "list" || isMapView) {
@@ -125,7 +132,14 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                 "list" -> {
                     Column(modifier = Modifier.fillMaxSize()) {
                         // 搜索栏始终显示 (根据需要，地图模式也可以隐藏部分筛选)
-                        Box(modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 8.dp)) {
+                        Box(
+                            modifier = Modifier.padding(
+                                top = 16.dp,
+                                start = 16.dp,
+                                end = 16.dp,
+                                bottom = 8.dp
+                            )
+                        ) {
                             SearchAndFilterSection(
                                 selectedRoad = selectedRoad,
                                 siteRoadInfo = siteRoadInfo,
@@ -145,12 +159,8 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                             )
                         }
 
-                        // 内容区域切换：列表 vs 地图
                         Box(modifier = Modifier.fillMaxSize()) {
                             if (isMapView) {
-                                // 地图模式
-                                // 注意：PagingData 只有当前加载的数据，地图通常需要全量点或聚合点
-                                // 这里演示使用当前已加载的数据进行绘制
                                 val currentItems = pagingItems.itemSnapshotList.items
                                 SiteMapView(
                                     siteList = currentItems,
@@ -161,48 +171,25 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                                 )
                             } else {
                                 // 列表模式
-                                PullToRefreshBox(
-                                    isRefreshing = isRefreshing,
-                                    onRefresh = { pagingItems.refresh() },
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    LazyColumn(
-                                        contentPadding = PaddingValues(bottom = 80.dp, start = 16.dp, end = 16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                                        modifier = Modifier.fillMaxSize()
-                                    ) {
-                                        // 状态处理
-                                        if (pagingItems.loadState.refresh is LoadState.Error) {
-                                            item { ErrorRetryView("加载失败") { pagingItems.retry() } }
-                                        } else if (pagingItems.loadState.refresh is LoadState.NotLoading && pagingItems.itemCount == 0) {
-                                            item { EmptyStateView(message = "未找到相关站点") }
+                                PagingList(
+                                    lazyPagingItems = pagingItems,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(
+                                        bottom = 80.dp,
+                                        start = 16.dp,
+                                        end = 16.dp
+                                    ),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    itemKey = { it.id ?: 0 },
+                                    emptyMessage = "未找到相关站点"
+                                ) { siteInfo ->
+                                    SiteCardItem(
+                                        siteInfo = siteInfo,
+                                        onClick = {
+                                            selectedSiteInfo = siteInfo
+                                            currentView = "poles"
                                         }
-
-                                        // 列表渲染
-                                        items(
-                                            count = pagingItems.itemCount,
-                                            key = pagingItems.itemKey { it.id ?: 0 },
-                                            contentType = pagingItems.itemContentType { "SiteItem" }
-                                        ) { index ->
-                                            val siteInfo = pagingItems[index]
-                                            if (siteInfo != null) {
-                                                SiteCardItem(
-                                                    siteInfo = siteInfo,
-                                                    onClick = {
-                                                        selectedSiteInfo = siteInfo
-                                                        currentView = "poles"
-                                                    }
-                                                )
-                                            }
-                                        }
-
-                                        item {
-                                            AppendLoadState(
-                                                loadState = pagingItems.loadState.append,
-                                                onRetry = { pagingItems.retry() }
-                                            )
-                                        }
-                                    }
+                                    )
                                 }
                             }
                         }
@@ -256,15 +243,14 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
 }
 
 
-
-
-
 @Composable
 fun SitesTopBar(currentView: String, title: String, onBack: () -> Unit) {
     Surface(
         color = Color.White,
         shadowElevation = 4.dp,
-        modifier = Modifier.fillMaxWidth().zIndex(1f)
+        modifier = Modifier
+            .fillMaxWidth()
+            .zIndex(1f)
     ) {
         Row(
             modifier = Modifier
@@ -298,14 +284,22 @@ fun SitesTopBar(currentView: String, title: String, onBack: () -> Unit) {
 fun InfoLabelValue(label: String, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(text = "$label: ", fontSize = 12.sp, color = Gray400)
-        Text(text = value, fontSize = 12.sp, color = Gray700, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            text = value,
+            fontSize = 12.sp,
+            color = Gray700,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
 @Composable
 fun EmptyStateView(message: String) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(48.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(Icons.Rounded.SearchOff, null, tint = Gray200, modifier = Modifier.size(64.dp))
@@ -318,13 +312,22 @@ fun EmptyStateView(message: String) {
 fun AppendLoadState(loadState: LoadState, onRetry: () -> Unit) {
     when (loadState) {
         is LoadState.Loading -> {
-            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = Blue600)
+            Box(Modifier
+                .fillMaxWidth()
+                .padding(16.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                    color = Blue600
+                )
             }
         }
+
         is LoadState.Error -> {
             Row(
-                Modifier.fillMaxWidth().padding(8.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -333,6 +336,7 @@ fun AppendLoadState(loadState: LoadState, onRetry: () -> Unit) {
                 TextButton(onClick = onRetry) { Text("重试", color = Blue600, fontSize = 12.sp) }
             }
         }
+
         else -> {}
     }
 }

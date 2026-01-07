@@ -32,6 +32,7 @@ import com.unilumin.smartapp.mock.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
 import com.unilumin.smartapp.ui.screens.DashboardScreen
 import com.unilumin.smartapp.ui.screens.device.DeviceDetailScreen
+import com.unilumin.smartapp.ui.screens.device.DeviceStatusChartScreen
 import com.unilumin.smartapp.ui.screens.device.DevicesScreen
 import com.unilumin.smartapp.ui.screens.login.LoginScreen
 import com.unilumin.smartapp.ui.screens.profile.ProfileScreen
@@ -93,13 +94,23 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         composable("dashboard") { DashboardScreen(retrofitClient) }
                         composable("devices") {
                             DevicesScreen(
-                                retrofitClient, onDetailClick = { lightDevice ->
+                                retrofitClient,
+                                onDetailClick = { lightDevice ->
                                     val deviceJson = com.google.gson.Gson().toJson(lightDevice)
                                     val encodedJson =
                                         java.net.URLEncoder.encode(deviceJson, "UTF-8")
                                     navController.navigate("deviceDetail/$encodedJson")
+                                }, onMenuClick = {
+                                    navController.navigate("deviceStatusChart")
                                 })
                         }
+                        //离线报表
+                        composable("deviceStatusChart") { e ->
+                            DeviceStatusChartScreen(
+                                retrofitClient,
+                                onBack = { navController.popBackStack() })
+                        }
+
                         //设备详情页面
                         composable("deviceDetail/{deviceJson}") { backStackEntry ->
                             //如果此处的json过大，可以改成deviceId，deviceName进行传递
@@ -125,7 +136,7 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                             })
                         }
                         //系统信息
-                        composable("systemInfo") { backStackEntry ->
+                        composable("systemInfo") { e ->
                             SystemInfoScreen(
                                 retrofitClient = retrofitClient,
                                 onBack = { navController.popBackStack() })

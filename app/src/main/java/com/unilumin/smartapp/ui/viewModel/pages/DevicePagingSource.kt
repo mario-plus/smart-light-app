@@ -13,7 +13,9 @@ import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
 import com.unilumin.smartapp.client.service.DeviceService
 
-
+/**
+ * 设备列表分页数据
+ * */
 class DevicePagingSource(
     private val filterType: String,
     private val searchQuery: String,

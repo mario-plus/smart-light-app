@@ -47,6 +47,13 @@ object DeviceType {
         CAMERA to "摄像头"
     )
 
+    const val OFFLINE_ANALYSIS = "offlineAnalysis"
+    const val MENU2 = "menu2"
+    val DeviceMenus = listOf(
+        OFFLINE_ANALYSIS to "离线报表",
+        MENU2 to "待开发"
+    )
+
 
     val DeviceDetailTabs = listOf(
         DETAIL to "详细信息",

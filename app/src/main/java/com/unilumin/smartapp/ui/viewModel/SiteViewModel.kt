@@ -37,6 +37,9 @@ class SiteViewModel(
         getRoadList()
     }
 
+    /**
+     * 分页数据
+     * */
     @OptIn(ExperimentalCoroutinesApi::class)
     val sitePagingFlow: Flow<PagingData<SiteInfo>> = combine(
         _selectedRoadId,
@@ -46,7 +49,7 @@ class SiteViewModel(
     }.flatMapLatest { (roadId, keyword) ->
         Pager(
             config = PagingConfig(
-                pageSize = 20, // 每页数量
+                pageSize = 20,
                 enablePlaceholders = false,
                 initialLoadSize = 20
             ),
@@ -63,6 +66,10 @@ class SiteViewModel(
         _searchKeyword.value = keyword
     }
 
+
+    /**
+     * 获取道路列表
+     * */
     fun getRoadList() {
         viewModelScope.launch {
             try {

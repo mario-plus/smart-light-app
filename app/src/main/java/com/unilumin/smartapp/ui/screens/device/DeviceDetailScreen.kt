@@ -70,6 +70,9 @@ import com.unilumin.smartapp.ui.theme.TextDark
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 
 
+/**
+ * 设备详情页面
+ * */
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable

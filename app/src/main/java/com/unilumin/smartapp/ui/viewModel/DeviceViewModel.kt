@@ -18,6 +18,7 @@ import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
+import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.LampCtlReq
@@ -41,9 +42,20 @@ import java.time.format.DateTimeFormatter
 class DeviceViewModel(
     retrofitClient: RetrofitClient, val context: Context
 ) : ViewModel() {
+
     private val deviceService = retrofitClient.getService(DeviceService::class.java)
+
+    //设备列表查询参数(产品类型)
     val currentFilter = MutableStateFlow(DeviceType.LAMP)
+    fun updateFilter(type: String) {
+        currentFilter.value = type
+    }
+
+    //设备列表查询参数(关键词)
     val searchQuery = MutableStateFlow("")
+    fun updateSearch(query: String) {
+        searchQuery.value = query
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     val timeFormat: DateTimeFormatter? = DateTimeFormatter.ofPattern("HH:mm:ss")
@@ -84,6 +96,7 @@ class DeviceViewModel(
     val baseInfoList = _baseInfoList.asStateFlow()
 
 
+    //遥测，属性统计报表数据
     private val _chartDataList = MutableStateFlow<List<SequenceTsl>>(emptyList())
     val chartDataList = _chartDataList.asStateFlow()
 
@@ -93,28 +106,22 @@ class DeviceViewModel(
     val deviceConfigList = _deviceConfigList.asStateFlow()
 
 
+    private val _deviceStatusAnalysis = MutableStateFlow<DeviceStatusAnalysisResp?>(null)
+    val deviceStatusAnalysisData = _deviceStatusAnalysis.asStateFlow()
+
+    //分页数据列表
     @OptIn(ExperimentalCoroutinesApi::class)
     val devicePagingFlow = combine(currentFilter, searchQuery) { filter, query ->
         Pair(filter, query)
     }.flatMapLatest { (filter, query) ->
         Pager(
             config = PagingConfig(pageSize = 20, initialLoadSize = 20), pagingSourceFactory = {
-                DevicePagingSource(
-                    filter, query, retrofitClient, context
-                )
+                DevicePagingSource(filter, query, retrofitClient, context)
             }).flow
     }.cachedIn(viewModelScope)
 
-    fun updateFilter(type: String) {
-        currentFilter.value = type
-    }
 
-    fun updateSearch(query: String) {
-        searchQuery.value = query
-    }
-
-
-     fun launchWithLoading(consumer: suspend () -> Unit) {
+    fun launchWithLoading(consumer: suspend () -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -156,6 +163,24 @@ class DeviceViewModel(
                 )
                 UniCallbackService<String>().parseDataNewSuspend(call, context)
                 Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /**
+     * 离线报表统计信息
+     * */
+    fun deviceStatusAnalysis() {
+        viewModelScope.launch {
+            try {
+                var parseDataNewSuspend =
+                    UniCallbackService<DeviceStatusAnalysisResp>().parseDataNewSuspend(
+                        deviceService.deviceStatusAnalysis(),
+                        context
+                    )
+                _deviceStatusAnalysis.value = parseDataNewSuspend
             } catch (e: Exception) {
                 e.printStackTrace()
             }

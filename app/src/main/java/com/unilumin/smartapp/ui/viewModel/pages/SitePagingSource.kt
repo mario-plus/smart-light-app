@@ -7,7 +7,9 @@ import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.SiteInfo
 import com.unilumin.smartapp.client.service.SiteService
-
+/**
+ * 站点分页数据
+ * */
 class SitePagingSource(
     private val siteService: SiteService,
     private val context: Context,
@@ -16,7 +18,6 @@ class SitePagingSource(
 ) : PagingSource<Int, SiteInfo>() {
 
     override fun getRefreshKey(state: PagingState<Int, SiteInfo>): Int? {
-        // 当列表刷新时，尝试从当前位置恢复页码
         return state.anchorPosition?.let { anchorPosition ->
             state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
                 ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)

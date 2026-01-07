@@ -45,6 +45,8 @@ val BackgroundGray = Color(0xFFF7F8FA)
 val AccentBlue = Color(0xFF007AFF)
 val TextPrimary = Color(0xFF1C1C1E)
 val TextSecondary = Color(0xFF8E8E93)
-
-val cardBackground = Color(0xFF0D241B) // 深蓝色背景
-val dividerColor = Color(0xFF1F2937)   // 分割线颜色
+val PrimaryBlue = Color(0xFF2A3A85) // 更深邃的商务蓝
+val AccentOrange = Color(0xFFFE9738) // 高饱和度的提醒橙
+val SuccessGreen = Color(0xFF4CAF50) // 标准成功绿
+val SoftBackground = Color(0xFFF4F7FD) // 带一点点蓝调的底色
+val DividerColor = Color(0xFFE0E6F3) // 淡淡的分割线颜色

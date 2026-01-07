@@ -4,6 +4,7 @@ import com.unilumin.smartapp.client.constant.RequestPathKey
 import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
+import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
 import com.unilumin.smartapp.client.data.EnvData
 import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.HistoryData
@@ -117,9 +118,28 @@ interface DeviceService {
     fun getSequenceTsl(
         @Query("deviceId") deviceId: Long,
         @Query("id") id: String,
-        @Query("type")  type: Int,
-        @Query("startTime")  startTime: String,
-        @Query("endTime")   endTime: String,
-        @Query("isAggregation")   isAggregation: Boolean,
+        @Query("type") type: Int,
+        @Query("startTime") startTime: String,
+        @Query("endTime") endTime: String,
+        @Query("isAggregation") isAggregation: Boolean,
     ): Call<NewResponseData<List<SequenceTsl>?>?>?
+
+
+    /**
+     * 获取离线报表数据
+     * */
+    @GET(RequestPathKey.KEY_GET_DEVICE_STATUS_ANALYSIS)
+    fun deviceStatusAnalysis(): Call<NewResponseData<DeviceStatusAnalysisResp?>?>?
+
+    /**
+     * 离线设备详情
+     * */
+    @GET(RequestPathKey.KEY_GET_OFFLINE_DEVICE_LIST)
+    fun offlineDeviceList(
+        @Query("curPage") curPage: Int,
+        @Query("pageSize") pageSize: Int,
+        @Query("timeType") timeType: Int,
+        @Query("primaryClass") primaryClass: Int
+    ): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+
 }

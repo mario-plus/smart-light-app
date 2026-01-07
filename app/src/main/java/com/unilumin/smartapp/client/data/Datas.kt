@@ -359,3 +359,23 @@ data class PagingState(
     var pageIndex: Int = 1,
     var hasMore: Boolean = true
 )
+
+data class DeviceStatusAnalysisResp(
+    val sum: Int,
+    val offlineSum: Int,
+    val onlineSum: Int,
+    val offlineRatio: Double,
+    val onlineRatio: Double,
+    val poleSum: Int,
+    val deviceStatusAnalysis: List<DeviceStatusAnalysis>
+)
+
+data class DeviceStatusAnalysis(
+    val primaryClass: Int,
+    val name: String,
+    val sum: Int,
+    val offlineSum: Int,
+    val onlineSum: Int,
+    val offlineRatio: Double,
+    val onlineRatio: Double
+)
