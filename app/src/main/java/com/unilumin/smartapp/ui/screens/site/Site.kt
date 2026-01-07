@@ -180,7 +180,7 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                                         end = 16.dp
                                     ),
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                                    itemKey = { it.id ?: 0 },
+                                    itemKey = { site -> site.id },
                                     emptyMessage = "未找到相关站点"
                                 ) { siteInfo ->
                                     SiteCardItem(
@@ -312,9 +312,11 @@ fun EmptyStateView(message: String) {
 fun AppendLoadState(loadState: LoadState, onRetry: () -> Unit) {
     when (loadState) {
         is LoadState.Loading -> {
-            Box(Modifier
-                .fillMaxWidth()
-                .padding(16.dp), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp), contentAlignment = Alignment.Center
+            ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     strokeWidth = 2.dp,

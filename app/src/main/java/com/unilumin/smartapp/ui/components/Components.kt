@@ -1,4 +1,6 @@
 package com.unilumin.smartapp.ui.components
+
+import android.annotation.SuppressLint
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -1679,7 +1681,7 @@ fun DeviceDataGrid(
 @Composable
 fun LoadingContent(isLoading: Boolean, content: @Composable () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
-        content()
+
         if (isLoading) {
             Box(
                 modifier = Modifier
@@ -1689,6 +1691,8 @@ fun LoadingContent(isLoading: Boolean, content: @Composable () -> Unit) {
             ) {
                 CircularProgressIndicator(color = ControlBlue)
             }
+        } else {
+            content()
         }
     }
 }
@@ -1704,7 +1708,9 @@ fun UsageLinearBar(label: String, usage: Double) {
 
     Column(modifier = Modifier.padding(vertical = 4.dp)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1742,94 +1748,112 @@ fun UsageLinearBar(label: String, usage: Double) {
 
 /**
  * 分页数据展示逻辑
+ * @param lazyPagingItems 数据源
+ * @param forceLoading 强制切换，避免切换过程残留的旧数据
+ * @param modifier 布局修饰符
+ * @param itemKey 唯一表示函数，比如传入deviceId
+ * @param contentPadding 内边距
+ * @param verticalArrangement 垂直边距
+ * @param emptyMessage 空状态提示词
+ * @param itemContent 业务布局，如DeviceCardItem，SiteCardItem
  * */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T : Any> PagingList(
     lazyPagingItems: LazyPagingItems<T>,
-    modifier: Modifier = Modifier,
+    forceLoading: Boolean = false, // 新增：用于拦截旧数据残留
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
     itemKey: ((T) -> Any)? = null,
     contentPadding: PaddingValues = PaddingValues(16.dp),
-    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(16.dp),
+    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(12.dp),
     emptyMessage: String = "未找到相关数据",
     itemContent: @Composable (T) -> Unit
 ) {
-    val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading && lazyPagingItems.itemCount > 0
+    val refreshState = lazyPagingItems.loadState.refresh
+    val shouldShowFullLoading =
+        forceLoading || (refreshState is LoadState.Loading && lazyPagingItems.itemCount == 0)
     PullToRefreshBox(
-        isRefreshing = isRefreshing,
+        isRefreshing = refreshState is LoadState.Loading && !shouldShowFullLoading,
         onRefresh = { lazyPagingItems.refresh() },
         modifier = modifier
     ) {
-        LazyColumn(
-            contentPadding = contentPadding,
-            verticalArrangement = verticalArrangement,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // 1. 列表内容
-            items(
-                count = lazyPagingItems.itemCount,
-                // 【关键修复】：不直接使用 hashCode()，防止 null 导致崩溃
-                key = lazyPagingItems.itemKey { item ->
-                    itemKey?.invoke(item) ?: (item.javaClass.getDeclaredField("id").apply { isAccessible = true }.get(item) ?: item.hashCode())
-                    // 如果反射不方便，建议调用处传入具体 key，或直接使用 device.id
-                }
-            ) { index ->
-                lazyPagingItems[index]?.let { item ->
-                    itemContent(item)
-                }
-            }
+        LoadingContent(shouldShowFullLoading) {
+            LazyColumn(
+                contentPadding = contentPadding,
+                verticalArrangement = verticalArrangement,
+                modifier = Modifier.fillMaxSize()
+            ) {
 
-            // 2. 状态处理逻辑
-            lazyPagingItems.apply {
-                when {
-                    // 全局首次加载
-                    loadState.refresh is LoadState.Loading && itemCount == 0 -> {
-                        item {
-                            Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                            }
-                        }
+                items(
+                    count = lazyPagingItems.itemCount,
+                    key = lazyPagingItems.itemKey { item ->
+                        itemKey?.invoke(item) ?: item.hashCode()
                     }
-                    // 加载下一页中
-                    loadState.append is LoadState.Loading -> {
-                        item {
-                            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                            }
-                        }
-                    }
-                    // 刷新或加载出错
-                    loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
-                        item {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text("加载失败", color = Color.Gray)
-                                Button(onClick = { retry() }, modifier = Modifier.padding(top = 8.dp)) {
-                                    Text("点击重试")
+                ) { index ->
+                    lazyPagingItems[index]?.let { itemContent(it) }
+                }
+                lazyPagingItems.apply {
+                    when {
+                        loadState.append is LoadState.Loading -> {
+                            item {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp), Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        Modifier.size(24.dp),
+                                        strokeWidth = 2.dp
+                                    )
                                 }
                             }
                         }
-                    }
-                    // 数据为空
-                    loadState.refresh is LoadState.NotLoading && itemCount == 0 -> {
-                        item {
-                            Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                                Text(emptyMessage, color = Color.Gray)
+
+                        loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
+                            item {
+                                Column(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    Alignment.CenterHorizontally as Arrangement.Vertical
+                                ) {
+                                    Text("加载失败", color = Color.Gray)
+                                    Button(
+                                        onClick = { retry() },
+                                        Modifier.padding(top = 8.dp)
+                                    ) { Text("重试") }
+                                }
                             }
                         }
-                    }
-                    // 到底了
-                    loadState.append.endOfPaginationReached && itemCount > 0 -> {
-                        item {
-                            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                Text("— 已经到底了 —", color = Color(0xFFCCCCCC))
+
+                        loadState.refresh is LoadState.NotLoading && itemCount == 0 -> {
+                            item {
+                                Box(Modifier.fillParentMaxSize(), Alignment.Center) {
+                                    Text(emptyMessage, color = Color.Gray)
+                                }
+                            }
+                        }
+
+                        loadState.append.endOfPaginationReached && itemCount > 0 -> {
+                            item {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp), Alignment.Center
+                                ) {
+                                    Text(
+                                        "— 已经到底了 —",
+                                        color = Color(0xFFCCCCCC),
+                                        fontSize = 12.sp
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
+
+
     }
 }

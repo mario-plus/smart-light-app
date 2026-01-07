@@ -1,12 +1,9 @@
 package com.unilumin.smartapp.ui.screens.device
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -27,11 +23,13 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +48,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceType
@@ -59,13 +58,12 @@ import com.unilumin.smartapp.ui.components.FilterChip
 import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchBar
 import com.unilumin.smartapp.ui.theme.Gray100
-import com.unilumin.smartapp.ui.theme.Gray200
 import com.unilumin.smartapp.ui.theme.Gray500
 import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.White
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 
-// --- Main Screen ---
+
 @SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,11 +72,8 @@ fun DevicesScreen(
     onDetailClick: (LightDevice) -> Unit,
     onMenuClick: () -> Unit
 ) {
-    // 1. 状态管理
     var showMenu by remember { mutableStateOf(false) }
-
     val menuShape = RoundedCornerShape(16.dp)
-
     val context = LocalContext.current
 
     val deviceViewModel: DeviceViewModel = viewModel(factory = object : ViewModelProvider.Factory {
@@ -87,101 +82,60 @@ fun DevicesScreen(
         }
     })
 
+    //产品类型选择
     val activeFilter by deviceViewModel.currentFilter.collectAsState()
+
+    //搜索条件
     val searchQuery by deviceViewModel.searchQuery.collectAsState()
 
-    /**
-     * 设备列表
-     * */
+    //分页数据
     val lazyPagingItems = deviceViewModel.devicePagingFlow.collectAsLazyPagingItems()
 
+    //条件
+    var lastSyncedParams by remember { mutableStateOf(Pair(activeFilter, searchQuery)) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Gray100)
-    ) {
+    //是否存在切换动作
+    val isSwitching = lastSyncedParams != Pair(activeFilter, searchQuery)
 
+    LaunchedEffect(lazyPagingItems.loadState.refresh) {
+        if (lazyPagingItems.loadState.refresh is LoadState.NotLoading ||
+            lazyPagingItems.loadState.refresh is LoadState.Error) {
+            lastSyncedParams = Pair(activeFilter, searchQuery)
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize().background(Gray100)) {
         Surface(
-            color = White, shadowElevation = 2.dp, modifier = Modifier
-                .fillMaxWidth()
-                .zIndex(1f)
+            color = White,
+            shadowElevation = 2.dp,
+            modifier = Modifier.fillMaxWidth().zIndex(1f)
         ) {
             Column(modifier = Modifier.padding(bottom = 16.dp)) {
-                // 1. 标题栏
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        "设备列表", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Gray900
-                    )
-                    Surface(
-                        shape = CircleShape,
-                        border = BorderStroke(1.dp, Gray200),
-                        color = White,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clickable {
-                                showMenu = true
-                            }) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Rounded.FilterList,
-                                null,
-                                tint = Gray500,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        MaterialTheme(
-                            // 关键：通过主题统一修改 DropdownMenu 的形状
-                            shapes = Shapes(extraSmall = menuShape)
-                        ) {
+                    Text("设备列表", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Gray900)
+
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Rounded.FilterList, null, tint = Gray500)
+
+                        MaterialTheme(shapes = Shapes(extraSmall = menuShape)) {
                             DropdownMenu(
                                 expanded = showMenu,
                                 onDismissRequest = { showMenu = false },
                                 modifier = Modifier
-                                    // 1. 先设置阴影。ambientColor 可以让阴影更淡更高级
-                                    .shadow(
-                                        elevation = 12.dp,
-                                        shape = menuShape,
-                                        spotColor = Color.Black.copy(alpha = 0.2f)
-                                    )
-                                    // 2. 必须裁剪，保证内容不溢出圆角
+                                    .shadow(12.dp, menuShape, spotColor = Color.Black.copy(alpha = 0.2f))
                                     .clip(menuShape)
-                                    // 3. 背景色建议带一点点透明度或纯白
                                     .background(Color.White)
-                                    // 4. 去掉那个灰色的 border，或者改用极浅的颜色
                                     .border(0.5.dp, Color(0xFFF0F0F0), menuShape)
                             ) {
-                                DeviceMenus.forEachIndexed { index, option ->
+                                DeviceMenus.forEach { option ->
                                     DropdownMenuItem(
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Default.Settings,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp),
-                                                tint = Color.Gray
-                                            )
-                                        },
-                                        text = {
-                                            Text(
-                                                option.second,
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Medium
-                                            )
-                                        },
-                                        onClick = {
-                                            onMenuClick()
-                                        },
-                                        // 增加点击区域的内边距，看起来更舒展
-                                        contentPadding = PaddingValues(
-                                            horizontal = 16.dp,
-                                            vertical = 12.dp
-                                        )
+                                        leadingIcon = { Icon(Icons.Default.Settings, null, Modifier.size(20.dp), Color.Gray) },
+                                        text = { Text(option.second, fontSize = 14.sp, fontWeight = FontWeight.Medium) },
+                                        onClick = { showMenu = false; onMenuClick() }
                                     )
                                 }
                             }
@@ -189,33 +143,32 @@ fun DevicesScreen(
                     }
                 }
 
-                // 2. 搜索框
                 SearchBar(
                     query = searchQuery,
                     onQueryChange = { deviceViewModel.updateSearch(it) },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 3. 筛选 Tabs
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(DeviceType.DataList) { (id, label) ->
-                        val isActive = activeFilter == id
                         FilterChip(
                             label = label,
-                            isActive = isActive,
-                            onClick = { deviceViewModel.updateFilter(id) })
+                            isActive = activeFilter == id,
+                            onClick = { deviceViewModel.updateFilter(id) }
+                        )
                     }
                 }
             }
         }
-
+        // 分页列表展示
         PagingList(
             lazyPagingItems = lazyPagingItems,
+            forceLoading = isSwitching, // 传入切换状态
             modifier = Modifier.weight(1f),
             itemKey = { device -> device.id },
             emptyMessage = "未找到相关设备",
@@ -224,10 +177,9 @@ fun DevicesScreen(
             DeviceCardItem(
                 deviceViewModel = deviceViewModel,
                 lightDevice = device,
-                type = deviceViewModel.currentFilter.value,
+                type = activeFilter,
                 onDetailClick = { onDetailClick(device) }
             )
         }
     }
-
 }

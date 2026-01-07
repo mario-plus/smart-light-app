@@ -129,7 +129,7 @@ data class SiteRoadInfo(
 )
 
 data class SiteInfo(
-    val id: String?,
+    val id: Long,
     val name: String?,
     val number: String?,
     val longitude: Double?,

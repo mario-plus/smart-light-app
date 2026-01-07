@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -82,6 +83,8 @@ fun DeviceStatusChartScreen(
     val isLoading by deviceViewModel.isLoading.collectAsState()
     val deviceStatusAnalysisData by deviceViewModel.deviceStatusAnalysisData.collectAsState()
 
+    //
+
     LaunchedEffect(Unit) {
         while (true) {
             deviceViewModel.deviceStatusAnalysis()
@@ -117,6 +120,8 @@ fun DeviceStatusChartScreen(
             }
         }, containerColor = PageBackground
     ) { padding ->
+
+
         LoadingContent(isLoading = isLoading) {
             deviceStatusAnalysisData?.let { data ->
                 LazyColumn(
@@ -139,7 +144,10 @@ fun DeviceStatusChartScreen(
                     }
 
                     items(data.deviceStatusAnalysis) { analysis ->
-                        DeviceCategoryCard(item = analysis)
+                        DeviceCategoryCard(item = analysis, onDetailClick = {
+                            //点击事件，用dialog显示离线设备
+
+                        })
                     }
                     item { Spacer(modifier = Modifier.height(20.dp)) }
                 }
@@ -214,7 +222,7 @@ fun OfflineRateDashboard(data: DeviceStatusAnalysisResp) {
                 Box(modifier = Modifier.width(1.dp).height(30.dp).background(DividerColor)) // 分割线
                 StatItem(label = "在线总数", value = data.onlineSum.toString(), PrimaryBlue)
                 Box(modifier = Modifier.width(1.dp).height(30.dp).background(DividerColor)) // 分割线
-                StatItem(label = "资产总数", value = data.sum.toString(), SuccessGreen)
+                StatItem(label = "设备总数", value = data.sum.toString(), SuccessGreen)
             }
         }
     }
@@ -231,20 +239,24 @@ fun StatItem(label: String, value: String, color: Color) {
 
 @SuppressLint("DefaultLocale")
 @Composable
-fun DeviceCategoryCard(item: DeviceStatusAnalysis) {
+fun DeviceCategoryCard(
+    item: DeviceStatusAnalysis,
+    onDetailClick: (DeviceStatusAnalysis) -> Unit // 增加回调参数
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = Color.White,
-        shadowElevation = 4.dp, // 轻微阴影
-        border = BorderStroke(1.dp, DividerColor) // 极浅的边框增加“实心”感
+        shadowElevation = 4.dp,
+        border = BorderStroke(1.dp, DividerColor)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
+            // 顶层容器：包含图标、标题和右上角的详情按钮
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // 图标背景色深度化
+                // 左侧图标
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = SoftBackground,
@@ -257,29 +269,60 @@ fun DeviceCategoryCard(item: DeviceStatusAnalysis) {
                         tint = PrimaryBlue
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // 中间标题
                 Text(
                     text = item.name,
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
-                    color = TextDark
+                    color = TextDark,
+                    modifier = Modifier.weight(1f) // 占据剩余空间，将按钮推向最右侧
                 )
+
+                // 右上角详情入口
+                androidx.compose.material3.TextButton(
+                    onClick = { onDetailClick(item) },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text(
+                        text = "详情",
+                        fontSize = 13.sp,
+                        color = PrimaryBlue,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = PrimaryBlue
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // 数据展示区增加背景色块
+            // 数据展示区
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFF9FAFC), RoundedCornerShape(12.dp)) // 给数据区加个浅色底，增加厚重感
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 DetailColumn("总数", item.sum.toString(), PrimaryBlue.copy(alpha = 0.7f))
+                Box(modifier = Modifier.width(1.dp).height(20.dp).background(DividerColor))
                 DetailColumn("离线数", item.offlineSum.toString(), Color(0xFFE57373))
-                // 离线率采用高亮块显示
+                Box(modifier = Modifier.width(1.dp).height(20.dp).background(DividerColor))
+
+                // 离线率高亮显示
                 Column(
                     modifier = Modifier
-                        .background(AccentOrange.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                        .background(AccentOrange.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     DetailColumn(

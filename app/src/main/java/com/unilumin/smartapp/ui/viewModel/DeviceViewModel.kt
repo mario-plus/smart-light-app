@@ -19,16 +19,20 @@ import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
+import com.unilumin.smartapp.client.data.EnvData
+import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.LampCtlReq
+import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.PagingState
+import com.unilumin.smartapp.client.data.RequestParam
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.service.DeviceService
-import com.unilumin.smartapp.ui.viewModel.pages.DevicePagingSource
+import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -115,10 +119,90 @@ class DeviceViewModel(
         Pair(filter, query)
     }.flatMapLatest { (filter, query) ->
         Pager(
-            config = PagingConfig(pageSize = 20, initialLoadSize = 20), pagingSourceFactory = {
-                DevicePagingSource(filter, query, retrofitClient, context)
+            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+            pagingSourceFactory = {
+                GenericPagingSource { page, pageSize ->
+                    getDeviceList(
+                        type = filter,
+                        searchQuery = query,
+                        page = page,
+                        pageSize = pageSize,
+                        context = context
+                    )
+                }
             }).flow
     }.cachedIn(viewModelScope)
+
+
+    //获取设备列表
+    suspend fun getDeviceList(
+        type: String,
+        searchQuery: String,
+        page: Int,
+        pageSize: Int,
+        context: Context
+    ): List<LightDevice> {
+        if (type == DeviceType.LAMP) {
+            return UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+                deviceService.getLightCtlList(
+                    RequestParam(searchQuery, page, pageSize)
+                ), context
+            )?.list ?: emptyList()
+        } else if (type == DeviceType.CONCENTRATOR) {
+            return UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+                deviceService.getGwCtlList(
+                    RequestParam(searchQuery, page, pageSize, 1)
+                ), context
+            )?.list ?: emptyList()
+        } else if (type == DeviceType.LOOP) {
+            var parseDataNewSuspend =
+                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+                    deviceService.getLoopCtlList(searchQuery, page, pageSize, 1), context
+                )
+            return parseDataNewSuspend?.list ?: emptyList()
+        } else if (type == DeviceType.PLAY_BOX) {
+            var parseDataNewSuspend =
+                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+                    deviceService.getLedList(searchQuery, page, pageSize, 12, 3), context
+                )
+            return parseDataNewSuspend?.list ?: emptyList()
+        } else if (type == DeviceType.ENV) {
+            var iotDevices =
+                getIotDevices(type, deviceService, searchQuery, page, pageSize, context)
+            val deviceIds = iotDevices.map { it.id }
+            //填充环境传感器设备数据
+            val envDataMap = if (deviceIds.isNotEmpty()) {
+                UniCallbackService<Map<Long, EnvData>>().parseDataNewSuspend(
+                    deviceService.getEnvDataList(EnvDataReq(deviceIds)), context
+                ) ?: emptyMap()
+            } else {
+                emptyMap()
+            }
+            iotDevices.forEach { device ->
+                val envData = envDataMap[device.id]
+                device.envData = envData
+            }
+            return iotDevices
+        }
+        return emptyList()
+    }
+
+    suspend fun getIotDevices(
+        type: String,
+        deviceService: DeviceService,
+        searchQuery: String,
+        page: Int,
+        pageSize: Int,
+        context: Context
+    ): List<LightDevice> {
+        var parseDataNewSuspend =
+            UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+                deviceService.getDeviceList(
+                    searchQuery, page, pageSize, DeviceType.getDeviceProductTypeId(type)
+                ), context
+            )
+        return parseDataNewSuspend?.list ?: emptyList()
+    }
 
 
     fun launchWithLoading(consumer: suspend () -> Unit) {
