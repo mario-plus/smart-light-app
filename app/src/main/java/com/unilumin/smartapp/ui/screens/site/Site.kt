@@ -74,6 +74,8 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
         }
     )
 
+    var totalCount = siteViewModel.totalCount.collectAsState()
+
     /**
      * 站点数据
      * */
@@ -172,6 +174,7 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                             } else {
                                 // 列表模式
                                 PagingList(
+                                    totalCount = totalCount.value,
                                     lazyPagingItems = pagingItems,
                                     modifier = Modifier.fillMaxSize(),
                                     contentPadding = PaddingValues(

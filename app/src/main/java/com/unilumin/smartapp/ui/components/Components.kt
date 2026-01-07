@@ -4,7 +4,12 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -36,12 +41,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.LocationOn
@@ -54,6 +64,7 @@ import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -132,21 +143,24 @@ import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.LoopInfo
+import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.ui.theme.AccentBlue
+import com.unilumin.smartapp.ui.theme.AlarmBg
+import com.unilumin.smartapp.ui.theme.AlarmRed
 import com.unilumin.smartapp.ui.theme.Amber50
 import com.unilumin.smartapp.ui.theme.Amber500
 import com.unilumin.smartapp.ui.theme.BackgroundGray
 import com.unilumin.smartapp.ui.theme.BgLightGray
 import com.unilumin.smartapp.ui.theme.Blue50
 import com.unilumin.smartapp.ui.theme.Blue600
+import com.unilumin.smartapp.ui.theme.CardBorder
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.Emerald50
 import com.unilumin.smartapp.ui.theme.Emerald600
 import com.unilumin.smartapp.ui.theme.Gray100
 import com.unilumin.smartapp.ui.theme.Gray200
-import com.unilumin.smartapp.ui.theme.Gray300
 import com.unilumin.smartapp.ui.theme.Gray400
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.Gray500
@@ -154,15 +168,21 @@ import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.Green50
 import com.unilumin.smartapp.ui.theme.Green500
 import com.unilumin.smartapp.ui.theme.LineColor
+import com.unilumin.smartapp.ui.theme.OfflineGray
 import com.unilumin.smartapp.ui.theme.Orange50
 import com.unilumin.smartapp.ui.theme.Orange500
+import com.unilumin.smartapp.ui.theme.PrimaryBlue
 import com.unilumin.smartapp.ui.theme.Red50
 import com.unilumin.smartapp.ui.theme.Red500
+import com.unilumin.smartapp.ui.theme.SafeBg
+import com.unilumin.smartapp.ui.theme.SafeGreen
 import com.unilumin.smartapp.ui.theme.TextDark
 import com.unilumin.smartapp.ui.theme.TextGray
 import com.unilumin.smartapp.ui.theme.TextPrimary
 import com.unilumin.smartapp.ui.theme.TextSecondary
+import com.unilumin.smartapp.ui.theme.TextTitle
 import com.unilumin.smartapp.ui.theme.White
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -329,46 +349,6 @@ fun BottomNavBar(navController: NavController) {
 
 
 @Composable
-fun PageLoadingView() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp), contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(color = Blue600)
-    }
-}
-
-@Composable
-fun PageAppendLoadingView() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(16.dp), color = Gray400, strokeWidth = 2.dp
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text("正在加载更多...", color = Gray400, fontSize = 12.sp)
-    }
-}
-
-@Composable
-fun EndOfListView() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 24.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("— 到底啦 —", color = Gray300, fontSize = 12.sp)
-    }
-}
-
-@Composable
 fun EmptyDataView(message: String) {
     Column(
         modifier = Modifier
@@ -385,27 +365,6 @@ fun EmptyDataView(message: String) {
         Text(message, color = Gray400, fontWeight = FontWeight.Medium)
     }
 }
-
-@Composable
-fun ErrorRetryView(message: String, onRetry: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(message, color = Gray500, fontSize = 14.sp)
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(
-            onClick = onRetry,
-            colors = ButtonDefaults.buttonColors(containerColor = Gray100, contentColor = Gray900),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Text("重试")
-        }
-    }
-}
-
 
 @Composable
 fun InfoColumn(label: String, value: String, isHighlight: Boolean = false) {
@@ -1745,6 +1704,47 @@ fun UsageLinearBar(label: String, usage: Double) {
     }
 }
 
+@Composable
+private fun TotalCountHeader(totalCount: Int) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp), // 留出一点边距
+        color = Color(0xFFF5F7FA), // 非常淡的灰蓝色背景，现代化风格
+        shape = RoundedCornerShape(8.dp), // 小圆角
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center // 居中显示
+        ) {
+            Icon(
+                imageVector = Icons.Default.DataUsage, // 或者 Icons.Default.List
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = Color(0xFF757575)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = buildAnnotatedString {
+                    append("共检索到 ")
+                    withStyle(
+                        style = SpanStyle(
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    ) {
+                        append("$totalCount")
+                    }
+                    append(" 条数据")
+                },
+                fontSize = 12.sp,
+                color = Color(0xFF757575)
+            )
+        }
+    }
+}
+
 
 /**
  * 分页数据展示逻辑
@@ -1761,7 +1761,8 @@ fun UsageLinearBar(label: String, usage: Double) {
 @Composable
 fun <T : Any> PagingList(
     lazyPagingItems: LazyPagingItems<T>,
-    forceLoading: Boolean = false, // 新增：用于拦截旧数据残留
+    totalCount: Int? = null,
+    forceLoading: Boolean = false,
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
     itemKey: ((T) -> Any)? = null,
     contentPadding: PaddingValues = PaddingValues(16.dp),
@@ -1772,6 +1773,15 @@ fun <T : Any> PagingList(
     val refreshState = lazyPagingItems.loadState.refresh
     val shouldShowFullLoading =
         forceLoading || (refreshState is LoadState.Loading && lazyPagingItems.itemCount == 0)
+
+    var showHeader by remember { mutableStateOf(false) }
+    LaunchedEffect(totalCount, refreshState) {
+        if (totalCount != null && totalCount > 0 && refreshState is LoadState.NotLoading) {
+            showHeader = true
+            delay(1500)
+            showHeader = false
+        }
+    }
     PullToRefreshBox(
         isRefreshing = refreshState is LoadState.Loading && !shouldShowFullLoading,
         onRefresh = { lazyPagingItems.refresh() },
@@ -1783,6 +1793,19 @@ fun <T : Any> PagingList(
                 verticalArrangement = verticalArrangement,
                 modifier = Modifier.fillMaxSize()
             ) {
+                item(key = "header_total_count") {
+                    AnimatedVisibility(
+                        visible = showHeader,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        if (totalCount != null) {
+                            Box(modifier = Modifier.padding(bottom = 4.dp)) {
+                                TotalCountHeader(totalCount = totalCount)
+                            }
+                        }
+                    }
+                }
 
                 items(
                     count = lazyPagingItems.itemCount,
@@ -1792,6 +1815,7 @@ fun <T : Any> PagingList(
                 ) { index ->
                     lazyPagingItems[index]?.let { itemContent(it) }
                 }
+
                 lazyPagingItems.apply {
                     when {
                         loadState.append is LoadState.Loading -> {
@@ -1799,7 +1823,8 @@ fun <T : Any> PagingList(
                                 Box(
                                     Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp), Alignment.Center
+                                        .padding(16.dp),
+                                    Alignment.Center
                                 ) {
                                     CircularProgressIndicator(
                                         Modifier.size(24.dp),
@@ -1812,15 +1837,16 @@ fun <T : Any> PagingList(
                         loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
                             item {
                                 Column(
-                                    Modifier
+                                    modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(16.dp),
-                                    Alignment.CenterHorizontally as Arrangement.Vertical
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text("加载失败", color = Color.Gray)
                                     Button(
                                         onClick = { retry() },
-                                        Modifier.padding(top = 8.dp)
+                                        modifier = Modifier.padding(top = 8.dp)
                                     ) { Text("重试") }
                                 }
                             }
@@ -1839,10 +1865,11 @@ fun <T : Any> PagingList(
                                 Box(
                                     Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp), Alignment.Center
+                                        .padding(16.dp),
+                                    Alignment.Center
                                 ) {
                                     Text(
-                                        "— 已经到底了 —",
+                                        "— 已加载全部 $itemCount 条数据 —",
                                         color = Color(0xFFCCCCCC),
                                         fontSize = 12.sp
                                     )
@@ -1853,7 +1880,220 @@ fun <T : Any> PagingList(
                 }
             }
         }
+    }
+}
 
+@Composable
+fun TimeFilterSegment(selectedType: Int, onTypeSelected: (Int) -> Unit) {
+    val options = listOf(0 to "最近活跃时间", 1 to "最近7天", 2 to "最近30天", 3 to "最近90天")
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFE8EAF6), RoundedCornerShape(12.dp))
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        options.forEach { (type, label) ->
+            val isSelected = selectedType == type
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isSelected) Color.White else Color.Transparent)
+                    .clickable { onTypeSelected(type) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) PrimaryBlue else Color.Gray
+                )
+            }
+        }
+    }
+}
 
+@Composable
+fun OfflineDeviceItem(
+    device: OfflineDevice,
+    onClick: () -> Unit = {}
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        shadowElevation = 2.dp,
+        border = BorderStroke(1.dp, CardBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(modifier = Modifier.weight(1f)) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFF5F7FA)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Devices,
+                            contentDescription = null,
+                            tint = Color(0xFF3D5AFE)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column {
+                        Text(
+                            text = device.deviceName,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = TextTitle,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = device.productName,
+                            fontSize = 12.sp,
+                            color = TextSecondary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    if (device.alarmType == 1) {
+                        StatusChip(
+                            text = "告警",
+                            color = AlarmRed,
+                            bgColor = AlarmBg,
+                            icon = Icons.Rounded.Warning
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val stateText = if (device.deviceState == 1) "已启用" else "已停用"
+                    val stateColor = if (device.deviceState == 1) SafeGreen else OfflineGray
+                    val stateBg = if (device.deviceState == 1) SafeBg else Color(0xFFF5F5F5)
+                    Text(
+                        text = stateText,
+                        fontSize = 11.sp,
+                        color = stateColor,
+                        modifier = Modifier
+                            .background(stateBg, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFEEEEEE))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // --- 第二行：具体信息 (网格布局或流式布局) ---
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // 序列号
+                InfoRowItem(
+                    icon = Icons.Default.QrCode,
+                    label = "SN:",
+                    value = device.serialNum
+                )
+                // 厂商信息
+                InfoRowItem(
+                    icon = Icons.Default.Apartment,
+                    label = "厂商:",
+                    value = device.productFactoryName
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // --- 底部：最后上线时间 (强调离线背景) ---
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFFFF8E1), RoundedCornerShape(6.dp)) // 淡黄色背景提醒注意
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccessTime,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = Color(0xFFFFA000)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "最后上线: ${device.lastActiveTime ?: "--"}",
+                    fontSize = 12.sp,
+                    color = Color(0xFFF57C00),
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+// 辅助组件：信息行
+@Composable
+fun InfoRowItem(icon: ImageVector, label: String, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = Color(0xFFB0BEC5)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            color = Color(0xFF90A4AE)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = value,
+            fontSize = 13.sp,
+            color = TextSecondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+// 辅助组件：状态胶囊
+@Composable
+fun StatusChip(text: String, color: Color, bgColor: Color, icon: ImageVector? = null) {
+    Row(
+        modifier = Modifier
+            .background(bgColor, RoundedCornerShape(50)) // 全圆角
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(12.dp),
+                tint = color
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+        }
+        Text(
+            text = text,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
     }
 }

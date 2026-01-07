@@ -50,3 +50,13 @@ val AccentOrange = Color(0xFFFE9738) // 高饱和度的提醒橙
 val SuccessGreen = Color(0xFF4CAF50) // 标准成功绿
 val SoftBackground = Color(0xFFF4F7FD) // 带一点点蓝调的底色
 val DividerColor = Color(0xFFE0E6F3) // 淡淡的分割线颜色
+
+
+// 定义颜色常量（建议放入 Theme 中）
+val AlarmRed = Color(0xFFFF5252)
+val AlarmBg = Color(0xFFFFEBEE)
+val SafeGreen = Color(0xFF4CAF50)
+val SafeBg = Color(0xFFE8F5E9)
+val OfflineGray = Color(0xFF9E9E9E)
+val CardBorder = Color(0xFFE0E0E0)
+val TextTitle = Color(0xFF212121)

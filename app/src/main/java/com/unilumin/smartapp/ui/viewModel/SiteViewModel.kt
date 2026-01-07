@@ -28,6 +28,10 @@ class SiteViewModel(
 
     private val siteService = retrofitClient.getService(SiteService::class.java)
 
+    //分页数据总数
+    private val _totalCount = MutableStateFlow<Int>(0)
+    val totalCount = _totalCount.asStateFlow()
+
     //道路信息
     private val _siteRoadInfo = MutableStateFlow<List<SiteRoadInfo>?>(null)
     val siteRoadInfo = _siteRoadInfo.asStateFlow()
@@ -108,6 +112,7 @@ class SiteViewModel(
                 rawResponse,
                 context
             )
-        return parseDataNewSuspend?.list ?: emptyList()
+        _totalCount.value = parseDataNewSuspend?.total!!
+        return parseDataNewSuspend.list
     }
 }

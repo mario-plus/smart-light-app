@@ -47,39 +47,39 @@ data class LightDevice(
     var productId: String,
     var productName: String? = null,
 
-    var gatewayName: String,
+    var gatewayName: String? = null,
     //会话状态 1-在线，0-离线
     @SerializedName(value = "state", alternate = ["networkState"]) var state: Int?,
     //设备状态（0停用 1启用）
     var deviceState: Int,
     //工作状态: 1告警 0正常
     var alarmType: Int,
-    var voltage: Double?,
-    var current: Double?,
-    var power: Double?,
-    var factor: Double?,
+    var voltage: Double? = null,
+    var current: Double? = null,
+    var power: Double? = null,
+    var factor: Double? = null,
     //亮度
-    var bright1: Int?,
+    var bright1: Int? = null,
     //色温
-    var bright2: Int?,
+    var bright2: Int? = null,
     //开关
-    var onOff: Int?,
+    var onOff: Int? = null,
     //回路信息
-    var loops: List<LoopInfo>?,
+    var loops: List<LoopInfo>? = null,
 
     //亮度
-    var brightness: String?,
+    var brightness: String? = null,
     //运行状态
-    var powerStatus: String?,
+    var powerStatus: String? = null,
     //音量
-    var volume: String?,
+    var volume: String? = null,
     //当前节目
-    var playingProgramName: String?,
+    var playingProgramName: String? = null,
     //分辨率
-    var widthHeighProgram: String?,
+    var widthHeighProgram: String? = null,
 
     //环境传感器数据
-    var envData: EnvData?
+    var envData: EnvData? = null
 )
 
 data class LoopInfo(
@@ -378,4 +378,21 @@ data class DeviceStatusAnalysis(
     val onlineSum: Int,
     val offlineRatio: Double,
     val onlineRatio: Double
+)
+
+
+//设备列表数据
+data class OfflineDevice(
+    val id: Long,
+    val deviceName: String,
+    val serialNum: String,
+    val productId: String,
+    val productTypeName: String,
+    val productName: String,
+    //设备状态（0停用 1启用）
+    val deviceState: Int,
+    //工作状态: 1告警 0正常
+    val alarmType: Int,
+    val productFactoryName: String,
+    val lastActiveTime: String
 )

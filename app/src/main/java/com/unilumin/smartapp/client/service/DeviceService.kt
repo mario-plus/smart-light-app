@@ -13,6 +13,7 @@ import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
+import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
 import com.unilumin.smartapp.client.data.SequenceTsl
@@ -138,8 +139,8 @@ interface DeviceService {
     fun offlineDeviceList(
         @Query("curPage") curPage: Int,
         @Query("pageSize") pageSize: Int,
-        @Query("timeType") timeType: Int,
-        @Query("primaryClass") primaryClass: Int
-    ): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+        @Query("timeType") timeType: Int?,
+        @Query("primaryClass") primaryClass: Int?
+    ): Call<NewResponseData<PageResponse<OfflineDevice>?>?>?
 
 }

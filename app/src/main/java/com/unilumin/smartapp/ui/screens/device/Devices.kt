@@ -82,8 +82,11 @@ fun DevicesScreen(
         }
     })
 
+
     //产品类型选择
     val activeFilter by deviceViewModel.currentFilter.collectAsState()
+
+    val totalCount = deviceViewModel.totalCount.collectAsState()
 
     //搜索条件
     val searchQuery by deviceViewModel.searchQuery.collectAsState()
@@ -99,24 +102,38 @@ fun DevicesScreen(
 
     LaunchedEffect(lazyPagingItems.loadState.refresh) {
         if (lazyPagingItems.loadState.refresh is LoadState.NotLoading ||
-            lazyPagingItems.loadState.refresh is LoadState.Error) {
+            lazyPagingItems.loadState.refresh is LoadState.Error
+        ) {
             lastSyncedParams = Pair(activeFilter, searchQuery)
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Gray100)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Gray100)
+    ) {
         Surface(
             color = White,
             shadowElevation = 2.dp,
-            modifier = Modifier.fillMaxWidth().zIndex(1f)
+            modifier = Modifier
+                .fillMaxWidth()
+                .zIndex(1f)
         ) {
             Column(modifier = Modifier.padding(bottom = 16.dp)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("设备列表", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Gray900)
+                    Text(
+                        "设备列表",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Gray900
+                    )
 
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Rounded.FilterList, null, tint = Gray500)
@@ -126,15 +143,32 @@ fun DevicesScreen(
                                 expanded = showMenu,
                                 onDismissRequest = { showMenu = false },
                                 modifier = Modifier
-                                    .shadow(12.dp, menuShape, spotColor = Color.Black.copy(alpha = 0.2f))
+                                    .shadow(
+                                        12.dp,
+                                        menuShape,
+                                        spotColor = Color.Black.copy(alpha = 0.2f)
+                                    )
                                     .clip(menuShape)
                                     .background(Color.White)
                                     .border(0.5.dp, Color(0xFFF0F0F0), menuShape)
                             ) {
                                 DeviceMenus.forEach { option ->
                                     DropdownMenuItem(
-                                        leadingIcon = { Icon(Icons.Default.Settings, null, Modifier.size(20.dp), Color.Gray) },
-                                        text = { Text(option.second, fontSize = 14.sp, fontWeight = FontWeight.Medium) },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.Settings,
+                                                null,
+                                                Modifier.size(20.dp),
+                                                Color.Gray
+                                            )
+                                        },
+                                        text = {
+                                            Text(
+                                                option.second,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        },
                                         onClick = { showMenu = false; onMenuClick() }
                                     )
                                 }
@@ -167,6 +201,7 @@ fun DevicesScreen(
         }
         // 分页列表展示
         PagingList(
+            totalCount = totalCount.value,
             lazyPagingItems = lazyPagingItems,
             forceLoading = isSwitching, // 传入切换状态
             modifier = Modifier.weight(1f),

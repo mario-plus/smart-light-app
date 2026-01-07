@@ -27,6 +27,7 @@ import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
+import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.PagingState
 import com.unilumin.smartapp.client.data.RequestParam
@@ -47,6 +48,11 @@ class DeviceViewModel(
     retrofitClient: RetrofitClient, val context: Context
 ) : ViewModel() {
 
+    //分页数据总数
+    private val _totalCount = MutableStateFlow<Int>(0)
+    val totalCount = _totalCount.asStateFlow()
+
+
     private val deviceService = retrofitClient.getService(DeviceService::class.java)
 
     //设备列表查询参数(产品类型)
@@ -59,6 +65,19 @@ class DeviceViewModel(
     val searchQuery = MutableStateFlow("")
     fun updateSearch(query: String) {
         searchQuery.value = query
+    }
+
+
+    //图表类型(最近活跃时间，最近七天，最近30天，最近90天)
+    val chartType = MutableStateFlow(0)
+    fun updateChartType(query: Int) {
+        chartType.value = query
+    }
+
+    //产品类型
+    val primaryClass = MutableStateFlow(0)
+    fun updatePrimary(type: Int) {
+        primaryClass.value = type
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -110,10 +129,11 @@ class DeviceViewModel(
     val deviceConfigList = _deviceConfigList.asStateFlow()
 
 
+    //离线图表数据
     private val _deviceStatusAnalysis = MutableStateFlow<DeviceStatusAnalysisResp?>(null)
     val deviceStatusAnalysisData = _deviceStatusAnalysis.asStateFlow()
 
-    //分页数据列表
+    //设备列表分页数据列表
     @OptIn(ExperimentalCoroutinesApi::class)
     val devicePagingFlow = combine(currentFilter, searchQuery) { filter, query ->
         Pair(filter, query)
@@ -134,6 +154,43 @@ class DeviceViewModel(
     }.cachedIn(viewModelScope)
 
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val offlineDeviceList = combine(chartType, primaryClass) { timeType, primaryClass ->
+        Pair(timeType, primaryClass)
+    }.flatMapLatest { (filter, query) ->
+        Pager(
+            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+            pagingSourceFactory = {
+                GenericPagingSource { page, pageSize ->
+                    getOfflineDeviceList(
+                        timeType = filter,
+                        curPage = page,
+                        pageSize = pageSize,
+                        primaryClass = query
+                    )
+
+                }
+            }).flow
+    }.cachedIn(viewModelScope)
+
+
+    suspend fun getOfflineDeviceList(
+        curPage: Int,
+        pageSize: Int,
+        timeType: Int,
+        primaryClass: Int
+    ): List<OfflineDevice> {
+        val tType = timeType.takeIf { it != 0 }
+        val pClass = primaryClass.takeIf { it != 0 }
+        var parseDataNewSuspend =
+            UniCallbackService<PageResponse<OfflineDevice>>().parseDataNewSuspend(
+                deviceService.offlineDeviceList(curPage, pageSize, tType, pClass), context
+            )
+        _totalCount.value = parseDataNewSuspend?.total!!
+        return parseDataNewSuspend.list
+    }
+
+
     //获取设备列表
     suspend fun getDeviceList(
         type: String,
@@ -143,29 +200,37 @@ class DeviceViewModel(
         context: Context
     ): List<LightDevice> {
         if (type == DeviceType.LAMP) {
-            return UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
-                deviceService.getLightCtlList(
-                    RequestParam(searchQuery, page, pageSize)
-                ), context
-            )?.list ?: emptyList()
+            var parseDataNewSuspend =
+                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+                    deviceService.getLightCtlList(
+                        RequestParam(searchQuery, page, pageSize)
+                    ), context
+                )
+            _totalCount.value = parseDataNewSuspend?.total!!
+            return parseDataNewSuspend.list
         } else if (type == DeviceType.CONCENTRATOR) {
-            return UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
-                deviceService.getGwCtlList(
-                    RequestParam(searchQuery, page, pageSize, 1)
-                ), context
-            )?.list ?: emptyList()
+            var parseDataNewSuspend =
+                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+                    deviceService.getGwCtlList(
+                        RequestParam(searchQuery, page, pageSize, 1)
+                    ), context
+                )
+            _totalCount.value = parseDataNewSuspend?.total!!
+            return parseDataNewSuspend.list
         } else if (type == DeviceType.LOOP) {
             var parseDataNewSuspend =
                 UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
                     deviceService.getLoopCtlList(searchQuery, page, pageSize, 1), context
                 )
-            return parseDataNewSuspend?.list ?: emptyList()
+            _totalCount.value = parseDataNewSuspend?.total!!
+            return parseDataNewSuspend.list
         } else if (type == DeviceType.PLAY_BOX) {
             var parseDataNewSuspend =
                 UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
                     deviceService.getLedList(searchQuery, page, pageSize, 12, 3), context
                 )
-            return parseDataNewSuspend?.list ?: emptyList()
+            _totalCount.value = parseDataNewSuspend?.total!!
+            return parseDataNewSuspend.list
         } else if (type == DeviceType.ENV) {
             var iotDevices =
                 getIotDevices(type, deviceService, searchQuery, page, pageSize, context)
@@ -201,7 +266,8 @@ class DeviceViewModel(
                     searchQuery, page, pageSize, DeviceType.getDeviceProductTypeId(type)
                 ), context
             )
-        return parseDataNewSuspend?.list ?: emptyList()
+        _totalCount.value = parseDataNewSuspend?.total!!
+        return parseDataNewSuspend.list
     }
 
 
@@ -376,7 +442,7 @@ class DeviceViewModel(
     }
 
     /**
-     * 历史数据
+     * 历史数据，暂不修改
      * */
     @RequiresApi(Build.VERSION_CODES.O)
     fun loadHistoryData(
