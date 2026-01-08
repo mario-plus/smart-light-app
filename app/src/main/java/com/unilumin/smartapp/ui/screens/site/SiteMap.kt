@@ -2,12 +2,18 @@ package com.unilumin.smartapp.ui.screens.site
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.Typeface
 import android.os.Bundle
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -17,9 +23,18 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.amap.api.maps.AMap
 import com.amap.api.maps.CameraUpdateFactory
 import com.amap.api.maps.MapView
-import com.amap.api.maps.model.*
+import com.amap.api.maps.model.BitmapDescriptorFactory
+import com.amap.api.maps.model.CameraPosition
+import com.amap.api.maps.model.LatLng
+import com.amap.api.maps.model.LatLngBounds
+import com.amap.api.maps.model.MarkerOptions
+import com.unilumin.smartapp.R
 import com.unilumin.smartapp.client.data.SiteInfo
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SiteMapView(
@@ -28,12 +43,8 @@ fun SiteMapView(
 ) {
     val context = LocalContext.current
     val mapView = remember { MapView(context) }
-
-    // 创建聚合管理器 (使用 remember 保持实例)
     val clusterManager = remember { SiteClusterManager(context, onSiteClick) }
-    val scope = rememberCoroutineScope()
 
-    // 生命周期管理
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, mapView) {
         val observer = LifecycleEventObserver { _, event ->
@@ -43,7 +54,7 @@ fun SiteMapView(
                 Lifecycle.Event.ON_PAUSE -> mapView.onPause()
                 Lifecycle.Event.ON_DESTROY -> {
                     mapView.onDestroy()
-                    clusterManager.destroy() // 清理资源
+                    clusterManager.destroy()
                 }
                 else -> {}
             }
@@ -56,7 +67,6 @@ fun SiteMapView(
         }
     }
 
-    // 数据更新监听
     LaunchedEffect(siteList) {
         if (siteList.isNotEmpty()) {
             clusterManager.updateData(mapView.map, siteList)
@@ -67,7 +77,6 @@ fun SiteMapView(
         factory = {
             mapView.apply {
                 map.uiSettings.isZoomControlsEnabled = false
-                map.uiSettings.isMyLocationButtonEnabled = true
                 map.uiSettings.isScaleControlsEnabled = true
                 clusterManager.attachToMap(map)
             }
@@ -76,31 +85,20 @@ fun SiteMapView(
     )
 }
 
-// ==========================================
-// 2. 聚合核心管理器 (逻辑核心)
-// ==========================================
-
 class SiteClusterManager(
     private val context: Context,
     private val onSiteClick: (SiteInfo) -> Unit
 ) {
     private var map: AMap? = null
     private var allSites: List<SiteInfo> = emptyList()
-
-    // 缓存当前屏幕显示的 Markers，用于差异化更新，防止闪烁
-    private val currentMarkers = mutableListOf<Marker>()
-
-    // 协程任务，用于防抖和后台计算
     private var calculateJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Main)
 
-    // 聚合半径 (dp)，在这个半径内的点会聚合在一起
-    private val clusterRadiusDp = 50f
+    private val baseClusterRadiusDp = 50f
+    private val showNameZoomLevel = 15.5f
 
     fun attachToMap(aMap: AMap) {
         this.map = aMap
-
-        // 监听相机移动结束（缩放或拖拽停止后重新计算）
         aMap.setOnCameraChangeListener(object : AMap.OnCameraChangeListener {
             override fun onCameraChange(position: CameraPosition?) {}
             override fun onCameraChangeFinish(position: CameraPosition?) {
@@ -108,27 +106,21 @@ class SiteClusterManager(
             }
         })
 
-        // 监听 Marker 点击
         aMap.setOnMarkerClickListener { marker ->
             val obj = marker.`object`
             if (obj is Cluster) {
-                // 点击聚合点 -> 放大地图
                 val builder = LatLngBounds.Builder()
                 obj.items.forEach { builder.include(LatLng(it.latitude ?: 0.0, it.longitude ?: 0.0)) }
                 try {
-                    map?.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 100))
+                    map?.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 150))
                 } catch (e: Exception) {
-                    // 只有1个点或异常时直接放大
                     map?.animateCamera(CameraUpdateFactory.zoomIn())
                 }
                 true
             } else if (obj is SiteInfo) {
-                // 点击单个设备 -> 回调详情
                 onSiteClick(obj)
-                true // 消费事件，阻止默认行为
-            } else {
-                false
-            }
+                true
+            } else false
         }
     }
 
@@ -137,47 +129,33 @@ class SiteClusterManager(
         this.allSites = list
         reCalculateClusters()
 
-        // 第一次加载数据时，自动缩放到包含所有点的范围
         if (list.isNotEmpty()) {
             val builder = LatLngBounds.Builder()
-            // 只取前100个点计算范围，防止5万个点计算太慢
-            list.take(100).forEach {
-                if((it.latitude ?: 0.0) != 0.0) builder.include(LatLng(it.latitude!!, it.longitude!!))
+            list.take(50).forEach {
+                if ((it.latitude ?: 0.0) != 0.0) builder.include(LatLng(it.latitude!!, it.longitude!!))
             }
             try {
                 aMap.moveCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 100))
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            } catch (e: Exception) {}
         }
     }
 
-    // 核心算法：重新计算聚合
     private fun reCalculateClusters() {
         val map = this.map ?: return
         if (allSites.isEmpty()) return
 
-        // 取消上一次计算，防止频繁拖拽导致的计算堆积
         calculateJob?.cancel()
-
-        calculateJob = scope.launch(Dispatchers.Default) { // 切换到后台线程计算
-
+        calculateJob = scope.launch(Dispatchers.Default) {
             val zoomLevel = map.cameraPosition.zoom
             val clusters = mutableListOf<Cluster>()
-
-            // 1. 过滤：只计算当前屏幕可见区域内的点 (性能优化关键)
-            // 注意：projection 需要在主线程获取，这里为了简单全量计算，
-            // 几万数据量下，简单的距离聚类全量计算通常在 100-200ms 内，可以接受。
-            // 如果数据量极大，建议先用 QuadTree 过滤范围。
+            val dynamicRadius = if (zoomLevel > showNameZoomLevel) 25f else baseClusterRadiusDp
 
             val visited = BooleanArray(allSites.size)
-            val distanceThreshold = dp2px(context, clusterRadiusDp) // 聚合像素距离
-            val scale = map.scalePerPixel // 当前缩放级别下，1像素代表多少米
+            val distanceThreshold = dp2px(context, dynamicRadius)
+            val scale = map.scalePerPixel
 
-            // 简单的贪婪算法聚合
             for (i in allSites.indices) {
                 if (visited[i]) continue
-
                 val seed = allSites[i]
                 val seedLat = seed.latitude ?: 0.0
                 val seedLng = seed.longitude ?: 0.0
@@ -187,24 +165,13 @@ class SiteClusterManager(
                 cluster.items.add(seed)
                 visited[i] = true
 
-                // 寻找邻居
                 for (j in i + 1 until allSites.size) {
                     if (visited[j]) continue
-
                     val candidate = allSites[j]
-                    val lat = candidate.latitude ?: 0.0
-                    val lng = candidate.longitude ?: 0.0
-
-                    // 计算两点间的直线距离 (米)
                     val distanceMeters = com.amap.api.maps.AMapUtils.calculateLineDistance(
-                        LatLng(seedLat, seedLng), LatLng(lat, lng)
+                        LatLng(seedLat, seedLng), LatLng(candidate.latitude ?: 0.0, candidate.longitude ?: 0.0)
                     )
-
-                    // 转换成屏幕像素距离：距离(米) / (米/像素)
-                    // 这种方式不需要依赖 Projection，可以在后台线程纯数学计算
-                    val distancePixels = distanceMeters / scale
-
-                    if (distancePixels < distanceThreshold) {
+                    if (distanceMeters / scale < distanceThreshold) {
                         cluster.items.add(candidate)
                         visited[j] = true
                     }
@@ -212,47 +179,41 @@ class SiteClusterManager(
                 clusters.add(cluster)
             }
 
-            // 计算完成，切回主线程渲染
             withContext(Dispatchers.Main) {
-                renderMarkers(clusters)
+                renderMarkers(clusters, zoomLevel)
             }
         }
     }
 
-    // 渲染 Marker
-    private fun renderMarkers(clusters: List<Cluster>) {
+    private fun renderMarkers(clusters: List<Cluster>, zoomLevel: Float) {
         val map = this.map ?: return
-
-        // 简单粗暴方案：清除所有重新添加
-        // 优化方案（进阶）：对比 ID 做增量更新，这里为了代码简洁直接 Clear
         map.clear()
-        currentMarkers.clear()
 
         clusters.forEach { cluster ->
             val size = cluster.items.size
             val latLng = LatLng(cluster.centerLat, cluster.centerLng)
-
             val markerOptions = MarkerOptions().position(latLng)
 
             if (size == 1) {
-                // 单个点：显示普通杆体图标
                 val site = cluster.items.first()
-                markerOptions
-                    .title(site.name)
-                    // .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_lamp_pole)) // 你的图标
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+                // 1. 生成图标 (缩放级别高时带名字)
+                val bitmap = createSiteIconWithText(
+                    context,
+                    site.name ?: "路灯",
+                    showName = zoomLevel >= showNameZoomLevel
+                )
+
+                markerOptions.icon(BitmapDescriptorFactory.fromBitmap(bitmap))
+                // 2. 关键：设置锚点在底部中心，这样灯杆的底座才会对准坐标点
+                markerOptions.anchor(0.5f, 1.0f)
 
                 val marker = map.addMarker(markerOptions)
-                marker.`object` = site // 绑定数据对象
+                marker.`object` = site
             } else {
-                // 聚合点：显示数字圆圈
                 val bitmap = createClusterBitmap(context, size)
-                markerOptions
-                    .icon(BitmapDescriptorFactory.fromBitmap(bitmap))
-                    .anchor(0.5f, 0.5f) // 居中
-
+                markerOptions.icon(BitmapDescriptorFactory.fromBitmap(bitmap)).anchor(0.5f, 0.5f)
                 val marker = map.addMarker(markerOptions)
-                marker.`object` = cluster // 绑定聚合对象
+                marker.`object` = cluster
             }
         }
     }
@@ -263,82 +224,86 @@ class SiteClusterManager(
     }
 }
 
-// ==========================================
-// 3. 辅助类与工具
-// ==========================================
+// ================= 辅助绘图工具 =================
 
-// 聚合数据实体
-data class Cluster(
-    val centerLat: Double,
-    val centerLng: Double,
-    val items: MutableList<SiteInfo> = mutableListOf()
-)
+/**
+ * 绘制灯杆图标并在下方显示文字
+ */
+fun createSiteIconWithText(context: Context, name: String, showName: Boolean): Bitmap {
+    // 1. 参数定义
+    val iconWidth = dp2px(context, 30f) // 灯杆宽度
+    val iconHeight = dp2px(context, 60f) // 灯杆高度
+    val textSize = dp2px(context, 11f).toFloat()
+    val padding = dp2px(context, 2f)
 
-// ==========================================
-// 美化版聚合图标绘制工具
-// ==========================================
-fun createClusterBitmap(context: Context, count: Int): Bitmap {
-    // 1. 配置参数
-    val radiusDp = 22f // 整体半径加大一点
-    val strokeWidthDp = 3f // 白色描边宽度
-    val radius = dp2px(context, radiusDp)
-    val strokeWidth = dp2px(context, strokeWidthDp).toFloat()
+    // 2. 加载图片并缩放
+    val originalBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.ic_smart_lamp_pole)
+    val scaledIcon = Bitmap.createScaledBitmap(originalBitmap, iconWidth, iconHeight, true)
 
-    // 预留阴影空间 (padding)
-    val shadowPadding = dp2px(context, 3f)
-    val totalSize = (radius + shadowPadding) * 2
-
-    val bitmap = Bitmap.createBitmap(totalSize, totalSize, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(bitmap)
-
-    // 2. 准备画笔
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-
-    // 3. 确定颜色 (洲明蓝配色体系)
-    val circleColor = when {
-        count < 10 -> Color.parseColor("#4B7BEC") // 亮蓝
-        count < 100 -> Color.parseColor("#F7B731") // 橙黄
-        else -> Color.parseColor("#EB3B5A") // 警示红
+    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#333333") // 文字深灰
+        this.textSize = textSize
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.DEFAULT_BOLD
+        // 白色发光边，防止文字遮挡地图线条
+        setShadowLayer(3f, 0f, 0f, Color.WHITE)
     }
 
-    // 中心点坐标
-    val centerX = totalSize / 2f
-    val centerY = totalSize / 2f
-    // 实际圆的半径 (减去阴影和描边的一半)
-    val drawRadius = radius - shadowPadding
+    // 3. 计算画布大小
+    val bounds = Rect()
+    if (showName) textPaint.getTextBounds(name, 0, name.length, bounds)
 
-    // 4. 绘制阴影 (画在最底层)
-    paint.color = circleColor
-    paint.setShadowLayer(dp2px(context, 4f).toFloat(), 0f, dp2px(context, 2f).toFloat(), Color.parseColor("#60000000"))
-    // 需要关闭硬件加速阴影才生效，或者绘制一个透明圆带阴影
-    canvas.drawCircle(centerX, centerY, drawRadius.toFloat(), paint)
-    paint.clearShadowLayer()
+    val canvasWidth = if (showName) maxOf(iconWidth, bounds.width() + 20) else iconWidth
+    val canvasHeight = if (showName) iconHeight + padding + bounds.height() + 10 else iconHeight
 
-    // 5. 绘制白色描边 (外圈)
+    val bitmap = Bitmap.createBitmap(canvasWidth, canvasHeight, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+
+    // 4. 绘制图片 (水平居中)
+    val iconX = (canvasWidth - iconWidth) / 2f
+    canvas.drawBitmap(scaledIcon, iconX, 0f, null)
+
+    // 5. 绘制文字 (在图片下方)
+    if (showName) {
+        val textX = canvasWidth / 2f
+        val textY = iconHeight + padding + bounds.height()
+        canvas.drawText(name, textX, textY.toFloat(), textPaint)
+    }
+
+    return bitmap
+}
+
+/**
+ * 绘制聚合圆圈
+ */
+fun createClusterBitmap(context: Context, count: Int): Bitmap {
+    val radius = dp2px(context, 22f)
+    val bitmap = Bitmap.createBitmap(radius * 2, radius * 2, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    // 渐变色
+    val color = when {
+        count < 10 -> Color.parseColor("#4B7BEC")
+        count < 100 -> Color.parseColor("#F7B731")
+        else -> Color.parseColor("#EB3B5A")
+    }
+
+    paint.color = color
+    canvas.drawCircle(radius.toFloat(), radius.toFloat(), radius.toFloat(), paint)
+
     paint.color = Color.WHITE
     paint.style = Paint.Style.STROKE
-    paint.strokeWidth = strokeWidth
-    canvas.drawCircle(centerX, centerY, drawRadius.toFloat(), paint)
+    paint.strokeWidth = dp2px(context, 2f).toFloat()
+    canvas.drawCircle(radius.toFloat(), radius.toFloat(), radius - 2f, paint)
 
-    // 6. 绘制实心圆 (内圈)
     paint.style = Paint.Style.FILL
-    paint.color = circleColor
-    // 半径减去描边宽度的一半，防止重叠锯齿
-    canvas.drawCircle(centerX, centerY, drawRadius - strokeWidth / 2, paint)
-
-    // 7. 绘制文字
-    textPaint.color = Color.WHITE
-    textPaint.textSize = dp2px(context, 13f).toFloat()
-    textPaint.typeface = android.graphics.Typeface.DEFAULT_BOLD
-    textPaint.textAlign = Paint.Align.CENTER
-
-    val fontMetrics = textPaint.fontMetrics
-    // 文字垂直居中计算公式
-    val baseline = centerY - (fontMetrics.bottom + fontMetrics.top) / 2
-
+    paint.textSize = dp2px(context, 12f).toFloat()
+    paint.textAlign = Paint.Align.CENTER
+    paint.typeface = Typeface.DEFAULT_BOLD
     val text = if (count > 999) "999+" else count.toString()
-    canvas.drawText(text, centerX, baseline, textPaint)
+    val baseline = radius - (paint.fontMetrics.bottom + paint.fontMetrics.top) / 2
+    canvas.drawText(text, radius.toFloat(), baseline, paint)
 
     return bitmap
 }
@@ -347,3 +312,9 @@ fun dp2px(context: Context, dpValue: Float): Int {
     val scale = context.resources.displayMetrics.density
     return (dpValue * scale + 0.5f).toInt()
 }
+
+data class Cluster(
+    val centerLat: Double,
+    val centerLng: Double,
+    val items: MutableList<SiteInfo> = mutableListOf()
+)
