@@ -356,7 +356,20 @@ fun BottomNavBar(navController: NavController) {
         }
     }
 }
+@Composable
 
+fun InfoLabelValue(label: String, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(text = "$label: ", fontSize = 12.sp, color = Gray400)
+        Text(
+            text = value,
+            fontSize = 12.sp,
+            color = Gray500,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
 
 @Composable
 fun EmptyDataView(message: String) {

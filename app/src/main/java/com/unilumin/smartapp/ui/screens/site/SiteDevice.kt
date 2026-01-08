@@ -32,7 +32,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unilumin.smartapp.client.data.SiteDevice
-import com.unilumin.smartapp.ui.theme.*
+import com.unilumin.smartapp.ui.components.InfoLabelValue
+import com.unilumin.smartapp.ui.theme.Amber600
+import com.unilumin.smartapp.ui.theme.Blue600
+import com.unilumin.smartapp.ui.theme.Gray100
+import com.unilumin.smartapp.ui.theme.Gray400
+import com.unilumin.smartapp.ui.theme.Gray50
+import com.unilumin.smartapp.ui.theme.Gray500
+import com.unilumin.smartapp.ui.theme.Gray600
+import com.unilumin.smartapp.ui.theme.Gray900
+import com.unilumin.smartapp.ui.theme.Green50
+import com.unilumin.smartapp.ui.theme.Green500
+import com.unilumin.smartapp.ui.theme.Red500
 
 
 @Composable
