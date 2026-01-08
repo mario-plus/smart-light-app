@@ -167,9 +167,13 @@ data class SiteDevice(
     val orderId: Int,
     val productTypeId: Int,
     val productTypeName: String,
+    //在线/离线
     val state: Int,
+    //设备状态（0停用 1启用）
     val deviceState: Int,
+
     val deviceStateName: String,
+    //工作状态: 1告警 0正常
     val alarmType: Int
 )
 

@@ -56,6 +56,7 @@ import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
@@ -2119,4 +2120,81 @@ fun StatusChip(text: String, color: Color, bgColor: Color, icon: ImageVector? = 
             color = color
         )
     }
+}
+
+@Composable
+fun DeviceStatusRow(
+    isDisable: Boolean,
+    hasAlarm: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(1f), // 占据一半宽度，保证对齐
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("可用状态: ", fontSize = 12.sp, color = Gray400)
+            Spacer(modifier = Modifier.width(4.dp))
+
+            if (isDisable) {
+                StatusIconText(
+                    isAbnormal = true,
+                    text = "禁用"
+                )
+            } else {
+                StatusIconText(
+                    isAbnormal = false,
+                    text = "启用"
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier.weight(1f), // 占据另一半宽度
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("工作状态: ", fontSize = 12.sp, color = Gray400)
+            Spacer(modifier = Modifier.width(4.dp))
+
+            if (hasAlarm) {
+                StatusIconText(
+                    isAbnormal = true,
+                    text = "异常"
+                )
+            } else {
+                StatusIconText(
+                    isAbnormal = false,
+                    text = "正常"
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 内部辅助组件：统一图标和文字的样式
+ */
+@Composable
+private fun StatusIconText(
+    isAbnormal: Boolean,
+    text: String
+) {
+    val color = if (isAbnormal) Red500 else Green500
+    val icon = if (isAbnormal) Icons.Rounded.Warning else Icons.Rounded.CheckCircle
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        tint = color,
+        modifier = Modifier.size(14.dp)
+    )
+    Spacer(modifier = Modifier.width(2.dp))
+    Text(
+        text = text,
+        fontSize = 12.sp,
+        color = color,
+        fontWeight = if (isAbnormal) FontWeight.Bold else FontWeight.Normal
+    )
 }

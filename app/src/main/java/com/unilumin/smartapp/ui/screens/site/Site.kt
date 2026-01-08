@@ -112,7 +112,6 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                 isMapView -> "站点地图"
                 else -> "站点管理"
             }
-            // 只要不是在最外层列表，都显示返回按钮
             val showBack = isMapView || selectedSiteInfo != null
 
             SitesTopBar(
@@ -134,12 +133,8 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // ================== Layer 1: 底层内容 (地图 OR 列表) ==================
-            // 核心逻辑：如果是地图模式，让 SiteMapView 始终处于 Composition 中
-            // 即使被上面的 Detail 盖住，也不要移除它，这样才能保持状态
 
             if (isMapView) {
-                // 这里获取数据快照给地图
                 val currentItems = pagingItems.itemSnapshotList.items
                 SiteMapView(
                     siteList = currentItems,
@@ -148,9 +143,6 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                     }
                 )
             }
-
-            // 列表模式：只有在不是地图模式，且没有选中站点详情时才显示
-            // (列表模式下进入详情，列表可以被销毁或隐藏，不影响状态，因为列表恢复成本低，且Paging库有缓存)
             if (!isMapView && selectedSiteInfo == null) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     // 搜索栏放在这里，只在列表/地图主页显示
@@ -194,10 +186,6 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                     }
                 }
             } else if (isMapView && selectedSiteInfo == null) {
-                // 地图模式下的搜索栏浮层
-                // 必须重复写一下或者抽离出来，因为上面的Column在selectedSiteInfo!=null时会隐藏
-                // 但在地图模式下，我们希望搜索栏也随着进入详情而隐藏，或者一直浮在上面？
-                // 这里选择：进入详情后，搜索栏隐藏，让位给详情内容
                 Box(
                     modifier = Modifier.padding(
                         top = 16.dp, start = 16.dp, end = 16.dp, bottom = 8.dp
@@ -277,6 +265,7 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                                         key = { index -> devices[index].id }
                                     ) { index ->
                                         val item = devices[index]
+                                        //TODO 此处做处理
                                         SiteDeviceCardItem(
                                             device = item,
                                             onClick = { selectedDevice = item } // 进入三级详情
@@ -286,7 +275,10 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                             }
                         } else {
                             // --- 显示单个设备详情 (Detail View) ---
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
                                         text = device.productName,
