@@ -323,7 +323,7 @@ class DeviceViewModel(
      * 离线报表统计信息
      * */
     fun deviceStatusAnalysis() {
-        viewModelScope.launch {
+        launchWithLoading {
             try {
                 var parseDataNewSuspend =
                     UniCallbackService<DeviceStatusAnalysisResp>().parseDataNewSuspend(

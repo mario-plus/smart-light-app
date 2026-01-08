@@ -329,9 +329,19 @@ fun BottomNavBar(navController: NavController) {
                 onClick = {
                     if (currentRoute != route) {
                         navController.navigate(route) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+//                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+//                            launchSingleTop = true
+//                            restoreState = true
+                            navController.navigate(route) {
+                                // 1. 弹出到起始目的地，并关闭 saveState 避免缓存子页堆栈
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = false
+                                }
+                                // 2. 确保栈中只有一个目的地实例
+                                launchSingleTop = true
+                                // 3. 关键：不恢复之前的状态（子页面状态会被销毁，回到根页面）
+                                restoreState = false
+                            }
                         }
                     }
                 },
