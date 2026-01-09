@@ -400,3 +400,22 @@ data class OfflineDevice(
     val productFactoryName: String,
     val lastActiveTime: String
 )
+
+data class PoleMapPointRes(
+    val lat: String,
+    val lng: String,
+    val count: Int,
+    val siteId: String,
+    val siteName: String,
+    val onOff: Int
+)
+
+data class PoleMapPointReq(
+    val precision: Int,
+    val minLng: String,
+    val maxLng: String,
+    val minLat: String,
+    val maxLat: String,
+    val projectRoadId: Long?,
+    val keyword: String?
+)

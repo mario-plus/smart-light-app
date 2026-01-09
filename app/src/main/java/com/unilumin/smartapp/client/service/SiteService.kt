@@ -3,11 +3,14 @@ package com.unilumin.smartapp.client.service
 import com.unilumin.smartapp.client.constant.RequestPathKey
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
+import com.unilumin.smartapp.client.data.PoleMapPointReq
+import com.unilumin.smartapp.client.data.PoleMapPointRes
 import com.unilumin.smartapp.client.data.SiteInfo
-
 import com.unilumin.smartapp.client.data.SiteRoadInfo
 import retrofit2.Call
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Query
 
 /**
@@ -28,4 +31,8 @@ interface SiteService {
         @Query("tagCondition") tagCondition: String,
         @Query("roadIdList") roadIdList: List<Long>? = null
     ): Call<NewResponseData<PageResponse<SiteInfo>?>?>?
+
+
+    @POST(RequestPathKey.LEY_SITE_MAP_POINT)
+    fun getSiteAggPoint(@Body req: PoleMapPointReq): Call<NewResponseData<List<PoleMapPointRes>?>?>?
 }
