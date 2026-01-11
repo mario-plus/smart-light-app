@@ -199,57 +199,58 @@ class DeviceViewModel(
         pageSize: Int,
         context: Context
     ): List<LightDevice> {
-        if (type == DeviceType.LAMP) {
-            var parseDataNewSuspend =
-                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
-                    deviceService.getLightCtlList(
-                        RequestParam(searchQuery, page, pageSize)
-                    ), context
-                )
-            _totalCount.value = parseDataNewSuspend?.total!!
-            return parseDataNewSuspend.list
-        } else if (type == DeviceType.CONCENTRATOR) {
-            var parseDataNewSuspend =
-                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
-                    deviceService.getGwCtlList(
-                        RequestParam(searchQuery, page, pageSize, 1)
-                    ), context
-                )
-            _totalCount.value = parseDataNewSuspend?.total!!
-            return parseDataNewSuspend.list
-        } else if (type == DeviceType.LOOP) {
-            var parseDataNewSuspend =
-                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
-                    deviceService.getLoopCtlList(searchQuery, page, pageSize, 1), context
-                )
-            _totalCount.value = parseDataNewSuspend?.total!!
-            return parseDataNewSuspend.list
-        } else if (type == DeviceType.PLAY_BOX) {
-            var parseDataNewSuspend =
-                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
-                    deviceService.getLedList(searchQuery, page, pageSize, 12, 3), context
-                )
-            _totalCount.value = parseDataNewSuspend?.total!!
-            return parseDataNewSuspend.list
-        } else if (type == DeviceType.ENV) {
-            var iotDevices =
-                getIotDevices(type, deviceService, searchQuery, page, pageSize, context)
-            val deviceIds = iotDevices.map { it.id }
-            //填充环境传感器设备数据
-            val envDataMap = if (deviceIds.isNotEmpty()) {
-                UniCallbackService<Map<Long, EnvData>>().parseDataNewSuspend(
-                    deviceService.getEnvDataList(EnvDataReq(deviceIds)), context
-                ) ?: emptyMap()
-            } else {
-                emptyMap()
-            }
-            iotDevices.forEach { device ->
-                val envData = envDataMap[device.id]
-                device.envData = envData
-            }
-            return iotDevices
-        }
-        return emptyList()
+        return getIotDevices(type, deviceService, searchQuery, page, pageSize, context)
+//        if (type == DeviceType.LAMP) {
+//            var parseDataNewSuspend =
+//                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+//                    deviceService.getLightCtlList(
+//                        RequestParam(searchQuery, page, pageSize)
+//                    ), context
+//                )
+//            _totalCount.value = parseDataNewSuspend?.total!!
+//            return parseDataNewSuspend.list
+//        } else if (type == DeviceType.CONCENTRATOR) {
+//            var parseDataNewSuspend =
+//                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+//                    deviceService.getGwCtlList(
+//                        RequestParam(searchQuery, page, pageSize, 1)
+//                    ), context
+//                )
+//            _totalCount.value = parseDataNewSuspend?.total!!
+//            return parseDataNewSuspend.list
+//        } else if (type == DeviceType.LOOP) {
+//            var parseDataNewSuspend =
+//                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+//                    deviceService.getLoopCtlList(searchQuery, page, pageSize, 1), context
+//                )
+//            _totalCount.value = parseDataNewSuspend?.total!!
+//            return parseDataNewSuspend.list
+//        } else if (type == DeviceType.PLAY_BOX) {
+//            var parseDataNewSuspend =
+//                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+//                    deviceService.getLedList(searchQuery, page, pageSize, 12, 3), context
+//                )
+//            _totalCount.value = parseDataNewSuspend?.total!!
+//            return parseDataNewSuspend.list
+//        } else if (type == DeviceType.ENV) {
+//            var iotDevices =
+//                getIotDevices(type, deviceService, searchQuery, page, pageSize, context)
+//            val deviceIds = iotDevices.map { it.id }
+//            //填充环境传感器设备数据
+//            val envDataMap = if (deviceIds.isNotEmpty()) {
+//                UniCallbackService<Map<Long, EnvData>>().parseDataNewSuspend(
+//                    deviceService.getEnvDataList(EnvDataReq(deviceIds)), context
+//                ) ?: emptyMap()
+//            } else {
+//                emptyMap()
+//            }
+//            iotDevices.forEach { device ->
+//                val envData = envDataMap[device.id]
+//                device.envData = envData
+//            }
+//            return iotDevices
+//        }
+//        return emptyList()
     }
 
     suspend fun getIotDevices(

@@ -77,6 +77,9 @@ object DeviceType {
 
     fun getDeviceProductTypeId(type: String): Int {
         return when (type) {
+            LAMP -> 1
+            LOOP -> 56
+            CONCENTRATOR -> 25
             ENV -> 7
             CAMERA -> 2
             else -> 0

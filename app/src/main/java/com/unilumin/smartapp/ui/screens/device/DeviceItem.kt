@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,6 +27,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,6 +37,7 @@ import com.unilumin.smartapp.client.constant.DeviceType
 import com.unilumin.smartapp.client.constant.DeviceType.getDeviceIcon
 import com.unilumin.smartapp.client.data.LightDevice
 import com.unilumin.smartapp.ui.components.DeviceStatus
+import com.unilumin.smartapp.ui.components.DeviceStatusRow
 import com.unilumin.smartapp.ui.theme.Blue50
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray100
@@ -53,6 +57,8 @@ fun DeviceCardItem(
     type: String,
     onDetailClick: (LightDevice) -> Unit
 ) {
+
+
     // 状态颜色逻辑
     val (iconBg, iconTint) = when (lightDevice.state) {
         1 -> Blue50 to Blue600
@@ -68,28 +74,32 @@ fun DeviceCardItem(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            DeviceHeader(lightDevice, type, iconBg, iconTint)
-            when (type) {
-                DeviceType.LAMP -> LampFeatureContent(
-                    deviceViewModel,
-                    lightDevice,
-                    onDetailClick
-                )
+            DeviceHeader(lightDevice, type, iconBg, iconTint, onClick = {
+                onDetailClick(lightDevice)
+            })
 
-                DeviceType.LOOP -> LoopFeatureContent(
-                    deviceViewModel,
-                    lightDevice,
-                    onDetailClick
-                )
 
-                DeviceType.PLAY_BOX -> PlayboxFeatureContent(
-                    deviceViewModel,
-                    lightDevice,
-                    onDetailClick
-                )
-
-                DeviceType.ENV -> EnvFeatureContent(deviceViewModel, lightDevice, onDetailClick)
-            }
+//            when (type) {
+//                DeviceType.LAMP -> LampFeatureContent(
+//                    deviceViewModel,
+//                    lightDevice,
+//                    onDetailClick
+//                )
+//
+//                DeviceType.LOOP -> LoopFeatureContent(
+//                    deviceViewModel,
+//                    lightDevice,
+//                    onDetailClick
+//                )
+//
+//                DeviceType.PLAY_BOX -> PlayboxFeatureContent(
+//                    deviceViewModel,
+//                    lightDevice,
+//                    onDetailClick
+//                )
+//
+//                DeviceType.ENV -> EnvFeatureContent(deviceViewModel, lightDevice, onDetailClick)
+//            }
         }
     }
 }
@@ -97,32 +107,38 @@ fun DeviceCardItem(
 /**
  * 通用头部：图标、名称、SN、状态
  */
+
 @Composable
 fun DeviceHeader(
     lightDevice: LightDevice,
     type: String,
-    iconBg: androidx.compose.ui.graphics.Color,
-    iconTint: androidx.compose.ui.graphics.Color
+    iconBg: Color,
+    iconTint: Color,
+    onClick: () -> Unit = {} // 1. 新增点击回调，默认为空以防预览报错
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick) // 2. 点击事件：放在 padding 之前，让水波纹充满整个条目
+            .padding(vertical = 8.dp, horizontal = 4.dp), // 稍微增加一点内边距，视觉更舒适
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top
     ) {
-        // 左侧内容
+        // --- 左侧主要内容 ---
         Row(
+            modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f)
         ) {
-            // 图标
+            // 1. 设备图标容器
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = iconBg,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(52.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        getDeviceIcon(type), // 假设此函数在外部定义
+                        getDeviceIcon(type),
                         null,
                         tint = iconTint,
                         modifier = Modifier.size(24.dp)
@@ -130,29 +146,52 @@ fun DeviceHeader(
                 }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
-            // 文字信息
-            Column(modifier = Modifier.weight(1f)) {
+            // 2. 文字信息区域
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp) // 稍微调小行间距，让4行内容紧凑一些
+            ) {
+                // 第一行：设备名称
                 Text(
                     text = lightDevice.name,
-                    fontSize = 16.sp,
+                    fontSize = 16.sp, // 17sp 稍微有点大，16sp 更精致
                     fontWeight = FontWeight.Bold,
-                    color = Gray900,
+                    color = Color(0xFF1F2937),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                // 第二行：序列码
                 Text(
-                    text = "SN:${lightDevice.serialNum}",
+                    text = "序列码: ${lightDevice.serialNum}", // 增加空格
                     fontSize = 12.sp,
-                    color = Gray400,
-                    lineHeight = 16.sp
+                    color = Color(0xFF9CA3AF),
+                    maxLines = 1
                 )
+                // 第三行：产品名称
+                Text(
+                    text = "产品名称: ${lightDevice.productName}", // 增加空格
+                    fontSize = 12.sp,
+                    color = Color(0xFF9CA3AF),
+                    maxLines = 1
+                )
+
+                // 第四行：告警/状态组件
+                Box(modifier = Modifier.padding(top = 4.dp)) {
+                    DeviceStatusRow(
+                        isDisable = lightDevice.deviceState == 0,
+                        hasAlarm = lightDevice.alarmType == 1
+                    )
+                }
             }
         }
-        // 右侧：状态
+
+        // --- 右侧：在线/离线 大状态指示 ---
         Spacer(modifier = Modifier.width(8.dp))
+
+        // 注意：如果 DeviceStatus 内部也有点击事件，可能会产生冲突
+        // 如果 DeviceStatus 只是展示，没有问题。
         DeviceStatus(lightDevice.state)
     }
 }
@@ -188,4 +227,25 @@ fun DetailInfoScrollRow(content: @Composable RowScope.() -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         content = content
     )
+}
+
+@Composable
+fun ProductTypeTag(typeName: String) {
+    Surface(
+        color = Color(0xFFF3F4F6), // 浅灰色背景 (Gray100)
+        shape = RoundedCornerShape(6.dp),
+        modifier = Modifier.height(20.dp) // 固定高度，整齐
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.padding(horizontal = 6.dp)
+        ) {
+            Text(
+                text = typeName,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF4B5563) // Gray600
+            )
+        }
+    }
 }
