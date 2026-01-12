@@ -59,7 +59,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.client.constant.DeviceType.menuItems
+import com.unilumin.smartapp.client.constant.DeviceConstant.menuItems
 import com.unilumin.smartapp.ui.components.ProfileMenuItem
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Emerald500

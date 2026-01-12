@@ -32,7 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unilumin.smartapp.client.constant.DeviceType.getDeviceIcon
+import com.unilumin.smartapp.client.constant.DeviceConstant.getDeviceIcon
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.DeviceStatusRow

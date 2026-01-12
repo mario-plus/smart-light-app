@@ -13,7 +13,7 @@ import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.unilumin.smartapp.mock.ServerConfig
 
-object DeviceType {
+object DeviceConstant {
     //单灯
     const val LAMP = "lamp"
 

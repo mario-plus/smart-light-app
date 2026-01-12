@@ -26,7 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import com.amap.api.maps.MapsInitializer
 import com.unilumin.smartapp.auth.TokenManagerFactory
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.client.constant.DeviceType
+import com.unilumin.smartapp.client.constant.DeviceConstant
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.mock.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
@@ -130,7 +130,7 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                 isLoggedIn = false
                                 sessionKey++
                             }, onItemClick = { name, profileViewModel ->
-                                if (name == DeviceType.SYSTEM_INFO) {
+                                if (name == DeviceConstant.SYSTEM_INFO) {
                                     navController.navigate("systemInfo")
                                 }
                             })

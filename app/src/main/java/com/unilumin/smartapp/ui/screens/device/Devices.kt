@@ -51,8 +51,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.client.constant.DeviceType
-import com.unilumin.smartapp.client.constant.DeviceType.DeviceMenus
+import com.unilumin.smartapp.client.constant.DeviceConstant
+import com.unilumin.smartapp.client.constant.DeviceConstant.DeviceMenus
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.ui.components.FilterChip
 import com.unilumin.smartapp.ui.components.PagingList
@@ -189,7 +189,7 @@ fun DevicesScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(DeviceType.DataList) { (id, label) ->
+                    items(DeviceConstant.DataList) { (id, label) ->
                         FilterChip(
                             label = label,
                             isActive = activeFilter == id,

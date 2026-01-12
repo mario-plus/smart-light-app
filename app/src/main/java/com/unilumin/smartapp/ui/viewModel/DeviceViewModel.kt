@@ -13,7 +13,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
-import com.unilumin.smartapp.client.constant.DeviceType
+import com.unilumin.smartapp.client.constant.DeviceConstant
 import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceModelData
@@ -53,7 +53,7 @@ class DeviceViewModel(
     private val deviceService = retrofitClient.getService(DeviceService::class.java)
 
     //设备列表查询参数(产品类型)
-    val currentFilter = MutableStateFlow(DeviceType.LAMP)
+    val currentFilter = MutableStateFlow(DeviceConstant.LAMP)
     fun updateFilter(type: String) {
         currentFilter.value = type
     }
@@ -261,7 +261,7 @@ class DeviceViewModel(
         var parseDataNewSuspend =
             UniCallbackService<PageResponse<IotDevice>>().parseDataNewSuspend(
                 deviceService.getDeviceList(
-                    searchQuery, page, pageSize, DeviceType.getDeviceProductTypeId(type)
+                    searchQuery, page, pageSize, DeviceConstant.getDeviceProductTypeId(type)
                 ), context
             )
         _totalCount.value = parseDataNewSuspend?.total!!
