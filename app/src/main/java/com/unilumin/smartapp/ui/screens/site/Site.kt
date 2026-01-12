@@ -85,18 +85,21 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
         factory = ViewModelFactory { SiteViewModel(retrofitClient, context) }
     )
 
-    // Data & States
+    // Data Sources
     val mapPoints by siteViewModel.mapPoints.collectAsState()
     val isMapLoading by siteViewModel.isMapLoading.collectAsState()
     val totalCount by siteViewModel.totalCount.collectAsState()
     val pagingItems = siteViewModel.sitePagingFlow.collectAsLazyPagingItems()
     val siteRoadInfo by siteViewModel.siteRoadInfo.collectAsState()
     val searchKeyword by siteViewModel.searchKeyword.collectAsState()
+
+    // States
+    var isMapView by remember { mutableStateOf(false) }
     val selectedSiteInfo by siteViewModel.selectedSiteInfo.collectAsState()
+    var selectedDevice by remember { mutableStateOf<SiteDevice?>(null) }
     val isDetailLoading by siteViewModel.isDetailLoading.collectAsState()
 
-    var isMapView by remember { mutableStateOf(false) }
-    var selectedDevice by remember { mutableStateOf<SiteDevice?>(null) }
+    // Filters
     var selectedRoad by remember { mutableStateOf<SiteRoadInfo?>(null) }
     var isRoadDropdownExpanded by remember { mutableStateOf(false) }
 
@@ -133,13 +136,10 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
 
             // ================== 1. 地图层 ==================
             if (isMapView) {
-                // 监听 ViewModel 发出的相机移动指令 (用于自动跳转最密区域)
-                // 注意：这里需要把事件传递给 Container 内部的 MapView，
-                // 由于 Compose 不方便直接持有 View 引用，我们通过 SiteMapViewContainer 内部处理
-
+                // 将 ViewModel 传入以便内部监听 cameraEffect
                 SiteMapViewContainer(
                     mapPoints = mapPoints,
-                    viewModel = siteViewModel, // 传入 VM 以便内部监听事件
+                    viewModel = siteViewModel,
                     onCameraChange = { minLng, maxLng, minLat, maxLat, zoom ->
                         siteViewModel.onMapCameraChange(minLng, maxLng, minLat, maxLat, zoom)
                     },
@@ -163,7 +163,7 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                 }
             }
 
-            // ================== 2. 列表层 ==================
+            // ================== 2. 列表层 (代码保持不变) ==================
             if (!isMapView && selectedSiteInfo == null) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     Box(modifier = Modifier.padding(16.dp, 16.dp, 16.dp, 8.dp)) {
@@ -200,8 +200,7 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                         )
                     }
                 }
-            }
-            else if (isMapView && selectedSiteInfo == null) {
+            } else if (isMapView && selectedSiteInfo == null) {
                 FilterSectionWrapper(padding = PaddingValues(16.dp)) {
                     SearchAndFilterSection(
                         selectedRoad = selectedRoad,
@@ -223,7 +222,7 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                 }
             }
 
-            // ================== 3. 详情弹窗 ==================
+            // ================== 3. 详情弹窗 (代码保持不变) ==================
             AnimatedVisibility(
                 visible = selectedSiteInfo != null,
                 enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
@@ -238,7 +237,6 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                     } else if (selectedSiteInfo != null) {
                         AnimatedContent(targetState = selectedDevice, label = "DetailNav") { device ->
                             if (device == null) {
-                                // 复用之前的列表代码
                                 val devices = selectedSiteInfo?.deviceList ?: emptyList()
                                 if (devices.isEmpty()) {
                                     EmptyDataView(message = "该站点下暂无设备")
@@ -268,11 +266,13 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
     }
 }
 
-// 封装地图组件
+/**
+ * 封装地图组件
+ */
 @Composable
 fun SiteMapViewContainer(
     mapPoints: List<PoleMapPointRes>,
-    viewModel: SiteViewModel, // 传入 VM 监听事件
+    viewModel: SiteViewModel, // 传入 VM 用于接收相机指令
     onCameraChange: (Double, Double, Double, Double, Float) -> Unit,
     onPoleClick: (PoleMapPointRes) -> Unit
 ) {
@@ -280,6 +280,7 @@ fun SiteMapViewContainer(
     val mapView = remember { MapView(context) }
     val renderer = remember { SiteMapRenderer(context, onPoleClick) }
 
+    // 生命周期管理
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, mapView) {
         val observer = LifecycleEventObserver { _, event ->
@@ -298,14 +299,15 @@ fun SiteMapViewContainer(
         }
     }
 
-    // 监听数据变化渲染
+    // 渲染数据
     LaunchedEffect(mapPoints) {
         renderer.render(mapPoints)
     }
 
-    // 监听 ViewModel 的相机移动指令 (如：自动跳转到最密区域)
+    // 【新增】监听 ViewModel 的相机移动指令 (自动跳转)
     LaunchedEffect(Unit) {
         viewModel.cameraEffect.collectLatest { update ->
+            // 使用 animateCamera 让跳转更丝滑
             mapView.map?.animateCamera(update)
         }
     }
@@ -317,26 +319,27 @@ fun SiteMapViewContainer(
                 renderer.attachToMap(map)
 
                 map.setOnMapLoadedListener {
-                    Log.d("SiteMapView", "地图加载完成，执行初始化逻辑")
+                    Log.i("SiteMapView", "地图加载完成，初始请求")
 
-                    // ========================================================
-                    // 修复 1：初始视角设为宏观视角 (Zoom 8)，不设死具体坐标
-                    // 这样 precision = 1，后端会返回大区域的聚合点
-                    // ViewModel 会算出哪里点最多，然后发指令跳转
-                    // ========================================================
-                    val initialZoom = 8f
-                    // 默认中心点可以设为项目所在的省份或城市中心，或者中国中心
-                    val centerChina = LatLng(35.8617, 104.1954)
+                    // 1. 设置初始视角为【宏观视角】 (Zoom 10)
+                    // 这里坐标设为项目大概位置，或者城市中心。
+                    // 重要的是 Zoom 要小，让 precision 变大，从而拉取聚合数据。
+                    val centerLat = 22.5428
+                    val centerLng = 113.959
+                    val startZoom = 10f
 
-                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(centerChina, initialZoom))
+                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(centerLat, centerLng), startZoom))
 
-                    // 手动触发第一次请求 (此时 Zoom=8)
+                    // 2. 手动触发请求
                     val projection = map.projection
                     val bounds = projection.visibleRegion.latLngBounds
+
                     onCameraChange(
-                        bounds.southwest.longitude, bounds.northeast.longitude,
-                        bounds.southwest.latitude, bounds.northeast.latitude,
-                        initialZoom
+                        bounds.southwest.longitude,
+                        bounds.northeast.longitude,
+                        bounds.southwest.latitude,
+                        bounds.northeast.latitude,
+                        startZoom
                     )
                 }
 
@@ -346,8 +349,10 @@ fun SiteMapViewContainer(
                         val currentZoom = p?.zoom ?: map.cameraPosition.zoom
                         val bounds = map.projection.visibleRegion.latLngBounds
                         onCameraChange(
-                            bounds.southwest.longitude, bounds.northeast.longitude,
-                            bounds.southwest.latitude, bounds.northeast.latitude,
+                            bounds.southwest.longitude,
+                            bounds.northeast.longitude,
+                            bounds.southwest.latitude,
+                            bounds.northeast.latitude,
                             currentZoom
                         )
                     }

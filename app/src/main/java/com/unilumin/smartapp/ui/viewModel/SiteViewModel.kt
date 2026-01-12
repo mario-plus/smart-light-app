@@ -85,34 +85,22 @@ class SiteViewModel(
         minLat: Double, maxLat: Double,
         zoom: Float
     ) {
-        // Log 调试：观察传入的 Zoom 是否正确
-        Log.i("SiteViewModel", "地图视角更新 -> Zoom: $zoom, Bounds: [$minLng, $minLat] - [$maxLng, $maxLat]")
-
-        // 1. 防抖：取消上一次未完成的请求
+        // 1. 防抖
         mapFetchJob?.cancel()
-
-        // 2. 启动新协程
         mapFetchJob = viewModelScope.launch {
-            // 3. 延迟 350ms，防止用户滑动过程中频繁请求接口
-            delay(350)
-
+            delay(300)
             _isMapLoading.value = true
 
-            // 4. 根据 Zoom 计算聚合精度 (Backend Precision Strategy)
-            // 阈值说明：
-            // < 10: 省/市级视角，精度10 (大网格)
-            // < 13: 区县级视角，精度100
-            // < 15: 街道级视角，精度1000
-            // >= 15: 设备级视角，精度100000 (极小网格，相当于不聚合)
+            // 2. 动态精度计算 (解决缩小不合并问题，增加 Zoom < 10 的处理)
             val precision = when {
-                zoom < 10 -> 1       // 之前是10，现在改成1，让它在大范围时聚合得更狠
-                zoom < 12 -> 10
-                zoom < 14 -> 100
-                zoom < 16 -> 1000
-                else -> 100000
+                zoom < 10 -> 1        // 省/全国级：极大网格 (聚合所有)
+                zoom < 12 -> 10       // 市级
+                zoom < 14 -> 100      // 区级
+                zoom < 16 -> 1000     // 街道级
+                else -> 100000        // 设备级
             }
 
-            Log.i("SiteViewModel", "发起聚合请求 -> Precision: $precision")
+            Log.i("SiteViewModel", "请求地图数据: Zoom=$zoom, Precision=$precision")
 
             try {
                 val req = PoleMapPointReq(
@@ -129,42 +117,46 @@ class SiteViewModel(
                     siteService.getSiteAggPoint(req),
                     context
                 )
+
                 val resultList = response ?: emptyList()
                 _mapPoints.value = resultList
-                Log.i("SiteViewModel", "数据加载成功，点位数: ${_mapPoints.value.size}")
 
+                // =========================================================
+                // 核心逻辑：首次加载时，寻找最密集的点并跳转
+                // =========================================================
                 if (isFirstLoad && resultList.isNotEmpty()) {
-                    isFirstLoad = false // 标记已处理
-                    moveToDensestCluster(resultList)
+                    isFirstLoad = false // 标记已处理，防止后续拖动地图时乱跳
+                    findAndMoveToDensestPoint(resultList)
                 }
+
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.e("SiteViewModel", "数据加载失败: ${e.message}")
             } finally {
                 _isMapLoading.value = false
             }
         }
     }
-    private suspend fun moveToDensestCluster(points: List<PoleMapPointRes>) {
-        // 找到 count 最大的点
+
+    /**
+     * 寻找数量最多的聚合点，并生成相机移动指令
+     */
+    private suspend fun findAndMoveToDensestPoint(points: List<PoleMapPointRes>) {
+        // 按 count 降序排序，取第一个
         val maxPoint = points.maxByOrNull { it.count }
 
         if (maxPoint != null) {
-            Log.i("SiteViewModel", "自动定位到最密区域: [${maxPoint.lat}, ${maxPoint.lng}] 数量:${maxPoint.count}")
+            Log.d("SiteViewModel", "自动定位最密区域: count=${maxPoint.count} at [${maxPoint.lat}, ${maxPoint.lng}]")
 
-            // 构造相机移动指令：移动到中心点，并放大到 16 级 (街道视角)
-            // 注意：这里只是发出指令，不直接操作 View
+            // 创建指令：移动到该点，并直接放大到 Zoom 16 (街道级)
             val update = CameraUpdateFactory.newLatLngZoom(
+                LatLng(maxPoint.lat.toDoubleOrNull() ?: 0.0, maxPoint.lng.toDoubleOrNull() ?: 0.0),
 
-                LatLng(
-                    maxPoint.lat.toDoubleOrNull() ?: 0.0, // 转换失败则默认为 0.0
-                    maxPoint.lng.toDoubleOrNull() ?: 0.0
-                ),
                 16f
             )
             _cameraEffect.emit(update)
         }
     }
+
 
     // ================== 点击杆体获取详情 ==================
     fun fetchSiteDetail(siteId: Long) {

@@ -53,7 +53,7 @@ import com.unilumin.smartapp.client.constant.DeviceType.NETWORK
 import com.unilumin.smartapp.client.constant.DeviceType.PROPERTY
 import com.unilumin.smartapp.client.constant.DeviceType.TELEMETRY
 import com.unilumin.smartapp.client.data.DeviceModelData
-import com.unilumin.smartapp.client.data.LightDevice
+import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.ui.components.DetailCard
 import com.unilumin.smartapp.ui.components.DetailRow
 import com.unilumin.smartapp.ui.components.DeviceDataGrid
@@ -77,7 +77,7 @@ import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceDetailScreen(
-    lightDevice: LightDevice, retrofitClient: RetrofitClient, onBack: () -> Unit
+    iotDevice: IotDevice, retrofitClient: RetrofitClient, onBack: () -> Unit
 ) {
 
     val context = LocalContext.current
@@ -131,18 +131,18 @@ fun DeviceDetailScreen(
     // 自动触发数据加载
     LaunchedEffect(selectedLabel) {
         when (selectedLabel) {
-            DETAIL -> deviceViewModel.getDeviceDetail(lightDevice.id)
-            PROPERTY -> deviceViewModel.getDeviceRealData(lightDevice.id, false)
-            TELEMETRY -> deviceViewModel.getDeviceRealData(lightDevice.id, true)
+            DETAIL -> deviceViewModel.getDeviceDetail(iotDevice.id)
+            PROPERTY -> deviceViewModel.getDeviceRealData(iotDevice.id, false)
+            TELEMETRY -> deviceViewModel.getDeviceRealData(iotDevice.id, true)
             EVENT -> deviceViewModel.loadHistoryData(
-                lightDevice.id,
+                iotDevice.id,
                 currentRange.first,
                 currentRange.second,
                 true,
                 deviceEventsDataList.map { it.key })
 
             NETWORK -> deviceViewModel.loadHistoryData(
-                lightDevice.id,
+                iotDevice.id,
                 currentRange.first,
                 currentRange.second,
                 true,
@@ -158,7 +158,7 @@ fun DeviceDetailScreen(
                     CenterAlignedTopAppBar(
                         title = {
                         Text(
-                            text = "${lightDevice.name}-详情", style = TextStyle(
+                            text = "${iotDevice.deviceName}-详情", style = TextStyle(
                                 fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
                             )
                         )
@@ -317,12 +317,12 @@ fun DeviceDetailScreen(
                                 onRangeSelected = { start, end ->
                                     tabDatesMap[selectedLabel] = start to end
                                     deviceViewModel.loadHistoryData(
-                                        lightDevice.id, start, end, isRefresh = true, keys = keys
+                                        iotDevice.id, start, end, isRefresh = true, keys = keys
                                     )
                                 },
                                 onLoadMore = { start, end ->
                                     deviceViewModel.loadHistoryData(
-                                        lightDevice.id, start, end, isRefresh = false, keys = keys
+                                        iotDevice.id, start, end, isRefresh = false, keys = keys
                                     )
                                 })
                     }
@@ -338,13 +338,13 @@ fun DeviceDetailScreen(
                                 onRangeSelected = { start, end ->
                                     tabDatesMap[selectedLabel] = start to end
                                     deviceViewModel.loadHistoryData(
-                                        lightDevice.id, start, end, isRefresh = true, keys = keys
+                                        iotDevice.id, start, end, isRefresh = true, keys = keys
                                     )
 
                                 },
                                 onLoadMore = { start, end ->
                                     deviceViewModel.loadHistoryData(
-                                        lightDevice.id, start, end, isRefresh = false, keys = keys
+                                        iotDevice.id, start, end, isRefresh = false, keys = keys
                                     )
 
                                 })
@@ -361,7 +361,7 @@ fun DeviceDetailScreen(
             historyDataList = historyDataList,
             hasMore = pagingState.hasMore,
             onLoadData = { start, end, refresh, keys ->
-                deviceViewModel.loadHistoryData(lightDevice.id, start, end, refresh, keys)
+                deviceViewModel.loadHistoryData(iotDevice.id, start, end, refresh, keys)
             },
             onDismiss = {
                 listDataDialog = false
@@ -373,7 +373,7 @@ fun DeviceDetailScreen(
             showChartDialog = false
         }, limitDays = 14, chartDataList, onLoadData = { start, end ->
             deviceViewModel.loadChartData(
-                lightDevice.id, start, end, selectedDeviceModelData!!
+                iotDevice.id, start, end, selectedDeviceModelData!!
             )
         })
     }

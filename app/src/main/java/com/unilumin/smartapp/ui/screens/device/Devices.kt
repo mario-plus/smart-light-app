@@ -53,7 +53,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceType
 import com.unilumin.smartapp.client.constant.DeviceType.DeviceMenus
-import com.unilumin.smartapp.client.data.LightDevice
+import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.ui.components.FilterChip
 import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchBar
@@ -69,7 +69,7 @@ import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 @Composable
 fun DevicesScreen(
     retrofitClient: RetrofitClient,
-    onDetailClick: (LightDevice) -> Unit,
+    onDetailClick: (IotDevice) -> Unit,
     onMenuClick: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -211,7 +211,7 @@ fun DevicesScreen(
         ) { device ->
             DeviceCardItem(
                 deviceViewModel = deviceViewModel,
-                lightDevice = device,
+                iotDevice = device,
                 type = activeFilter,
                 onDetailClick = { onDetailClick(device) }
             )

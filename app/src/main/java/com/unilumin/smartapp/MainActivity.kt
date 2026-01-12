@@ -27,7 +27,7 @@ import com.amap.api.maps.MapsInitializer
 import com.unilumin.smartapp.auth.TokenManagerFactory
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceType
-import com.unilumin.smartapp.client.data.LightDevice
+import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.mock.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
 import com.unilumin.smartapp.ui.screens.DashboardScreen
@@ -116,10 +116,10 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                             //如果此处的json过大，可以改成deviceId，deviceName进行传递
                             val encodedJson = backStackEntry.arguments?.getString("deviceJson")
                             val deviceJson = java.net.URLDecoder.decode(encodedJson, "UTF-8")
-                            val lightDevice =
-                                com.google.gson.Gson().fromJson(deviceJson, LightDevice::class.java)
+                            val iotDevice =
+                                com.google.gson.Gson().fromJson(deviceJson, IotDevice::class.java)
                             DeviceDetailScreen(
-                                lightDevice = lightDevice,
+                                iotDevice = iotDevice,
                                 retrofitClient = retrofitClient,
                                 onBack = { navController.popBackStack() })
                         }

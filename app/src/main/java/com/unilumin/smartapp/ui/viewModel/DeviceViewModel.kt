@@ -19,18 +19,15 @@ import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
-import com.unilumin.smartapp.client.data.EnvData
-import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.LampCtlReq
-import com.unilumin.smartapp.client.data.LightDevice
+import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.PagingState
-import com.unilumin.smartapp.client.data.RequestParam
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
@@ -198,7 +195,7 @@ class DeviceViewModel(
         page: Int,
         pageSize: Int,
         context: Context
-    ): List<LightDevice> {
+    ): List<IotDevice> {
         return getIotDevices(type, deviceService, searchQuery, page, pageSize, context)
 //        if (type == DeviceType.LAMP) {
 //            var parseDataNewSuspend =
@@ -260,9 +257,9 @@ class DeviceViewModel(
         page: Int,
         pageSize: Int,
         context: Context
-    ): List<LightDevice> {
+    ): List<IotDevice> {
         var parseDataNewSuspend =
-            UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
+            UniCallbackService<PageResponse<IotDevice>>().parseDataNewSuspend(
                 deviceService.getDeviceList(
                     searchQuery, page, pageSize, DeviceType.getDeviceProductTypeId(type)
                 ), context

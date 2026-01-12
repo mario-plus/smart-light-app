@@ -1,7 +1,5 @@
 package com.unilumin.smartapp.client.data
 
-import com.google.gson.annotations.SerializedName
-
 data class ResponseData<T>(
     var code: Int?, var message: String?, var data: T?
 )
@@ -36,50 +34,18 @@ data class UserInfo(
 )
 
 //设备列表数据
-data class LightDevice(
+data class IotDevice(
     var id: Long,
-    @SerializedName(
-        value = "name", alternate = ["loopControllerName", "deviceName"]
-    ) var name: String,
-
-    var serialNum: String,
-
-    var productId: String,
+    var deviceName: String? = null,
+    var serialNum: String? = null,
+    var productId: String? = null,
     var productName: String? = null,
-
-    var gatewayName: String? = null,
     //会话状态 1-在线，0-离线
-    @SerializedName(value = "state", alternate = ["networkState"]) var state: Int?,
+    var state: Int?,
     //设备状态（0停用 1启用）
     var deviceState: Int,
     //工作状态: 1告警 0正常
-    var alarmType: Int,
-    var voltage: Double? = null,
-    var current: Double? = null,
-    var power: Double? = null,
-    var factor: Double? = null,
-    //亮度
-    var bright1: Int? = null,
-    //色温
-    var bright2: Int? = null,
-    //开关
-    var onOff: Int? = null,
-    //回路信息
-    var loops: List<LoopInfo>? = null,
-
-    //亮度
-    var brightness: String? = null,
-    //运行状态
-    var powerStatus: String? = null,
-    //音量
-    var volume: String? = null,
-    //当前节目
-    var playingProgramName: String? = null,
-    //分辨率
-    var widthHeighProgram: String? = null,
-
-    //环境传感器数据
-    var envData: EnvData? = null
+    var alarmType: Int? = null
 )
 
 data class LoopInfo(

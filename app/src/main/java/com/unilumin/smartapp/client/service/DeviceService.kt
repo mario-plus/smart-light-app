@@ -10,7 +10,7 @@ import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.LampCtlReq
-import com.unilumin.smartapp.client.data.LightDevice
+import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OfflineDevice
@@ -29,11 +29,11 @@ import retrofit2.http.Query
 interface DeviceService {
     //单灯列表
     @POST(RequestPathKey.KEY_GET_LIGHT_LIST)
-    fun getLightCtlList(@Body param: RequestParam?): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+    fun getLightCtlList(@Body param: RequestParam?): Call<NewResponseData<PageResponse<IotDevice>?>?>?
 
     //集控列表
     @POST(RequestPathKey.KEY_GET_GW_LIST)
-    fun getGwCtlList(@Body param: RequestParam?): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+    fun getGwCtlList(@Body param: RequestParam?): Call<NewResponseData<PageResponse<IotDevice>?>?>?
 
     //回路控制器列表
     @GET(RequestPathKey.KEY_GET_LOOP_LIST)
@@ -42,7 +42,7 @@ interface DeviceService {
         @Query("curPage") curPage: Int,
         @Query("pageSize") pageSize: Int,
         @Query("subSystemType") subSystemType: Int
-    ): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+    ): Call<NewResponseData<PageResponse<IotDevice>?>?>?
 
     @GET(RequestPathKey.KEY_LED_LIST)
     fun getLedList(
@@ -51,7 +51,7 @@ interface DeviceService {
         @Query("pageSize") pageSize: Int,
         @Query("productTypeId") productTypeId: Int,
         @Query("subSystemType") subSystemType: Int
-    ): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+    ): Call<NewResponseData<PageResponse<IotDevice>?>?>?
 
 
     //分组列表
@@ -83,7 +83,7 @@ interface DeviceService {
         @Query("curPage") curPage: Int,
         @Query("pageSize") pageSize: Int,
         @Query("productTypeIds") productTypeIds: Int
-    ): Call<NewResponseData<PageResponse<LightDevice>?>?>?
+    ): Call<NewResponseData<PageResponse<IotDevice>?>?>?
 
     @GET(RequestPathKey.KEY_CAMERA_LIVE_URL)
     fun getCameraLiveUrl(

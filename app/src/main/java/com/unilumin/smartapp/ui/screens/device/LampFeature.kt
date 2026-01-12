@@ -1,123 +1,123 @@
-package com.unilumin.smartapp.ui.screens.device
-
-
-import android.annotation.SuppressLint
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.unilumin.smartapp.client.constant.DeviceType.colorTempSupportedList
-import com.unilumin.smartapp.client.data.LightDevice
-import com.unilumin.smartapp.ui.components.InfoColumn
-import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
-import com.unilumin.smartapp.ui.components.VerticalDivider
-import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
-import com.unilumin.smartapp.ui.theme.Gray100
-import com.unilumin.smartapp.ui.theme.Gray50
-import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
-
-@SuppressLint("DefaultLocale", "UnusedBoxWithConstraintsScope")
-@Composable
-fun LampFeatureContent(
-    deviceViewModel: DeviceViewModel,
-    lightDevice: LightDevice,
-    onDetailClick: (LightDevice) -> Unit
-) {
-
-    val scope = rememberCoroutineScope()
-    var showDialog by remember { mutableStateOf(false) }
-    FeatureContentContainer {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            BoxWithConstraints {
-                val isWideScreen = maxWidth > 600.dp
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Gray50, RoundedCornerShape(12.dp))
-                        .border(1.dp, Gray100, RoundedCornerShape(12.dp))
-                        .then(if (!isWideScreen) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
-                        .padding(vertical = 12.dp, horizontal = 8.dp),
-                    horizontalArrangement = if (isWideScreen) Arrangement.SpaceEvenly else Arrangement.spacedBy(
-                        16.dp
-                    ),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // 1. 开关状态
-                    val powerState = when (lightDevice.onOff) {
-                        1 -> "开"
-                        0 -> "关"
-                        else -> "--"
-                    }
-                    InfoColumn("开关", powerState, isHighlight = true)
-                    VerticalDivider()
-                    // 2. 亮度
-                    val brightness = lightDevice.bright1?.let { "$it%" } ?: "--"
-                    InfoColumn("亮度", brightness, isHighlight = true)
-                    // 3. 色温 (仅在产品列表中才显示)
-                    if (lightDevice.productId in colorTempSupportedList) {
-                        VerticalDivider()
-                        val colorTemp = lightDevice.bright2?.let { "$it%" } ?: "--"
-                        InfoColumn("色温", colorTemp, isHighlight = true)
-                    }
-                    VerticalDivider()
-                    // 4. 电压 (处理 Float/Double 的格式化)
-                    val voltageStr = lightDevice.voltage?.let { String.format("%.1fV", it) } ?: "--"
-                    InfoColumn("电压", voltageStr)
-                    VerticalDivider()
-                    // 5. 电流
-                    val currentStr =
-                        lightDevice.current?.let { String.format("%.1fmA", it) } ?: "--"
-                    InfoColumn("电流", currentStr)
-                    VerticalDivider()
-                    // 6. 功率
-                    val powerStr = lightDevice.power?.let { String.format("%.1fW", it) } ?: "--"
-                    InfoColumn("功率", powerStr)
-                    VerticalDivider()
-                    // 7. 功率因子
-                    val factorStr = lightDevice.factor?.let { String.format("%.1f", it) } ?: "--"
-                    InfoColumn("功率因子", factorStr)
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            RemoteControlButtonGroup(
-                canClick = lightDevice.state == 1,
-                showRemoteCtlBtn = true,
-                onRemoteControlClick = { showDialog = true },
-                onHistoryClick = { onDetailClick(lightDevice) })
-        }
-    }
-    if (showDialog) {
-        DeviceControlDialog(
-            lightDevice.productId,
-            lightDevice.name,
-            initialBrightness = lightDevice.bright1,
-            initColorT = lightDevice.bright2,
-            onDismiss = { showDialog = false },
-            onClick = { a, b ->
-                deviceViewModel.lampCtl(lightDevice.id, a, b)
-                //控制后关闭dialog，如果不需要关闭，移除即可
-                showDialog = false
-            })
-    }
-}
-
-
-
+//package com.unilumin.smartapp.ui.screens.device
+//
+//
+//import android.annotation.SuppressLint
+//import androidx.compose.foundation.background
+//import androidx.compose.foundation.border
+//import androidx.compose.foundation.horizontalScroll
+//import androidx.compose.foundation.layout.Arrangement
+//import androidx.compose.foundation.layout.BoxWithConstraints
+//import androidx.compose.foundation.layout.Column
+//import androidx.compose.foundation.layout.Row
+//import androidx.compose.foundation.layout.Spacer
+//import androidx.compose.foundation.layout.fillMaxWidth
+//import androidx.compose.foundation.layout.height
+//import androidx.compose.foundation.layout.padding
+//import androidx.compose.foundation.rememberScrollState
+//import androidx.compose.foundation.shape.RoundedCornerShape
+//import androidx.compose.runtime.Composable
+//import androidx.compose.runtime.getValue
+//import androidx.compose.runtime.mutableStateOf
+//import androidx.compose.runtime.remember
+//import androidx.compose.runtime.rememberCoroutineScope
+//import androidx.compose.runtime.setValue
+//import androidx.compose.ui.Alignment
+//import androidx.compose.ui.Modifier
+//import androidx.compose.ui.unit.dp
+//import com.unilumin.smartapp.client.constant.DeviceType.colorTempSupportedList
+//import com.unilumin.smartapp.client.data.LightDevice
+//import com.unilumin.smartapp.ui.components.InfoColumn
+//import com.unilumin.smartapp.ui.components.RemoteControlButtonGroup
+//import com.unilumin.smartapp.ui.components.VerticalDivider
+//import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
+//import com.unilumin.smartapp.ui.theme.Gray100
+//import com.unilumin.smartapp.ui.theme.Gray50
+//import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
+//
+//@SuppressLint("DefaultLocale", "UnusedBoxWithConstraintsScope")
+//@Composable
+//fun LampFeatureContent(
+//    deviceViewModel: DeviceViewModel,
+//    lightDevice: LightDevice,
+//    onDetailClick: (LightDevice) -> Unit
+//) {
+//
+//    val scope = rememberCoroutineScope()
+//    var showDialog by remember { mutableStateOf(false) }
+//    FeatureContentContainer {
+//        Column(modifier = Modifier.fillMaxWidth()) {
+//            BoxWithConstraints {
+//                val isWideScreen = maxWidth > 600.dp
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .background(Gray50, RoundedCornerShape(12.dp))
+//                        .border(1.dp, Gray100, RoundedCornerShape(12.dp))
+//                        .then(if (!isWideScreen) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
+//                        .padding(vertical = 12.dp, horizontal = 8.dp),
+//                    horizontalArrangement = if (isWideScreen) Arrangement.SpaceEvenly else Arrangement.spacedBy(
+//                        16.dp
+//                    ),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    // 1. 开关状态
+//                    val powerState = when (lightDevice.onOff) {
+//                        1 -> "开"
+//                        0 -> "关"
+//                        else -> "--"
+//                    }
+//                    InfoColumn("开关", powerState, isHighlight = true)
+//                    VerticalDivider()
+//                    // 2. 亮度
+//                    val brightness = lightDevice.bright1?.let { "$it%" } ?: "--"
+//                    InfoColumn("亮度", brightness, isHighlight = true)
+//                    // 3. 色温 (仅在产品列表中才显示)
+//                    if (lightDevice.productId in colorTempSupportedList) {
+//                        VerticalDivider()
+//                        val colorTemp = lightDevice.bright2?.let { "$it%" } ?: "--"
+//                        InfoColumn("色温", colorTemp, isHighlight = true)
+//                    }
+//                    VerticalDivider()
+//                    // 4. 电压 (处理 Float/Double 的格式化)
+//                    val voltageStr = lightDevice.voltage?.let { String.format("%.1fV", it) } ?: "--"
+//                    InfoColumn("电压", voltageStr)
+//                    VerticalDivider()
+//                    // 5. 电流
+//                    val currentStr =
+//                        lightDevice.current?.let { String.format("%.1fmA", it) } ?: "--"
+//                    InfoColumn("电流", currentStr)
+//                    VerticalDivider()
+//                    // 6. 功率
+//                    val powerStr = lightDevice.power?.let { String.format("%.1fW", it) } ?: "--"
+//                    InfoColumn("功率", powerStr)
+//                    VerticalDivider()
+//                    // 7. 功率因子
+//                    val factorStr = lightDevice.factor?.let { String.format("%.1f", it) } ?: "--"
+//                    InfoColumn("功率因子", factorStr)
+//                }
+//            }
+//            Spacer(modifier = Modifier.height(12.dp))
+//            RemoteControlButtonGroup(
+//                canClick = lightDevice.state == 1,
+//                showRemoteCtlBtn = true,
+//                onRemoteControlClick = { showDialog = true },
+//                onHistoryClick = { onDetailClick(lightDevice) })
+//        }
+//    }
+//    if (showDialog) {
+//        DeviceControlDialog(
+//            lightDevice.productId.toString(),
+//            lightDevice.name.toString(),
+//            initialBrightness = lightDevice.bright1,
+//            initColorT = lightDevice.bright2,
+//            onDismiss = { showDialog = false },
+//            onClick = { a, b ->
+//                deviceViewModel.lampCtl(lightDevice.id, a, b)
+//                //控制后关闭dialog，如果不需要关闭，移除即可
+//                showDialog = false
+//            })
+//    }
+//}
+//
+//
+//

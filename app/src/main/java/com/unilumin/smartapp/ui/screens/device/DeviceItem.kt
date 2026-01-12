@@ -1,6 +1,5 @@
 package com.unilumin.smartapp.ui.screens.device
 
-import EnvFeatureContent
 import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -33,9 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unilumin.smartapp.client.constant.DeviceType
 import com.unilumin.smartapp.client.constant.DeviceType.getDeviceIcon
-import com.unilumin.smartapp.client.data.LightDevice
+import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.DeviceStatusRow
 import com.unilumin.smartapp.ui.theme.Blue50
@@ -43,7 +41,6 @@ import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray100
 import com.unilumin.smartapp.ui.theme.Gray400
 import com.unilumin.smartapp.ui.theme.Gray50
-import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.Orange50
 import com.unilumin.smartapp.ui.theme.Orange500
 import com.unilumin.smartapp.ui.theme.White
@@ -53,14 +50,14 @@ import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 @Composable
 fun DeviceCardItem(
     deviceViewModel: DeviceViewModel,
-    lightDevice: LightDevice,
+    iotDevice: IotDevice,
     type: String,
-    onDetailClick: (LightDevice) -> Unit
+    onDetailClick: (IotDevice) -> Unit
 ) {
 
 
     // 状态颜色逻辑
-    val (iconBg, iconTint) = when (lightDevice.state) {
+    val (iconBg, iconTint) = when (iotDevice.state) {
         1 -> Blue50 to Blue600
         0 -> Gray100 to Gray400
         else -> Orange50 to Orange500
@@ -74,8 +71,8 @@ fun DeviceCardItem(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            DeviceHeader(lightDevice, type, iconBg, iconTint, onClick = {
-                onDetailClick(lightDevice)
+            DeviceHeader(iotDevice, type, iconBg, iconTint, onClick = {
+                onDetailClick(iotDevice)
             })
 
 
@@ -110,7 +107,7 @@ fun DeviceCardItem(
 
 @Composable
 fun DeviceHeader(
-    lightDevice: LightDevice,
+    iotDevice: IotDevice,
     type: String,
     iconBg: Color,
     iconTint: Color,
@@ -155,7 +152,7 @@ fun DeviceHeader(
             ) {
                 // 第一行：设备名称
                 Text(
-                    text = lightDevice.name,
+                    text = iotDevice.deviceName.toString(),
                     fontSize = 16.sp, // 17sp 稍微有点大，16sp 更精致
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1F2937),
@@ -164,14 +161,14 @@ fun DeviceHeader(
                 )
                 // 第二行：序列码
                 Text(
-                    text = "序列码: ${lightDevice.serialNum}", // 增加空格
+                    text = "序列码: ${iotDevice.serialNum}", // 增加空格
                     fontSize = 12.sp,
                     color = Color(0xFF9CA3AF),
                     maxLines = 1
                 )
                 // 第三行：产品名称
                 Text(
-                    text = "产品名称: ${lightDevice.productName}", // 增加空格
+                    text = "产品名称: ${iotDevice.productName}", // 增加空格
                     fontSize = 12.sp,
                     color = Color(0xFF9CA3AF),
                     maxLines = 1
@@ -180,8 +177,8 @@ fun DeviceHeader(
                 // 第四行：告警/状态组件
                 Box(modifier = Modifier.padding(top = 4.dp)) {
                     DeviceStatusRow(
-                        isDisable = lightDevice.deviceState == 0,
-                        hasAlarm = lightDevice.alarmType == 1
+                        isDisable = iotDevice.deviceState == 0,
+                        hasAlarm = iotDevice.alarmType == 1
                     )
                 }
             }
@@ -192,7 +189,7 @@ fun DeviceHeader(
 
         // 注意：如果 DeviceStatus 内部也有点击事件，可能会产生冲突
         // 如果 DeviceStatus 只是展示，没有问题。
-        DeviceStatus(lightDevice.state)
+        DeviceStatus(iotDevice.state)
     }
 }
 
