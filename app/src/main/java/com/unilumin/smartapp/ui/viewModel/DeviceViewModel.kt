@@ -57,6 +57,12 @@ class DeviceViewModel(
         productType.value = type
     }
 
+    //0离线，1在线
+    val state = MutableStateFlow(-1)
+    fun updateState(s: Int) {
+        state.value = s
+    }
+
     //设备列表查询参数(关键词)
     val searchQuery = MutableStateFlow("")
     fun updateSearch(query: String) {
@@ -131,14 +137,15 @@ class DeviceViewModel(
 
     //设备列表分页数据列表
     @OptIn(ExperimentalCoroutinesApi::class)
-    val devicePagingFlow = combine(productType, searchQuery) { filter, query ->
-        Pair(filter, query)
-    }.flatMapLatest { (filter, query) ->
+    val devicePagingFlow = combine(state, productType, searchQuery) { state, filter, query ->
+        Triple(state, filter, query)
+    }.flatMapLatest { (state, filter, query) ->
         Pager(
             config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
             pagingSourceFactory = {
                 GenericPagingSource { page, pageSize ->
                     getDeviceList(
+                        state = state,
                         productType = filter,
                         searchQuery = query,
                         page = page,
@@ -159,10 +166,7 @@ class DeviceViewModel(
             pagingSourceFactory = {
                 GenericPagingSource { page, pageSize ->
                     getOfflineDeviceList(
-                        timeType = filter,
-                        curPage = page,
-                        pageSize = pageSize,
-                        primaryClass = query
+                        timeType = filter, curPage = page, pageSize = pageSize, primaryClass = query
                     )
 
                 }
@@ -171,10 +175,7 @@ class DeviceViewModel(
 
 
     suspend fun getOfflineDeviceList(
-        curPage: Int,
-        pageSize: Int,
-        timeType: Int,
-        primaryClass: Int
+        curPage: Int, pageSize: Int, timeType: Int, primaryClass: Int
     ): List<OfflineDevice> {
         val tType = timeType.takeIf { it != 0 }
         val pClass = primaryClass.takeIf { it != 0 }
@@ -189,11 +190,8 @@ class DeviceViewModel(
 
     //获取设备列表
     suspend fun getDeviceList(
-        productType: Long,
-        searchQuery: String,
-        page: Int,
-        pageSize: Int,
-        context: Context
+        state: Int,
+        productType: Long, searchQuery: String, page: Int, pageSize: Int, context: Context
     ): List<IotDevice> {
         return getIotDevices(productType, deviceService, searchQuery, page, pageSize, context)
 //        if (type == DeviceType.LAMP) {
@@ -257,12 +255,12 @@ class DeviceViewModel(
         pageSize: Int,
         context: Context
     ): List<IotDevice> {
-        var parseDataNewSuspend =
-            UniCallbackService<PageResponse<IotDevice>>().parseDataNewSuspend(
-                deviceService.getDeviceList(
-                    searchQuery, page, pageSize, productType
-                ), context
-            )
+        val s = state.value.takeIf { it != -1 }
+        var parseDataNewSuspend = UniCallbackService<PageResponse<IotDevice>>().parseDataNewSuspend(
+            deviceService.getDeviceList(
+                searchQuery, page, pageSize, productType, s
+            ), context
+        )
         _totalCount.value = parseDataNewSuspend?.total!!
         return parseDataNewSuspend.list
     }
@@ -324,8 +322,7 @@ class DeviceViewModel(
             try {
                 var parseDataNewSuspend =
                     UniCallbackService<DeviceStatusAnalysisResp>().parseDataNewSuspend(
-                        deviceService.deviceStatusAnalysis(),
-                        context
+                        deviceService.deviceStatusAnalysis(), context
                     )
                 _deviceStatusAnalysis.value = parseDataNewSuspend
             } catch (e: Exception) {
@@ -444,7 +441,10 @@ class DeviceViewModel(
     @RequiresApi(Build.VERSION_CODES.O)
     fun loadHistoryData(
         deviceId: Long,
-        startTime: String, endTime: String, isRefresh: Boolean = false, keys: List<String>
+        startTime: String,
+        endTime: String,
+        isRefresh: Boolean = false,
+        keys: List<String>
     ) {
         launchWithLoading {
             if (isRefresh) {

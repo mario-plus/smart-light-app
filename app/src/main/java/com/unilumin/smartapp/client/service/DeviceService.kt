@@ -82,7 +82,8 @@ interface DeviceService {
         @Query("keyword") keyword: String,
         @Query("curPage") curPage: Int,
         @Query("pageSize") pageSize: Int,
-        @Query("productTypeIds") productType: Long
+        @Query("productTypeIds") productType: Long,
+        @Query("state") state: Int?
     ): Call<NewResponseData<PageResponse<IotDevice>?>?>?
 
     @GET(RequestPathKey.KEY_CAMERA_LIVE_URL)

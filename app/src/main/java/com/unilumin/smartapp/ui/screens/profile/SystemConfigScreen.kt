@@ -111,7 +111,7 @@ fun SystemConfigScreen(
             // --- 这里的配置项：设备产品类型管理 ---
             item {
                 ConfigExpandableCard(
-                    title = "设备显示配置",
+                    title = "设备类型配置",
                     subtitle = "管理首页显示的设备类型",
                     isExpanded = isDeviceListExpanded,
                     onExpandClick = { isDeviceListExpanded = !isDeviceListExpanded }

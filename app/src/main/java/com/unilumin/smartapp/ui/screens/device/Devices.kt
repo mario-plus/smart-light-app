@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
@@ -78,7 +79,6 @@ import com.unilumin.smartapp.ui.theme.Gray500
 import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.White
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
-import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
 import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 
 @SuppressLint("StateFlowValueCalledInComposition")
@@ -108,25 +108,36 @@ fun DevicesScreen(
     val productTypes by systemViewModel.productTypes.collectAsState()
     val activeTypes = remember(productTypes) { productTypes.filter { it.isSelected } }
 
-    //产品类型选择
+    // 产品类型选择
     val productType by deviceViewModel.productType.collectAsState()
     val totalCount = deviceViewModel.totalCount.collectAsState()
 
-    //搜索条件
+    // 搜索条件
     val searchQuery by deviceViewModel.searchQuery.collectAsState()
 
-    //分页数据
+    // 设备状态 (-1:全部, 0:离线, 1:在线)
+    val deviceState by deviceViewModel.state.collectAsState()
+
+    // 分页数据
     val lazyPagingItems = deviceViewModel.devicePagingFlow.collectAsLazyPagingItems()
 
-    //条件
-    var lastSyncedParams by remember { mutableStateOf(Pair(productType, searchQuery)) }
+    // 状态下拉框控制
+    var statusExpanded by remember { mutableStateOf(false) }
+    val statusOptions = remember {
+        listOf(-1 to "全部状态", 1 to "设备在线", 0 to "设备离线")
+    }
 
-    //是否存在切换动作
-    val isSwitching = lastSyncedParams != Pair(productType, searchQuery)
+    // --- Loading 状态控制逻辑 ---
+    // 条件同步记录，用于判断是否在切换查询条件
+    var lastSyncedParams by remember { mutableStateOf(Triple(productType, searchQuery, deviceState)) }
 
+    // 只要这三个条件有任何一个与记录不符，就认为正在发起新的切换请求
+    val isSwitching = lastSyncedParams != Triple(productType, searchQuery, deviceState)
+
+    // 当 Paging 加载完成或报错时，同步状态，结束 "强制加载" 动画
     LaunchedEffect(lazyPagingItems.loadState.refresh) {
         if (lazyPagingItems.loadState.refresh is LoadState.NotLoading || lazyPagingItems.loadState.refresh is LoadState.Error) {
-            lastSyncedParams = Pair(productType, searchQuery)
+            lastSyncedParams = Triple(productType, searchQuery, deviceState)
         }
     }
 
@@ -141,6 +152,7 @@ fun DevicesScreen(
                 .zIndex(1f)
         ) {
             Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                // 1. 标题栏
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -188,15 +200,77 @@ fun DevicesScreen(
                     }
                 }
 
-                SearchBar(
-                    query = searchQuery,
-                    onQueryChange = { deviceViewModel.updateSearch(it) },
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+                // 2. 状态筛选 + 搜索框 (合并在一行)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // --- 状态选择下拉框 ---
+                    Box {
+                        Row(
+                            modifier = Modifier
+                                .height(48.dp) // 与常见 SearchBar 高度一致
+                                .clip(RoundedCornerShape(24.dp)) // 胶囊圆角
+                                .background(Gray100)
+                                .clickable { statusExpanded = true }
+                                .padding(start = 12.dp, end = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                // 显示简化后的文本，例如去掉 "设备" 二字以节省空间
+                                text = statusOptions.find { it.first == deviceState }?.second?.replace("设备", "") ?: "状态",
+                                fontSize = 14.sp,
+                                color = Gray900,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = null,
+                                tint = Gray500,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = statusExpanded,
+                            onDismissRequest = { statusExpanded = false },
+                            modifier = Modifier.background(Color.White)
+                        ) {
+                            statusOptions.forEach { (value, label) ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = label,
+                                            fontSize = 14.sp,
+                                            color = if (value == deviceState) Blue600 else Gray900,
+                                            fontWeight = if (value == deviceState) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    },
+                                    onClick = {
+                                        deviceViewModel.updateState(value)
+                                        statusExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // --- 搜索框 ---
+                    // 使用 weight 填满剩余空间
+                    SearchBar(
+                        query = searchQuery,
+                        onQueryChange = { deviceViewModel.updateSearch(it) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 筛选区域
+                // 3. 筛选区域
                 DeviceFilterSection(
                     activeTypes = activeTypes,
                     selectedId = productType,
@@ -209,6 +283,7 @@ fun DevicesScreen(
         PagingList(
             totalCount = totalCount.value,
             lazyPagingItems = lazyPagingItems,
+            // 只有在切换查询条件时才强制显示 Loading，否则由 PagingList 内部根据 loadState 决定
             forceLoading = isSwitching,
             modifier = Modifier.weight(1f),
             itemKey = { device -> device.id },
@@ -233,16 +308,15 @@ fun DeviceFilterSection(
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
-    // 【修改点 1】创建 LazyList 的状态对象，用于控制滚动
+    // 创建 LazyList 的状态对象，用于控制滚动
     val listState = rememberLazyListState()
 
-    // 【修改点 2】监听选中项或展开状态的变化
+    // 监听选中项或展开状态的变化
     // 当选中项改变，且当前处于收起状态（或刚刚收起）时，滚动到对应位置
     LaunchedEffect(selectedId, isExpanded) {
         if (!isExpanded) {
             val index = activeTypes.indexOfFirst { it.id == selectedId }
             if (index >= 0) {
-                // 平滑滚动到指定位置，并且稍微偏移一点(可选)，保证选中项完全可见
                 listState.animateScrollToItem(index)
             }
         }
@@ -315,7 +389,6 @@ fun DeviceFilterSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     LazyRow(
-                        // 【修改点 3】绑定状态，使滚动生效
                         state = listState,
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -351,7 +424,7 @@ fun DeviceFilterSection(
 }
 
 /**
- * 网格单项组件 (确保内部内容居中)
+ * 网格单项组件
  */
 @Composable
 fun GridFilterItem(
@@ -360,10 +433,9 @@ fun GridFilterItem(
     onClick: () -> Unit
 ) {
     Column(
-        // 【关键修改 3】水平居中对齐图标和文字
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .width(76.dp) // 给定固定宽度，确保网格整齐
+            .width(76.dp)
             .clip(RoundedCornerShape(8.dp))
             .clickable { onClick() }
             .padding(vertical = 4.dp)
@@ -373,7 +445,6 @@ fun GridFilterItem(
             shape = CircleShape,
             color = if (isSelected) Blue600 else Gray100
         ) {
-            // 图标在圆圈内居中
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = type.icon,
@@ -388,7 +459,6 @@ fun GridFilterItem(
             text = type.name,
             fontSize = 12.sp,
             maxLines = 1,
-            // 文字居中
             textAlign = TextAlign.Center,
             color = if (isSelected) Blue600 else Gray900,
             overflow = TextOverflow.Ellipsis,
