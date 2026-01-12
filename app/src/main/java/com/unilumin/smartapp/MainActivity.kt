@@ -73,15 +73,6 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
     var sessionKey by remember { mutableIntStateOf(0) }
     var isLoggedIn by remember { mutableStateOf(false) }
 
-    // 配置的设备产品list，设备页面需要使用，待优化
-    val profileViewModel: ProfileViewModel = viewModel(
-        factory = ViewModelFactory {
-            ProfileViewModel(retrofitClient, context)
-        }
-    )
-
-
-
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = Blue600, background = Gray50, surface = Color.White, onSurface = Gray900
@@ -108,7 +99,6 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         composable("devices") {
                             DevicesScreen(
                                 retrofitClient = retrofitClient,
-                                profileViewModel = profileViewModel,
                                 onDetailClick = { lightDevice ->
                                     val deviceJson = com.google.gson.Gson().toJson(lightDevice)
                                     val encodedJson =

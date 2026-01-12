@@ -79,13 +79,13 @@ import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.White
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
+import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 
 @SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DevicesScreen(
     retrofitClient: RetrofitClient,
-    profileViewModel: ProfileViewModel,
     onDetailClick: (IotDevice) -> Unit,
     onMenuClick: () -> Unit
 ) {
@@ -99,7 +99,13 @@ fun DevicesScreen(
         }
     })
 
-    val productTypes by profileViewModel.productTypes.collectAsState()
+    val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return SystemViewModel(retrofitClient, context) as T
+        }
+    })
+
+    val productTypes by systemViewModel.productTypes.collectAsState()
     val activeTypes = remember(productTypes) { productTypes.filter { it.isSelected } }
 
     //产品类型选择

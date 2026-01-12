@@ -43,6 +43,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.data.ProductType
@@ -50,6 +52,7 @@ import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.theme.TextDark
 import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
+import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 import com.unilumin.smartapp.ui.viewModel.ViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,17 +63,12 @@ fun SystemConfigScreen(
 ) {
 
     val context = LocalContext.current
-    val profileViewModel: ProfileViewModel = viewModel(
-        factory = ViewModelFactory {
-            ProfileViewModel(retrofitClient, context)
+    val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return SystemViewModel(retrofitClient, context) as T
         }
-    )
-
-
-
-
-
-    val productTypes by profileViewModel.productTypes.collectAsState()
+    })
+    val productTypes by systemViewModel.productTypes.collectAsState()
 
     var isDeviceListExpanded by remember { mutableStateOf(false) }
 
@@ -124,7 +122,7 @@ fun SystemConfigScreen(
                     DeviceTypeSwitchItem(
                         product = product,
                         onCheckedChange = { isChecked ->
-                            profileViewModel.toggleProductType(product.id, isChecked)
+                            systemViewModel.toggleProductType(product.id, isChecked)
                         }
                     )
                 }
