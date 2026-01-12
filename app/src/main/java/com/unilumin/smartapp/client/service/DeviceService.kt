@@ -9,8 +9,8 @@ import com.unilumin.smartapp.client.data.EnvData
 import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
-import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.IotDevice
+import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OfflineDevice
@@ -82,7 +82,7 @@ interface DeviceService {
         @Query("keyword") keyword: String,
         @Query("curPage") curPage: Int,
         @Query("pageSize") pageSize: Int,
-        @Query("productTypeIds") productTypeIds: Int
+        @Query("productTypeIds") productType: Long
     ): Call<NewResponseData<PageResponse<IotDevice>?>?>?
 
     @GET(RequestPathKey.KEY_CAMERA_LIVE_URL)

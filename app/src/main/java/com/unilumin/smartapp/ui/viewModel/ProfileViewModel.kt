@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
+import com.unilumin.smartapp.client.constant.DeviceConstant.DEVICE_PRODUCT_TYPE_LIST
 import com.unilumin.smartapp.client.data.MinioUrl
+import com.unilumin.smartapp.client.data.ProductType
 import com.unilumin.smartapp.client.data.ProjectInfo
 import com.unilumin.smartapp.client.data.ResponseData
 import com.unilumin.smartapp.client.data.SystemInfo
@@ -14,14 +16,19 @@ import com.unilumin.smartapp.client.data.UserInfo
 import com.unilumin.smartapp.client.service.ProjectService
 import com.unilumin.smartapp.client.service.SystemService
 import com.unilumin.smartapp.client.service.UserService
+import com.unilumin.smartapp.mock.ProductTypeManage
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import retrofit2.Call
 
 class ProfileViewModel(
     val retrofitClient: RetrofitClient, val context: Context
 ) : ViewModel() {
+
 
     val userService = retrofitClient.getService(UserService::class.java)
     val projectService = retrofitClient.getService(ProjectService::class.java)
@@ -52,9 +59,34 @@ class ProfileViewModel(
     private val _userAvatarUrl = MutableStateFlow<String?>(null)
     val userAvatarUrl = _userAvatarUrl.asStateFlow()
 
+    var configStore = ProductTypeManage(context)
+
     init {
         fetchProjects()
         fetchUserInfo()
+    }
+
+
+
+
+    // 暴露给 UI 的状态流：使用 stateIn 保持热流，确保跨页面感知
+    val productTypes: StateFlow<List<ProductType>> = configStore.productTypesFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = DEVICE_PRODUCT_TYPE_LIST
+        )
+
+    // 切换选中状态
+    fun toggleProductType(id: Long, isSelected: Boolean) {
+        viewModelScope.launch {
+            // 基于当前流中的最新值进行修改
+            val currentList = productTypes.value.map {
+                if (it.id == id) it.copy(isSelected = isSelected) else it
+            }
+            // 写入 DataStore，这会触发 productTypesFlow 发射新值，从而自动更新 UI
+            configStore.saveProductTypes(currentList)
+        }
     }
 
     fun fetchProjects() {

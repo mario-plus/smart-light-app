@@ -1,5 +1,7 @@
 package com.unilumin.smartapp.client.data
 
+import androidx.compose.ui.graphics.vector.ImageVector
+
 data class ResponseData<T>(
     var code: Int?, var message: String?, var data: T?
 )
@@ -384,4 +386,12 @@ data class PoleMapPointReq(
     val maxLat: String,
     val projectRoadId: Long?,
     val keyword: String?
+)
+
+
+data class ProductType(
+    val id: Long,
+    val name: String,
+    val icon: ImageVector,
+    var isSelected: Boolean = false
 )

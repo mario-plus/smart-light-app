@@ -1,5 +1,6 @@
 package com.unilumin.smartapp
 
+import SystemConfigScreen
 import SystemInfoScreen
 import android.os.Build
 import android.os.Bundle
@@ -20,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -40,6 +42,8 @@ import com.unilumin.smartapp.ui.screens.site.SitesScreen
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.Gray900
+import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
+import com.unilumin.smartapp.ui.viewModel.ViewModelFactory
 
 
 class MainActivity : ComponentActivity() {
@@ -69,6 +73,15 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
     var sessionKey by remember { mutableIntStateOf(0) }
     var isLoggedIn by remember { mutableStateOf(false) }
 
+    // 配置的设备产品list，设备页面需要使用，待优化
+    val profileViewModel: ProfileViewModel = viewModel(
+        factory = ViewModelFactory {
+            ProfileViewModel(retrofitClient, context)
+        }
+    )
+
+
+
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = Blue600, background = Gray50, surface = Color.White, onSurface = Gray900
@@ -94,21 +107,22 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         composable("dashboard") { DashboardScreen(retrofitClient) }
                         composable("devices") {
                             DevicesScreen(
-                                retrofitClient,
+                                retrofitClient = retrofitClient,
+                                profileViewModel = profileViewModel,
                                 onDetailClick = { lightDevice ->
                                     val deviceJson = com.google.gson.Gson().toJson(lightDevice)
                                     val encodedJson =
                                         java.net.URLEncoder.encode(deviceJson, "UTF-8")
                                     navController.navigate("deviceDetail/$encodedJson")
-                                }, onMenuClick = {
+                                },
+                                onMenuClick = {
                                     navController.navigate("deviceStatusChart")
                                 })
                         }
                         //离线报表
                         composable("deviceStatusChart") { e ->
                             DeviceStatusChartScreen(
-                                retrofitClient,
-                                onBack = { navController.popBackStack() })
+                                retrofitClient, onBack = { navController.popBackStack() })
                         }
 
                         //设备详情页面
@@ -132,6 +146,8 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                             }, onItemClick = { name, profileViewModel ->
                                 if (name == DeviceConstant.SYSTEM_INFO) {
                                     navController.navigate("systemInfo")
+                                } else if (name == DeviceConstant.SYSTEM_CONFIG) {
+                                    navController.navigate("systemConfig")
                                 }
                             })
                         }
@@ -141,6 +157,13 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                 retrofitClient = retrofitClient,
                                 onBack = { navController.popBackStack() })
                         }
+                        //系统配置
+                        composable("systemConfig") { e ->
+                            SystemConfigScreen(
+                                retrofitClient = retrofitClient,
+                                onBack = { navController.popBackStack() })
+                        }
+
                     }
                 }
             }

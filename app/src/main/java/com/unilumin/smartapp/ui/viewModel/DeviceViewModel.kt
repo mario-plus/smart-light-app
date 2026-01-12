@@ -13,7 +13,6 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
-import com.unilumin.smartapp.client.constant.DeviceConstant
 import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceModelData
@@ -21,8 +20,8 @@ import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
-import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.IotDevice
+import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OfflineDevice
@@ -53,9 +52,9 @@ class DeviceViewModel(
     private val deviceService = retrofitClient.getService(DeviceService::class.java)
 
     //设备列表查询参数(产品类型)
-    val currentFilter = MutableStateFlow(DeviceConstant.LAMP)
-    fun updateFilter(type: String) {
-        currentFilter.value = type
+    val productType = MutableStateFlow(1L)
+    fun updateFilter(type: Long) {
+        productType.value = type
     }
 
     //设备列表查询参数(关键词)
@@ -132,7 +131,7 @@ class DeviceViewModel(
 
     //设备列表分页数据列表
     @OptIn(ExperimentalCoroutinesApi::class)
-    val devicePagingFlow = combine(currentFilter, searchQuery) { filter, query ->
+    val devicePagingFlow = combine(productType, searchQuery) { filter, query ->
         Pair(filter, query)
     }.flatMapLatest { (filter, query) ->
         Pager(
@@ -140,7 +139,7 @@ class DeviceViewModel(
             pagingSourceFactory = {
                 GenericPagingSource { page, pageSize ->
                     getDeviceList(
-                        type = filter,
+                        productType = filter,
                         searchQuery = query,
                         page = page,
                         pageSize = pageSize,
@@ -190,13 +189,13 @@ class DeviceViewModel(
 
     //获取设备列表
     suspend fun getDeviceList(
-        type: String,
+        productType: Long,
         searchQuery: String,
         page: Int,
         pageSize: Int,
         context: Context
     ): List<IotDevice> {
-        return getIotDevices(type, deviceService, searchQuery, page, pageSize, context)
+        return getIotDevices(productType, deviceService, searchQuery, page, pageSize, context)
 //        if (type == DeviceType.LAMP) {
 //            var parseDataNewSuspend =
 //                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
@@ -251,7 +250,7 @@ class DeviceViewModel(
     }
 
     suspend fun getIotDevices(
-        type: String,
+        productType: Long,
         deviceService: DeviceService,
         searchQuery: String,
         page: Int,
@@ -261,7 +260,7 @@ class DeviceViewModel(
         var parseDataNewSuspend =
             UniCallbackService<PageResponse<IotDevice>>().parseDataNewSuspend(
                 deviceService.getDeviceList(
-                    searchQuery, page, pageSize, DeviceConstant.getDeviceProductTypeId(type)
+                    searchQuery, page, pageSize, productType
                 ), context
             )
         _totalCount.value = parseDataNewSuspend?.total!!
