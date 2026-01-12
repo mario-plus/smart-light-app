@@ -278,7 +278,7 @@ fun SiteMapViewContainer(
 ) {
     val context = LocalContext.current
     val mapView = remember { MapView(context) }
-    val renderer = remember { SiteMapRenderer(context, onPoleClick) }
+    val renderer = remember { SiteMap(context, onPoleClick) }
 
     // 生命周期管理
     val lifecycle = LocalLifecycleOwner.current.lifecycle
