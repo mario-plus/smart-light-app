@@ -60,3 +60,7 @@ val SafeBg = Color(0xFFE8F5E9)
 val OfflineGray = Color(0xFF9E9E9E)
 val CardBorder = Color(0xFFE0E0E0)
 val TextTitle = Color(0xFF212121)
+val AppThemeBackground = Color(0xFFF7F8FA)
+val AppContentColor = Color(0xFF2D3338) // 深灰，比纯黑柔和
+val TopBarGradientStart = Color(0xFFF9FAFB) // 接近纯白
+val TopBarGradientEnd = Color(0xFFEFF1F5)   // 极淡的灰蓝

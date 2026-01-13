@@ -22,6 +22,7 @@ pagingCompose = "3.2.1"
 retrofit = "2.9.0"
 cronetEmbedded = "141.7340.3"
 xdmap = "latest.integration"
+material3 = "1.4.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -54,6 +55,7 @@ androidx-navigation-runtime-android = { group = "androidx.navigation", name = "n
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 cronet-embedded = { group = "org.chromium.net", name = "cronet-embedded", version.ref = "cronetEmbedded" }
 xdmap = { module = "com.amap.api:3dmap", version.ref = "xdmap" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -54,6 +56,7 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.PROPERTY
 import com.unilumin.smartapp.client.constant.DeviceConstant.TELEMETRY
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.IotDevice
+import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.DetailCard
 import com.unilumin.smartapp.ui.components.DetailRow
 import com.unilumin.smartapp.ui.components.DeviceDataGrid
@@ -154,27 +157,10 @@ fun DeviceDetailScreen(
     Scaffold(
         topBar = {
             Surface(shadowElevation = 3.dp) {
+
                 Column(modifier = Modifier.background(CardWhite)) {
-                    CenterAlignedTopAppBar(
-                        title = {
-                        Text(
-                            text = "${iotDevice.deviceName}-详情", style = TextStyle(
-                                fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
-                            )
-                        )
-                    },
-                        navigationIcon = {
-                            IconButton(onClick = onBack) {
-                                Icon(
-                                    Icons.Default.ArrowBack,
-                                    contentDescription = "返回",
-                                    tint = TextDark,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
-                    )
+                    CommonTopAppBar(title = "${iotDevice.deviceName}-详情", onBack = { onBack() })
+                    Spacer(modifier = Modifier.height(8.dp))
                     // 4. 替换为 LazyRow 实现的滑动 Chip Tabs
                     LazyRow(
                         modifier = Modifier
@@ -308,46 +294,46 @@ fun DeviceDetailScreen(
 
                     NETWORK -> {
                         var keys = listOf("onLine", "offLine")
-                            HistoryDataListView(
-                                limitDays = 14,
-                                startDate = currentStart,
-                                endDate = currentEnd,
-                                historyDataList,
-                                hasMore = pagingState.hasMore,
-                                onRangeSelected = { start, end ->
-                                    tabDatesMap[selectedLabel] = start to end
-                                    deviceViewModel.loadHistoryData(
-                                        iotDevice.id, start, end, isRefresh = true, keys = keys
-                                    )
-                                },
-                                onLoadMore = { start, end ->
-                                    deviceViewModel.loadHistoryData(
-                                        iotDevice.id, start, end, isRefresh = false, keys = keys
-                                    )
-                                })
+                        HistoryDataListView(
+                            limitDays = 14,
+                            startDate = currentStart,
+                            endDate = currentEnd,
+                            historyDataList,
+                            hasMore = pagingState.hasMore,
+                            onRangeSelected = { start, end ->
+                                tabDatesMap[selectedLabel] = start to end
+                                deviceViewModel.loadHistoryData(
+                                    iotDevice.id, start, end, isRefresh = true, keys = keys
+                                )
+                            },
+                            onLoadMore = { start, end ->
+                                deviceViewModel.loadHistoryData(
+                                    iotDevice.id, start, end, isRefresh = false, keys = keys
+                                )
+                            })
                     }
 
                     EVENT -> {
                         var keys = deviceEventsDataList.map { it.key }
-                            HistoryDataListView(
-                                limitDays = 14,
-                                startDate = currentStart,
-                                endDate = currentEnd,
-                                historyDataList,
-                                hasMore = pagingState.hasMore,
-                                onRangeSelected = { start, end ->
-                                    tabDatesMap[selectedLabel] = start to end
-                                    deviceViewModel.loadHistoryData(
-                                        iotDevice.id, start, end, isRefresh = true, keys = keys
-                                    )
+                        HistoryDataListView(
+                            limitDays = 14,
+                            startDate = currentStart,
+                            endDate = currentEnd,
+                            historyDataList,
+                            hasMore = pagingState.hasMore,
+                            onRangeSelected = { start, end ->
+                                tabDatesMap[selectedLabel] = start to end
+                                deviceViewModel.loadHistoryData(
+                                    iotDevice.id, start, end, isRefresh = true, keys = keys
+                                )
 
-                                },
-                                onLoadMore = { start, end ->
-                                    deviceViewModel.loadHistoryData(
-                                        iotDevice.id, start, end, isRefresh = false, keys = keys
-                                    )
+                            },
+                            onLoadMore = { start, end ->
+                                deviceViewModel.loadHistoryData(
+                                    iotDevice.id, start, end, isRefresh = false, keys = keys
+                                )
 
-                                })
+                            })
                     }
                 }
 

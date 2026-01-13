@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.data.SystemFileInfo
+import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.DetailCard
 import com.unilumin.smartapp.ui.components.DetailRow
 import com.unilumin.smartapp.ui.components.LoadingContent
@@ -90,30 +91,7 @@ fun SystemInfoScreen(
 
     Scaffold(
         topBar = {
-            Surface(shadowElevation = 3.dp) {
-                Column(modifier = Modifier.background(CardWhite)) {
-                    CenterAlignedTopAppBar(
-                        title = {
-                            Text(
-                                text = "系统资源监控", style = TextStyle(
-                                    fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
-                                )
-                            )
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = onBack) {
-                                Icon(
-                                    Icons.Default.ArrowBack,
-                                    contentDescription = "返回",
-                                    tint = TextDark,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
-                    )
-                }
-            }
+            CommonTopAppBar(title = "系统资源监控",onBack={onBack()})
         }, containerColor = PageBackground
     ) { padding ->
         LoadingContent(isLoading = isLoading) {

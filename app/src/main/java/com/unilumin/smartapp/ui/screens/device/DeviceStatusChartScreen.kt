@@ -54,6 +54,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysis
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
+import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.EmptyDataView
 import com.unilumin.smartapp.ui.components.LoadingContent
 import com.unilumin.smartapp.ui.screens.dialog.OfflineDeviceDetailSheet
@@ -95,30 +96,10 @@ fun DeviceStatusChartScreen(
 
     Scaffold(
         topBar = {
-            Surface(shadowElevation = 3.dp) {
-                Column(modifier = Modifier.background(CardWhite)) {
-                    CenterAlignedTopAppBar(
-                        title = {
-                        Text(
-                            text = "离线报表", style = TextStyle(
-                                fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
-                            )
-                        )
-                    },
-                        navigationIcon = {
-                            IconButton(onClick = onBack) {
-                                Icon(
-                                    Icons.Default.ArrowBack,
-                                    contentDescription = "返回",
-                                    tint = TextDark,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
-                    )
-                }
-            }
+                CommonTopAppBar(
+                    title = "离线报表",
+                    onBack = { onBack() }
+                )
         }, containerColor = PageBackground
     ) { padding ->
 

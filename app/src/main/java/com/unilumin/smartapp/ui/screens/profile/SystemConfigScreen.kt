@@ -1,4 +1,3 @@
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +47,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.data.ProductType
+import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.theme.TextDark
@@ -76,26 +76,7 @@ fun SystemConfigScreen(
         topBar = {
             Surface(shadowElevation = 3.dp) {
                 Column(modifier = Modifier.background(CardWhite)) {
-                    CenterAlignedTopAppBar(
-                        title = {
-                            Text(
-                                text = "系统配置", style = TextStyle(
-                                    fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark
-                                )
-                            )
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = onBack) {
-                                Icon(
-                                    Icons.Default.ArrowBack,
-                                    contentDescription = "返回",
-                                    tint = TextDark,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
-                    )
+                    CommonTopAppBar(title = "系统配置", onBack = { onBack() })
                 }
             }
         }, containerColor = PageBackground
@@ -152,7 +133,12 @@ fun ConfigExpandableCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Settings, contentDescription = null, tint = TextDark, modifier = Modifier.size(24.dp))
+            Icon(
+                Icons.Default.Settings,
+                contentDescription = null,
+                tint = TextDark,
+                modifier = Modifier.size(24.dp)
+            )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = title, fontSize = 16.sp, color = TextDark, fontWeight = FontWeight.Bold)
