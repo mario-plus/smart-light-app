@@ -1,5 +1,6 @@
 package com.unilumin.smartapp
 
+import SmartLampScreen
 import SystemConfigScreen
 import SystemInfoScreen
 import android.os.Build
@@ -40,7 +41,6 @@ import com.unilumin.smartapp.ui.components.BottomNavBar
 import com.unilumin.smartapp.ui.screens.DashboardScreen
 import com.unilumin.smartapp.ui.screens.app.broadcast.SmartBroadScreen
 import com.unilumin.smartapp.ui.screens.app.env.SmartEnvScreen
-import com.unilumin.smartapp.ui.screens.app.lamp.SmartLampScreen
 import com.unilumin.smartapp.ui.screens.app.monitor.SmartMonitorScreen
 import com.unilumin.smartapp.ui.screens.app.playBox.SmartPlayBoxScreen
 import com.unilumin.smartapp.ui.screens.device.DeviceDetailScreen

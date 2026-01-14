@@ -3,7 +3,6 @@ package com.unilumin.smartapp.ui.screens.device
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,8 +36,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,7 +48,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -70,6 +66,7 @@ import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.ui.components.FilterChip
 import com.unilumin.smartapp.ui.components.PagingList
+import com.unilumin.smartapp.ui.components.ReferenceStyleDropdownMenu
 import com.unilumin.smartapp.ui.components.SearchBar
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray100
@@ -175,38 +172,14 @@ fun DevicesScreen(
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Rounded.FilterList, null, tint = Gray500)
 
-                        MaterialTheme(shapes = Shapes(extraSmall = menuShape)) {
-                            DropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false },
-                                modifier = Modifier
-                                    .shadow(
-                                        12.dp, menuShape, spotColor = Color.Black.copy(alpha = 0.2f)
-                                    )
-                                    .clip(menuShape)
-                                    .background(Color.White)
-                                    .border(0.5.dp, Color(0xFFF0F0F0), menuShape)
-                            ) {
-                                smartApps.forEach { smartApp ->
-                                    if (smartApp.isSelected) {
-                                        DropdownMenuItem(leadingIcon = {
-                                            Icon(
-                                                smartApp.icon,
-                                                null,
-                                                Modifier.size(20.dp),
-                                                Color.Gray
-                                            )
-                                        }, text = {
-                                            Text(
-                                                smartApp.name,
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Medium
-                                            )
-                                        }, onClick = { showMenu = false; onMenuClick(smartApp.id) })
-                                    }
-                                }
-                            }
-                        }
+                        ReferenceStyleDropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            items = smartApps,
+                            onItemClick = { systemConfig ->
+                                showMenu = false
+                                onMenuClick(systemConfig.id)
+                            })
                     }
                 }
 

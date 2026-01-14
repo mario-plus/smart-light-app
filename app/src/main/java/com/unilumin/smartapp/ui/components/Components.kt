@@ -34,7 +34,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -52,7 +52,6 @@ import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.outlined.Dashboard
@@ -63,6 +62,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.List
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Person
@@ -90,6 +90,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -2213,100 +2214,125 @@ fun CommonTopAppBar(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    height: Dp = 64.dp,
-    elevation: Dp = 2.dp,
-    // 默认空列表，表示没有菜单
+    height: Dp = 72.dp,
     menuItems: List<SystemConfig> = emptyList(),
-    // 菜单点击回调
     onMenuItemClick: (SystemConfig) -> Unit = {}
 ) {
-
+    var menuExpanded by remember { mutableStateOf(false) }
+    val textMain = Color(0xFF1A1C1E) // 主标题深黑
     val gradientBrush = Brush.verticalGradient(
         colors = listOf(Color(0xFFF0F7FF), Gray50),
         startY = 0f,
         endY = 500f
     )
-    var menuExpanded by remember { mutableStateOf(false) }
 
     Surface(
-        shadowElevation = elevation,
-        color = Color.Transparent,
-        modifier = modifier
+        modifier = modifier.fillMaxWidth(),
+        color = Color.Transparent // Set Surface color to Transparent to let the gradient show
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(height)
-                .background(brush = gradientBrush)
+                .background(brush = gradientBrush) // Apply the gradient background
                 .padding(horizontal = 4.dp)
         ) {
-            // 1. 左侧：返回按钮
+            // === Left: Back Button ===
             IconButton(
                 onClick = onBack,
                 modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "返回",
-                    tint = Color.Black, // 建议使用 AppContentColor
+                    contentDescription = "Back",
+                    tint = textMain,
                     modifier = Modifier.size(24.dp)
                 )
             }
 
-            // 2. 中间：标题
+            // === Center: Title ===
             Text(
                 text = title,
                 style = TextStyle(
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+                    fontWeight = FontWeight.Bold,
+                    color = textMain,
+                    letterSpacing = 0.5.sp
                 ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.align(Alignment.Center)
             )
 
-            // 3. 右侧区域
-            Row(
-                modifier = Modifier.align(Alignment.CenterEnd),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (menuItems.isNotEmpty()) {
-                    Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "更多",
-                                tint = Color.Black,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false },
-                            modifier = Modifier.background(Color.White)
-                        ) {
-                            menuItems.forEach { systemConfig ->
-                                if (systemConfig.isSelected) {
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                text = systemConfig.name,
-                                                fontSize = 16.sp,
-                                                color = Color.Black // 确保文字颜色
-                                            )
-                                        },
-                                        onClick = {
-                                            menuExpanded = false
-                                            onMenuItemClick(systemConfig)
-                                        }
-                                    )
-                                }
-
-                            }
-                        }
+            // === Right: Menu Button ===
+            if (menuItems.isNotEmpty()) {
+                Box(
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                ) {
+                    IconButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.Rounded.FilterList,
+                            contentDescription = "Menu",
+                            tint = textMain,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
+
+                    ReferenceStyleDropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                        items = menuItems,
+                        onItemClick = { systemConfig ->
+                            menuExpanded = false
+                            onMenuItemClick(systemConfig)
+                        }
+                    )
                 }
             }
         }
     }
+}
+
+@Composable
+fun ReferenceStyleDropdownMenu(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    items: List<SystemConfig>,
+    onItemClick: (SystemConfig) -> Unit
+) {
+    val menuShape = RoundedCornerShape(16.dp)
+    MaterialTheme(shapes = Shapes(extraSmall = menuShape)) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onDismissRequest() },
+            modifier = Modifier
+                .widthIn(min = 150.dp)
+                .shadow(
+                    12.dp, menuShape, spotColor = Color.Black.copy(alpha = 0.2f)
+                )
+                .clip(menuShape)
+                .background(Color.White)
+                .border(0.5.dp, Color(0xFFF0F0F0), menuShape)
+        ) {
+            items.forEach { smartApp ->
+                if (smartApp.isSelected) {
+                    DropdownMenuItem(leadingIcon = {
+                        Icon(
+                            smartApp.icon,
+                            null,
+                            Modifier.size(20.dp),
+                            Color.Gray
+                        )
+                    }, text = {
+                        Text(
+                            smartApp.name,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }, onClick = { onItemClick(smartApp) })
+                }
+            }
+        }
+    }
+
 }
