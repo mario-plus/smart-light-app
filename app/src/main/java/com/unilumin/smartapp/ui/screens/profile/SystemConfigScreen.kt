@@ -63,9 +63,11 @@ fun SystemConfigScreen(
     })
     val productTypes by systemViewModel.productTypes.collectAsState()
     val smartApps by systemViewModel.smartApps.collectAsState()
+    val lampFunctions by systemViewModel.lampFunctions.collectAsState()
 
     var isDeviceListExpanded by remember { mutableStateOf(false) }
     var isSmartAppExpanded by remember { mutableStateOf(false) }
+    var isLampFunctionExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -129,6 +131,28 @@ fun SystemConfigScreen(
                     )
                 }
             }
+
+
+            // 3. 智慧应用的标题卡片单独作为一个 item (放在设备列表下方)
+            item {
+                ConfigExpandableCard(
+                    title = "智慧路灯功能配置",
+                    subtitle = "设备列表智慧应用功能模块配置",
+                    isExpanded = isLampFunctionExpanded,
+                    onExpandClick = { isLampFunctionExpanded = !isLampFunctionExpanded }
+                )
+            }
+            if (isLampFunctionExpanded) {
+                items(lampFunctions, key = { it.id }) { systemConfig ->
+                    DeviceTypeSwitchItem(
+                        systemConfig = systemConfig,
+                        onCheckedChange = { isChecked ->
+                            systemViewModel.toggleLampFunctions(systemConfig.id, isChecked)
+                        }
+                    )
+                }
+            }
+
         }
     }
 }

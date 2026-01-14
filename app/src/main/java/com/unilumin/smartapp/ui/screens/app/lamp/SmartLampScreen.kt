@@ -11,31 +11,50 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP
 import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.PageBackground
+import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartLampScreen(
     retrofitClient: RetrofitClient, onBack: () -> Unit
 ) {
+
+    var context = LocalContext.current
+
+    val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return SystemViewModel(retrofitClient, context) as T
+        }
+    })
+
+    val lampFunctions by systemViewModel.lampFunctions.collectAsState()
+
+
     Scaffold(
         topBar = {
             Surface(shadowElevation = 3.dp) {
                 Column(modifier = Modifier.background(CardWhite)) {
                     CommonTopAppBar(
-                        title =getSmartAppName(SMART_LAMP), onBack = { onBack() },
-                        menuItems = listOf("单灯控制器", "集中控制器", "回路控制器"),
-                        onMenuItemClick = { i, c ->
+                        title = getSmartAppName(SMART_LAMP),
+                        onBack = { onBack() },
+                        menuItems = lampFunctions,
+                        onMenuItemClick = { systemConfig ->
 
-                        }
-                    )
+                        })
                 }
             }
         }, containerColor = PageBackground

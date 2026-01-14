@@ -54,6 +54,23 @@ object DeviceConstant {
         SystemConfig(SMART_PLAY_BOX, "智慧屏幕", getIconForName(SMART_PLAY_BOX), true)
     )
 
+    const val SMART_LAMP_LIGHT = "lampLight"
+    const val SMART_LAMP_GATEWAY = "lightGateway"
+    const val SMART_LAMP_LOOP = "lightLoop"
+    const val SMART_LAMP_GROUP = "lightGroup"
+    const val SMART_LAMP_STRATEGY = "lightStrategy"
+    const val SMART_LAMP_JOB = "lightJob"
+
+    val SMART_LAMP_FUNC_LIST = listOf<SystemConfig>(
+        SystemConfig(SMART_LAMP_LIGHT, "单灯管理", getIconForName(SMART_LAMP_LIGHT), true),
+        SystemConfig(SMART_LAMP_GATEWAY, "集控管理", getIconForName(SMART_LAMP_GATEWAY), true),
+        SystemConfig(SMART_LAMP_LOOP, "回路管理", getIconForName(SMART_LAMP_LOOP), true),
+        SystemConfig(SMART_LAMP_GROUP, "分组管理", getIconForName(SMART_LAMP_GROUP), true),
+        SystemConfig(SMART_LAMP_STRATEGY, "策略管理", getIconForName(SMART_LAMP_STRATEGY), true),
+        SystemConfig(SMART_LAMP_JOB, "任务管理", getIconForName(SMART_LAMP_JOB), true)
+    )
+
+
     fun getSmartAppName(id: String): String {
         return SMART_APP_LIST.find { it.id == id }?.name ?: "未知应用"
     }

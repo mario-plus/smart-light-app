@@ -152,6 +152,7 @@ import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.LoopInfo
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.SequenceTsl
+import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.ui.theme.AccentBlue
 import com.unilumin.smartapp.ui.theme.AlarmBg
 import com.unilumin.smartapp.ui.theme.AlarmRed
@@ -2215,9 +2216,9 @@ fun CommonTopAppBar(
     height: Dp = 64.dp,
     elevation: Dp = 2.dp,
     // 默认空列表，表示没有菜单
-    menuItems: List<String> = emptyList(),
+    menuItems: List<SystemConfig> = emptyList(),
     // 菜单点击回调
-    onMenuItemClick: (Int, String) -> Unit = { _, _ -> }
+    onMenuItemClick: (SystemConfig) -> Unit = {}
 ) {
 
     val gradientBrush = Brush.verticalGradient(
@@ -2268,9 +2269,7 @@ fun CommonTopAppBar(
                 modifier = Modifier.align(Alignment.CenterEnd),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 【核心逻辑】只有当 menuItems 不为空时，才渲染菜单按钮
                 if (menuItems.isNotEmpty()) {
-                    // ✅ 修复点：wrapContentSize 必须写在 Modifier 中
                     Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
                         IconButton(onClick = { menuExpanded = true }) {
                             Icon(
@@ -2286,20 +2285,23 @@ fun CommonTopAppBar(
                             onDismissRequest = { menuExpanded = false },
                             modifier = Modifier.background(Color.White)
                         ) {
-                            menuItems.forEachIndexed { index, itemText ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = itemText,
-                                            fontSize = 16.sp,
-                                            color = Color.Black // 确保文字颜色
-                                        )
-                                    },
-                                    onClick = {
-                                        menuExpanded = false
-                                        onMenuItemClick(index, itemText)
-                                    }
-                                )
+                            menuItems.forEach { systemConfig ->
+                                if (systemConfig.isSelected) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = systemConfig.name,
+                                                fontSize = 16.sp,
+                                                color = Color.Black // 确保文字颜色
+                                            )
+                                        },
+                                        onClick = {
+                                            menuExpanded = false
+                                            onMenuItemClick(systemConfig)
+                                        }
+                                    )
+                                }
+
                             }
                         }
                     }
