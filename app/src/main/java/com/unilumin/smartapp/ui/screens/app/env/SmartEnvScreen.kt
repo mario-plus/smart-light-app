@@ -14,8 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.client.constant.DeviceConstant.DeviceMenus
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_ENV
+import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.PageBackground
@@ -29,7 +29,7 @@ fun SmartEnvScreen(
         topBar = {
             Surface(shadowElevation = 3.dp) {
                 Column(modifier = Modifier.background(CardWhite)) {
-                    CommonTopAppBar(title =DeviceMenus.toMap()[SMART_ENV].toString() , onBack = { onBack() })
+                    CommonTopAppBar(title =getSmartAppName(SMART_ENV) , onBack = { onBack() })
                 }
             }
         }, containerColor = PageBackground

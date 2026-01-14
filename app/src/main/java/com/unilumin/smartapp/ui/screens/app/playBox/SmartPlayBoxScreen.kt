@@ -14,8 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.client.constant.DeviceConstant.DeviceMenus
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_PLAY_BOX
+import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.PageBackground
@@ -30,7 +30,7 @@ fun SmartPlayBoxScreen(
             Surface(shadowElevation = 3.dp) {
                 Column(modifier = Modifier.background(CardWhite)) {
                     CommonTopAppBar(
-                        title = DeviceMenus.toMap()[SMART_PLAY_BOX].toString(),
+                        title = getSmartAppName(SMART_PLAY_BOX),
                         onBack = { onBack() })
                 }
             }

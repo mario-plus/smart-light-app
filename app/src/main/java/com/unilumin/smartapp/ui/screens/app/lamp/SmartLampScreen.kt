@@ -14,8 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.client.constant.DeviceConstant.DeviceMenus
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP
+import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.PageBackground
@@ -30,10 +30,10 @@ fun SmartLampScreen(
             Surface(shadowElevation = 3.dp) {
                 Column(modifier = Modifier.background(CardWhite)) {
                     CommonTopAppBar(
-                        title = DeviceMenus.toMap()[SMART_LAMP].toString(), onBack = { onBack() },
+                        title =getSmartAppName(SMART_LAMP), onBack = { onBack() },
                         menuItems = listOf("单灯控制器", "集中控制器", "回路控制器"),
                         onMenuItemClick = { i, c ->
-                            
+
                         }
                     )
                 }

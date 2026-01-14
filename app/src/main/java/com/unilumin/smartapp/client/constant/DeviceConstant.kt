@@ -1,6 +1,12 @@
 package com.unilumin.smartapp.client.constant
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.CameraOutdoor
+import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.outlined.DevicesOther
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.DirectionsWalk
@@ -32,15 +38,10 @@ object DeviceConstant {
 
 
     const val OFFLINE_ANALYSIS = "offlineAnalysis"
-
     const val SMART_LAMP = "smartLamp"
-
     const val SMART_MONITOR = "smartMonitor"
-
     const val SMART_ENV = "smartEnv"
-
     const val SMART_BROAD = "smartBroad"
-
     const val SMART_PLAY_BOX = "smartPlayBox"
 
     //设备列表--应用列表
@@ -52,6 +53,11 @@ object DeviceConstant {
         SystemConfig(SMART_BROAD, "智慧广播", getIconForName(SMART_BROAD), true),
         SystemConfig(SMART_PLAY_BOX, "智慧屏幕", getIconForName(SMART_PLAY_BOX), true)
     )
+
+    fun getSmartAppName(id: String): String {
+        return SMART_APP_LIST.find { it.id == id }?.name ?: "未知应用"
+    }
+
 
     // 设备列表--产品类型
     val DEVICE_PRODUCT_TYPE_LIST = listOf(
@@ -123,24 +129,6 @@ object DeviceConstant {
         SystemConfig("115", "通用指令执行器", getIconForName("通用指令执行器"))
     )
 
-
-    val DeviceMenus = listOf(
-
-        OFFLINE_ANALYSIS to "离线报表",
-
-        SMART_LAMP to "智慧路灯",
-
-        SMART_MONITOR to "安防监控",
-
-        SMART_ENV to "智能感知",
-
-        SMART_BROAD to "智慧广播",
-
-        SMART_PLAY_BOX to "智慧屏幕",
-
-        )
-
-
     val DeviceDetailTabs = listOf(
         DETAIL to "详细信息",
         NETWORK to "网络状态",
@@ -151,7 +139,6 @@ object DeviceConstant {
 
     //双色温单灯产品id
     val colorTempSupportedList = listOf("107", "125")
-
 
     const val SYSTEM_INFO = "系统信息"
     const val SYSTEM_CONFIG = "系统配置"
@@ -186,7 +173,14 @@ object DeviceConstant {
             name.contains("电表") || name.contains("电流") -> Icons.Outlined.ElectricMeter
             name.contains("车") || name.contains("闸") -> Icons.Outlined.DirectionsCar
             name.contains("人") -> Icons.Outlined.DirectionsWalk
+            name == OFFLINE_ANALYSIS -> Icons.Filled.Assessment // 或 Icons.Filled.Analytics
+            name == SMART_LAMP -> Icons.Filled.Lightbulb // 标准库没有很好的路灯，用灯泡代替
+            name == SMART_MONITOR -> Icons.Filled.CameraOutdoor // 需要 material-icons-extended 依赖
+            name == SMART_ENV -> Icons.Filled.Eco // 代表环境/生态
+            name == SMART_BROAD -> Icons.Filled.Campaign // 扩音器代表广播
+            name == SMART_PLAY_BOX -> Icons.Filled.Tv // 电视代表屏幕
             else -> Icons.Outlined.DevicesOther // 默认图标
+
         }
     }
 
