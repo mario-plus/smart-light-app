@@ -21,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -29,10 +28,21 @@ import com.amap.api.maps.MapsInitializer
 import com.unilumin.smartapp.auth.TokenManagerFactory
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant
+import com.unilumin.smartapp.client.constant.DeviceConstant.OFFLINE_ANALYSIS
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_BROAD
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_ENV
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_MONITOR
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_PLAY_BOX
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.mock.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
 import com.unilumin.smartapp.ui.screens.DashboardScreen
+import com.unilumin.smartapp.ui.screens.app.broadcast.SmartBroadScreen
+import com.unilumin.smartapp.ui.screens.app.env.SmartEnvScreen
+import com.unilumin.smartapp.ui.screens.app.lamp.SmartLampScreen
+import com.unilumin.smartapp.ui.screens.app.monitor.SmartMonitorScreen
+import com.unilumin.smartapp.ui.screens.app.playBox.SmartPlayBoxScreen
 import com.unilumin.smartapp.ui.screens.device.DeviceDetailScreen
 import com.unilumin.smartapp.ui.screens.device.DeviceStatusChartScreen
 import com.unilumin.smartapp.ui.screens.device.DevicesScreen
@@ -42,8 +52,6 @@ import com.unilumin.smartapp.ui.screens.site.SitesScreen
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.Gray900
-import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
-import com.unilumin.smartapp.ui.viewModel.ViewModelFactory
 
 
 class MainActivity : ComponentActivity() {
@@ -95,7 +103,10 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         startDestination = "dashboard",
                         modifier = Modifier.padding(innerPadding)
                     ) {
+                        //概览
                         composable("dashboard") { DashboardScreen(retrofitClient) }
+
+                        //设备
                         composable("devices") {
                             DevicesScreen(
                                 retrofitClient = retrofitClient,
@@ -105,8 +116,15 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                         java.net.URLEncoder.encode(deviceJson, "UTF-8")
                                     navController.navigate("deviceDetail/$encodedJson")
                                 },
-                                onMenuClick = {
-                                    navController.navigate("deviceStatusChart")
+                                onMenuClick = { e ->
+                                    when (e) {
+                                        OFFLINE_ANALYSIS -> navController.navigate("deviceStatusChart")
+                                        SMART_LAMP-> navController.navigate("smartLampScreen")
+                                        SMART_MONITOR-> navController.navigate("smartMonitorScreen")
+                                        SMART_ENV -> navController.navigate("smartEnvScreen")
+                                        SMART_BROAD-> navController.navigate("smartBroadScreen")
+                                        SMART_PLAY_BOX-> navController.navigate("smartPlayBoxScreen")
+                                    }
                                 })
                         }
                         //离线报表
@@ -114,6 +132,37 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                             DeviceStatusChartScreen(
                                 retrofitClient, onBack = { navController.popBackStack() })
                         }
+
+                        //智慧路灯
+                        composable("smartLampScreen") { e ->
+                            SmartLampScreen(
+                                retrofitClient, onBack = { navController.popBackStack() })
+                        }
+                        //智慧广播
+                        composable("smartBroadScreen") { e ->
+                            SmartBroadScreen(
+                                retrofitClient, onBack = { navController.popBackStack() })
+                        }
+                        //智能感知
+                        composable("smartEnvScreen") { e ->
+                            SmartEnvScreen(
+                                retrofitClient, onBack = { navController.popBackStack() })
+                        }
+
+                        //安防监控
+                        composable("smartMonitorScreen") { e ->
+                            SmartMonitorScreen(
+                                retrofitClient, onBack = { navController.popBackStack() })
+                        }
+
+                        //智慧屏幕
+                        composable("smartPlayBoxScreen") { e ->
+                            SmartPlayBoxScreen(
+                                retrofitClient, onBack = { navController.popBackStack() })
+                        }
+
+
+
 
                         //设备详情页面
                         composable("deviceDetail/{deviceJson}") { backStackEntry ->
@@ -127,7 +176,10 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                 retrofitClient = retrofitClient,
                                 onBack = { navController.popBackStack() })
                         }
+                        //站点
                         composable("sites") { SitesScreen(retrofitClient) }
+
+                        //我的
                         composable("profile") {
                             ProfileScreen(retrofitClient = retrofitClient, onLogout = {
                                 TokenManagerFactory.getInstance(context).clear()

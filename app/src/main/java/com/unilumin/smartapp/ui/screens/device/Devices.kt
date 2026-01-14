@@ -67,9 +67,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.client.constant.DeviceConstant.DeviceMenus
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_APP_LIST
 import com.unilumin.smartapp.client.data.IotDevice
-import com.unilumin.smartapp.client.data.ProductType
+import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.ui.components.FilterChip
 import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchBar
@@ -87,7 +87,7 @@ import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 fun DevicesScreen(
     retrofitClient: RetrofitClient,
     onDetailClick: (IotDevice) -> Unit,
-    onMenuClick: () -> Unit
+    onMenuClick: (String) -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val menuShape = RoundedCornerShape(16.dp)
@@ -129,7 +129,15 @@ fun DevicesScreen(
 
     // --- Loading 状态控制逻辑 ---
     // 条件同步记录，用于判断是否在切换查询条件
-    var lastSyncedParams by remember { mutableStateOf(Triple(productType, searchQuery, deviceState)) }
+    var lastSyncedParams by remember {
+        mutableStateOf(
+            Triple(
+                productType,
+                searchQuery,
+                deviceState
+            )
+        )
+    }
 
     // 只要这三个条件有任何一个与记录不符，就认为正在发起新的切换请求
     val isSwitching = lastSyncedParams != Triple(productType, searchQuery, deviceState)
@@ -179,7 +187,7 @@ fun DevicesScreen(
                                     .background(Color.White)
                                     .border(0.5.dp, Color(0xFFF0F0F0), menuShape)
                             ) {
-                                DeviceMenus.forEach { option ->
+                                SMART_APP_LIST.forEach { option ->
                                     DropdownMenuItem(leadingIcon = {
                                         Icon(
                                             Icons.Default.Settings,
@@ -189,11 +197,11 @@ fun DevicesScreen(
                                         )
                                     }, text = {
                                         Text(
-                                            option.second,
+                                            option.name,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Medium
                                         )
-                                    }, onClick = { showMenu = false; onMenuClick() })
+                                    }, onClick = { showMenu = false; onMenuClick(option.id) })
                                 }
                             }
                         }
@@ -220,7 +228,10 @@ fun DevicesScreen(
                         ) {
                             Text(
                                 // 显示简化后的文本，例如去掉 "设备" 二字以节省空间
-                                text = statusOptions.find { it.first == deviceState }?.second?.replace("设备", "") ?: "状态",
+                                text = statusOptions.find { it.first == deviceState }?.second?.replace(
+                                    "设备",
+                                    ""
+                                ) ?: "状态",
                                 fontSize = 14.sp,
                                 color = Gray900,
                                 fontWeight = FontWeight.Medium
@@ -273,7 +284,7 @@ fun DevicesScreen(
                 // 3. 筛选区域
                 DeviceFilterSection(
                     activeTypes = activeTypes,
-                    selectedId = productType,
+                    selectedId = productType.toLong(),
                     onSelect = { id -> deviceViewModel.updateFilter(id) }
                 )
             }
@@ -293,7 +304,7 @@ fun DevicesScreen(
             DeviceCardItem(
                 deviceViewModel = deviceViewModel,
                 iotDevice = device,
-                productType = productType,
+                productType = productType.toLong(),
                 onDetailClick = { onDetailClick(device) })
         }
     }
@@ -302,9 +313,9 @@ fun DevicesScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeviceFilterSection(
-    activeTypes: List<ProductType>,
+    activeTypes: List<SystemConfig>,
     selectedId: Long,
-    onSelect: (Long) -> Unit
+    onSelect: (String) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -315,7 +326,7 @@ fun DeviceFilterSection(
     // 当选中项改变，且当前处于收起状态（或刚刚收起）时，滚动到对应位置
     LaunchedEffect(selectedId, isExpanded) {
         if (!isExpanded) {
-            val index = activeTypes.indexOfFirst { it.id == selectedId }
+            val index = activeTypes.indexOfFirst { it.id == selectedId.toString() }
             if (index >= 0) {
                 listState.animateScrollToItem(index)
             }
@@ -373,7 +384,7 @@ fun DeviceFilterSection(
                         activeTypes.forEach { type ->
                             GridFilterItem(
                                 type = type,
-                                isSelected = type.id == selectedId,
+                                isSelected = type.id == selectedId.toString(),
                                 onClick = {
                                     onSelect(type.id)
                                     isExpanded = false // 选中后自动收起
@@ -397,7 +408,7 @@ fun DeviceFilterSection(
                         items(activeTypes) { type ->
                             FilterChip(
                                 label = type.name,
-                                isActive = type.id == selectedId,
+                                isActive = type.id == selectedId.toString(),
                                 onClick = { onSelect(type.id) }
                             )
                         }
@@ -428,7 +439,7 @@ fun DeviceFilterSection(
  */
 @Composable
 fun GridFilterItem(
-    type: ProductType,
+    type: SystemConfig,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {

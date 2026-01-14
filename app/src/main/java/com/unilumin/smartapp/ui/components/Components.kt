@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +34,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.outlined.Dashboard
@@ -72,11 +73,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -95,7 +97,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberTooltipState
@@ -156,8 +157,6 @@ import com.unilumin.smartapp.ui.theme.AlarmBg
 import com.unilumin.smartapp.ui.theme.AlarmRed
 import com.unilumin.smartapp.ui.theme.Amber50
 import com.unilumin.smartapp.ui.theme.Amber500
-import com.unilumin.smartapp.ui.theme.AppContentColor
-import com.unilumin.smartapp.ui.theme.AppThemeBackground
 import com.unilumin.smartapp.ui.theme.BackgroundGray
 import com.unilumin.smartapp.ui.theme.BgLightGray
 import com.unilumin.smartapp.ui.theme.Blue50
@@ -189,8 +188,6 @@ import com.unilumin.smartapp.ui.theme.TextGray
 import com.unilumin.smartapp.ui.theme.TextPrimary
 import com.unilumin.smartapp.ui.theme.TextSecondary
 import com.unilumin.smartapp.ui.theme.TextTitle
-import com.unilumin.smartapp.ui.theme.TopBarGradientEnd
-import com.unilumin.smartapp.ui.theme.TopBarGradientStart
 import com.unilumin.smartapp.ui.theme.White
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -366,6 +363,7 @@ fun BottomNavBar(navController: NavController) {
         }
     }
 }
+
 @Composable
 
 fun InfoLabelValue(label: String, value: String) {
@@ -2209,11 +2207,6 @@ private fun StatusIconText(
 }
 
 
-
-
-
-
-
 @Composable
 fun CommonTopAppBar(
     title: String,
@@ -2221,10 +2214,18 @@ fun CommonTopAppBar(
     modifier: Modifier = Modifier,
     height: Dp = 64.dp,
     elevation: Dp = 2.dp,
-    gradientColors: List<Color> = listOf(TopBarGradientStart, TopBarGradientEnd),
-    actions: @Composable RowScope.() -> Unit = {}
+    // 默认空列表，表示没有菜单
+    menuItems: List<String> = emptyList(),
+    // 菜单点击回调
+    onMenuItemClick: (Int, String) -> Unit = { _, _ -> }
 ) {
-    val gradientBrush = Brush.horizontalGradient(colors = gradientColors)
+
+    val gradientBrush = Brush.verticalGradient(
+        colors = listOf(Color(0xFFF0F7FF), Gray50),
+        startY = 0f,
+        endY = 500f
+    )
+    var menuExpanded by remember { mutableStateOf(false) }
 
     Surface(
         shadowElevation = elevation,
@@ -2238,7 +2239,7 @@ fun CommonTopAppBar(
                 .background(brush = gradientBrush)
                 .padding(horizontal = 4.dp)
         ) {
-            // 1. 左侧：返回按钮 (居中靠左)
+            // 1. 左侧：返回按钮
             IconButton(
                 onClick = onBack,
                 modifier = Modifier.align(Alignment.CenterStart)
@@ -2246,28 +2247,64 @@ fun CommonTopAppBar(
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "返回",
-                    tint = AppContentColor,
-                    modifier = Modifier.size(22.dp)
+                    tint = Color.Black, // 建议使用 AppContentColor
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
-            // 2. 中间：标题 (绝对居中)
+            // 2. 中间：标题
             Text(
                 text = title,
                 style = TextStyle(
-                    fontSize = 18.sp, // 高度变回 64dp 后，字体可以稍微大一点点
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = AppContentColor
+                    color = Color.Black
                 ),
                 modifier = Modifier.align(Alignment.Center)
             )
 
-            // 3. 右侧：操作按钮 (居中靠右)
+            // 3. 右侧区域
             Row(
                 modifier = Modifier.align(Alignment.CenterEnd),
-                verticalAlignment = Alignment.CenterVertically,
-                content = actions
-            )
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 【核心逻辑】只有当 menuItems 不为空时，才渲染菜单按钮
+                if (menuItems.isNotEmpty()) {
+                    // ✅ 修复点：wrapContentSize 必须写在 Modifier 中
+                    Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "更多",
+                                tint = Color.Black,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                            modifier = Modifier.background(Color.White)
+                        ) {
+                            menuItems.forEachIndexed { index, itemText ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = itemText,
+                                            fontSize = 16.sp,
+                                            color = Color.Black // 确保文字颜色
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onMenuItemClick(index, itemText)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

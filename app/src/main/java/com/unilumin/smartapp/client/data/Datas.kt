@@ -389,8 +389,8 @@ data class PoleMapPointReq(
 )
 
 
-data class ProductType(
-    val id: Long,
+data class SystemConfig(
+    val id: String,
     val name: String,
     val icon: ImageVector,
     var isSelected: Boolean = false

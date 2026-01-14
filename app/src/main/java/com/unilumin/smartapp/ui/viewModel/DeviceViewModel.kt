@@ -52,8 +52,8 @@ class DeviceViewModel(
     private val deviceService = retrofitClient.getService(DeviceService::class.java)
 
     //设备列表查询参数(产品类型)
-    val productType = MutableStateFlow(1L)
-    fun updateFilter(type: Long) {
+    val productType = MutableStateFlow("1")
+    fun updateFilter(type: String) {
         productType.value = type
     }
 
@@ -146,7 +146,7 @@ class DeviceViewModel(
                 GenericPagingSource { page, pageSize ->
                     getDeviceList(
                         state = state,
-                        productType = filter,
+                        productType = filter.toLong(),
                         searchQuery = query,
                         page = page,
                         pageSize = pageSize,

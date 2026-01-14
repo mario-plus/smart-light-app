@@ -6,9 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
-import com.unilumin.smartapp.client.constant.DeviceConstant.DEVICE_PRODUCT_TYPE_LIST
 import com.unilumin.smartapp.client.data.MinioUrl
-import com.unilumin.smartapp.client.data.ProductType
 import com.unilumin.smartapp.client.data.ProjectInfo
 import com.unilumin.smartapp.client.data.ResponseData
 import com.unilumin.smartapp.client.data.SystemInfo
@@ -16,12 +14,8 @@ import com.unilumin.smartapp.client.data.UserInfo
 import com.unilumin.smartapp.client.service.ProjectService
 import com.unilumin.smartapp.client.service.SystemService
 import com.unilumin.smartapp.client.service.UserService
-import com.unilumin.smartapp.mock.ProductTypeManage
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import retrofit2.Call
 

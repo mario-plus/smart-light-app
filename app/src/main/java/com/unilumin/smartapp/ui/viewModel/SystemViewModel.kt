@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.DEVICE_PRODUCT_TYPE_LIST
-import com.unilumin.smartapp.client.data.ProductType
+import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.mock.ProductTypeManage
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +20,7 @@ class SystemViewModel(
 
 
     // 暴露给 UI 的状态流：使用 stateIn 保持热流，确保跨页面感知
-    val productTypes: StateFlow<List<ProductType>> = configStore.productTypesFlow
+    val productTypes: StateFlow<List<SystemConfig>> = configStore.productTypesFlow
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -28,7 +28,7 @@ class SystemViewModel(
         )
 
     // 切换选中状态
-    fun toggleProductType(id: Long, isSelected: Boolean) {
+    fun toggleProductType(id: String, isSelected: Boolean) {
         viewModelScope.launch {
             // 基于当前流中的最新值进行修改
             val currentList = productTypes.value.map {

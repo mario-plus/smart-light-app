@@ -5,7 +5,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.unilumin.smartapp.client.constant.DeviceConstant.DEVICE_PRODUCT_TYPE_LIST
-import com.unilumin.smartapp.client.data.ProductType
+import com.unilumin.smartapp.client.data.SystemConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -16,7 +16,7 @@ class ProductTypeManage(private val context: Context) {
 
     private val SELECTED_IDS_KEY = stringPreferencesKey("selected_product_ids")
 
-    val productTypesFlow: Flow<List<ProductType>> = context.dataStore.data.map { preferences ->
+    val productTypesFlow: Flow<List<SystemConfig>> = context.dataStore.data.map { preferences ->
         val savedIdsString = preferences[SELECTED_IDS_KEY]
 
         if (savedIdsString == null) {
@@ -24,7 +24,6 @@ class ProductTypeManage(private val context: Context) {
         } else {
             val savedIds = savedIdsString.split(",")
                 .filter { it.isNotEmpty() }
-                .map { it.toLong() }
                 .toSet()
 
             DEVICE_PRODUCT_TYPE_LIST.map { item ->
@@ -34,9 +33,9 @@ class ProductTypeManage(private val context: Context) {
     }
 
     // 保存选中的 ID 列表
-    suspend fun saveProductTypes(list: List<ProductType>) {
+    suspend fun saveProductTypes(list: List<SystemConfig>) {
         val idsString = list.filter { it.isSelected }
-            .joinToString(",") { it.id.toString() }
+            .joinToString(",") { it.id }
 
         context.dataStore.edit { preferences ->
             preferences[SELECTED_IDS_KEY] = idsString
