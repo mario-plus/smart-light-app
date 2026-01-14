@@ -31,7 +31,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -67,7 +66,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_APP_LIST
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.ui.components.FilterChip
@@ -104,6 +102,8 @@ fun DevicesScreen(
             return SystemViewModel(retrofitClient, context) as T
         }
     })
+
+    val smartApps by systemViewModel.smartApps.collectAsState()
 
     val productTypes by systemViewModel.productTypes.collectAsState()
     val activeTypes = remember(productTypes) { productTypes.filter { it.isSelected } }
@@ -187,21 +187,23 @@ fun DevicesScreen(
                                     .background(Color.White)
                                     .border(0.5.dp, Color(0xFFF0F0F0), menuShape)
                             ) {
-                                SMART_APP_LIST.forEach { option ->
-                                    DropdownMenuItem(leadingIcon = {
-                                        Icon(
-                                            Icons.Default.Settings,
-                                            null,
-                                            Modifier.size(20.dp),
-                                            Color.Gray
-                                        )
-                                    }, text = {
-                                        Text(
-                                            option.name,
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }, onClick = { showMenu = false; onMenuClick(option.id) })
+                                smartApps.forEach { smartApp ->
+                                    if (smartApp.isSelected) {
+                                        DropdownMenuItem(leadingIcon = {
+                                            Icon(
+                                                smartApp.icon,
+                                                null,
+                                                Modifier.size(20.dp),
+                                                Color.Gray
+                                            )
+                                        }, text = {
+                                            Text(
+                                                smartApp.name,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }, onClick = { showMenu = false; onMenuClick(smartApp.id) })
+                                    }
                                 }
                             }
                         }

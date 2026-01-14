@@ -62,8 +62,10 @@ fun SystemConfigScreen(
         }
     })
     val productTypes by systemViewModel.productTypes.collectAsState()
+    val smartApps by systemViewModel.smartApps.collectAsState()
 
     var isDeviceListExpanded by remember { mutableStateOf(false) }
+    var isSmartAppExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -82,21 +84,47 @@ fun SystemConfigScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // --- 这里的配置项：设备产品类型管理 ---
+            // ================== 第一部分：设备类型配置 ==================
+            // 1. 标题卡片单独作为一个 item
             item {
                 ConfigExpandableCard(
                     title = "设备类型配置",
-                    subtitle = "管理首页显示的设备类型",
+                    subtitle = "设备列表显示的设备类型",
                     isExpanded = isDeviceListExpanded,
                     onExpandClick = { isDeviceListExpanded = !isDeviceListExpanded }
                 )
             }
+
+            // 2. 如果展开，显示设备类型列表 (items 必须直接在 LazyColumn 作用域内)
             if (isDeviceListExpanded) {
                 items(productTypes, key = { it.id }) { product ->
                     DeviceTypeSwitchItem(
-                        product = product,
+                        systemConfig = product,
                         onCheckedChange = { isChecked ->
                             systemViewModel.toggleProductType(product.id, isChecked)
+                        }
+                    )
+                }
+            }
+
+            // ================== 第二部分：智慧应用配置 ==================
+            // 3. 智慧应用的标题卡片单独作为一个 item (放在设备列表下方)
+            item {
+                ConfigExpandableCard(
+                    title = "智慧应用配置",
+                    subtitle = "设备列表智慧应用项",
+                    isExpanded = isSmartAppExpanded,
+                    onExpandClick = { isSmartAppExpanded = !isSmartAppExpanded }
+                )
+            }
+
+            // 4. 如果展开，显示智慧应用列表
+            if (isSmartAppExpanded) {
+                items(smartApps, key = { it.id }) { systemConfig ->
+                    DeviceTypeSwitchItem(
+                        systemConfig = systemConfig,
+                        onCheckedChange = { isChecked ->
+                            systemViewModel.toggleSmartApps(systemConfig.id, isChecked)
                         }
                     )
                 }
@@ -151,7 +179,7 @@ fun ConfigExpandableCard(
  */
 @Composable
 fun DeviceTypeSwitchItem(
-    product: SystemConfig,
+    systemConfig: SystemConfig,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Surface(
@@ -168,7 +196,7 @@ fun DeviceTypeSwitchItem(
         ) {
             // 显示图标（如果 ProductType 有图标字段的话）
             Icon(
-                imageVector = product.icon,
+                imageVector = systemConfig.icon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint = TextDark.copy(alpha = 0.6f)
@@ -176,7 +204,7 @@ fun DeviceTypeSwitchItem(
             Spacer(modifier = Modifier.width(12.dp))
 
             Text(
-                text = product.name,
+                text = systemConfig.name,
                 modifier = Modifier.weight(1f),
                 fontSize = 15.sp,
                 color = TextDark,
@@ -184,7 +212,7 @@ fun DeviceTypeSwitchItem(
             )
 
             Switch(
-                checked = product.isSelected,
+                checked = systemConfig.isSelected,
                 onCheckedChange = onCheckedChange, // 传递给 ViewModel
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
