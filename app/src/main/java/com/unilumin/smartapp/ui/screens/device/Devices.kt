@@ -85,7 +85,6 @@ fun DevicesScreen(
     onMenuClick: (String) -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    val menuShape = RoundedCornerShape(16.dp)
 
     val context = LocalContext.current
     val deviceViewModel: DeviceViewModel = viewModel(factory = object : ViewModelProvider.Factory {
@@ -277,7 +276,6 @@ fun DevicesScreen(
             contentPadding = PaddingValues(vertical = 12.dp, horizontal = 16.dp)
         ) { device ->
             DeviceCardItem(
-                deviceViewModel = deviceViewModel,
                 iotDevice = device,
                 productType = productType.toLong(),
                 onDetailClick = { onDetailClick(device) })

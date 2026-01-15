@@ -67,4 +67,5 @@ object RequestPathKey {
     const val KEY_GET_OFFLINE_DEVICE_LIST: String = "$IOT_HUB_MANAGER/offline_device_list"
 
 
+
 }

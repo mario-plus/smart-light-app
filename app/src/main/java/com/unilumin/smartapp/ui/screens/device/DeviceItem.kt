@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,15 +37,15 @@ import com.unilumin.smartapp.ui.theme.Gray400
 import com.unilumin.smartapp.ui.theme.Orange50
 import com.unilumin.smartapp.ui.theme.Orange500
 import com.unilumin.smartapp.ui.theme.White
-import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 
 @SuppressLint("DefaultLocale")
 @Composable
 fun DeviceCardItem(
-    deviceViewModel: DeviceViewModel,
     iotDevice: IotDevice,
     productType: Long,
-    onDetailClick: (IotDevice) -> Unit
+    onDetailClick: (IotDevice) -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit = {}
 ) {
     val (iconBg, iconTint) = when (iotDevice.state) {
         1 -> Blue50 to Blue600
@@ -56,12 +57,19 @@ fun DeviceCardItem(
         shape = RoundedCornerShape(16.dp),
         shadowElevation = 0.5.dp,
         border = BorderStroke(1.dp, Gray100),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            DeviceHeader(iotDevice, productType, iconBg, iconTint, onClick = {
-                onDetailClick(iotDevice)
-            })
+            DeviceHeader(
+                iotDevice = iotDevice,
+                productType = productType,
+                iconBg = iconBg,
+                iconTint = iconTint,
+                onClick = { onDetailClick(iotDevice) }
+            )
+            content()
+
+
 //            when (type) {
 //                DeviceType.LAMP -> LampFeatureContent(
 //                    deviceViewModel,

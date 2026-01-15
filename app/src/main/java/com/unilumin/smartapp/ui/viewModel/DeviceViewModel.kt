@@ -44,6 +44,9 @@ class DeviceViewModel(
     retrofitClient: RetrofitClient, val context: Context
 ) : ViewModel() {
 
+
+
+
     //分页数据总数
     private val _totalCount = MutableStateFlow<Int>(0)
     val totalCount = _totalCount.asStateFlow()
@@ -137,24 +140,25 @@ class DeviceViewModel(
 
     //设备列表分页数据列表
     @OptIn(ExperimentalCoroutinesApi::class)
-    val devicePagingFlow = combine(state, productType, searchQuery) { state, filter, query ->
-        Triple(state, filter, query)
-    }.flatMapLatest { (state, filter, query) ->
-        Pager(
-            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
-            pagingSourceFactory = {
-                GenericPagingSource { page, pageSize ->
-                    getDeviceList(
-                        state = state,
-                        productType = filter.toLong(),
-                        searchQuery = query,
-                        page = page,
-                        pageSize = pageSize,
-                        context = context
-                    )
-                }
-            }).flow
-    }.cachedIn(viewModelScope)
+    val devicePagingFlow =
+        combine(state, productType, searchQuery) { state, productType, keywords ->
+            Triple(state, productType, keywords)
+        }.flatMapLatest { (state, productType, keywords) ->
+            Pager(
+                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+                pagingSourceFactory = {
+                    GenericPagingSource { page, pageSize ->
+                        getDeviceList(
+                            state = state,
+                            productType = productType.toLong(),
+                            searchQuery = keywords,
+                            page = page,
+                            pageSize = pageSize,
+                            context = context
+                        )
+                    }
+                }).flow
+        }.cachedIn(viewModelScope)
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -191,9 +195,15 @@ class DeviceViewModel(
     //获取设备列表
     suspend fun getDeviceList(
         state: Int,
-        productType: Long, searchQuery: String, page: Int, pageSize: Int, context: Context
+        productType: Long,
+        searchQuery: String,
+        page: Int,
+        pageSize: Int,
+        context: Context
     ): List<IotDevice> {
-        return getIotDevices(productType, deviceService, searchQuery, page, pageSize, context)
+        return getIotDevices(
+            state, productType, deviceService, searchQuery, page, pageSize, context
+        )
 //        if (type == DeviceType.LAMP) {
 //            var parseDataNewSuspend =
 //                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
@@ -248,6 +258,7 @@ class DeviceViewModel(
     }
 
     suspend fun getIotDevices(
+        state: Int,
         productType: Long,
         deviceService: DeviceService,
         searchQuery: String,
@@ -255,7 +266,7 @@ class DeviceViewModel(
         pageSize: Int,
         context: Context
     ): List<IotDevice> {
-        val s = state.value.takeIf { it != -1 }
+        val s = state.takeIf { it != -1 }
         var parseDataNewSuspend = UniCallbackService<PageResponse<IotDevice>>().parseDataNewSuspend(
             deviceService.getDeviceList(
                 searchQuery, page, pageSize, productType, s

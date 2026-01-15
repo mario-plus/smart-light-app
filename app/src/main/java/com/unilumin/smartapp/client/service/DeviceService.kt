@@ -15,7 +15,6 @@ import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PageResponse
-import com.unilumin.smartapp.client.data.RequestParam
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.data.WebRTCResponse
 import retrofit2.Call
@@ -27,22 +26,7 @@ import retrofit2.http.Query
 
 
 interface DeviceService {
-    //单灯列表
-    @POST(RequestPathKey.KEY_GET_LIGHT_LIST)
-    fun getLightCtlList(@Body param: RequestParam?): Call<NewResponseData<PageResponse<IotDevice>?>?>?
 
-    //集控列表
-    @POST(RequestPathKey.KEY_GET_GW_LIST)
-    fun getGwCtlList(@Body param: RequestParam?): Call<NewResponseData<PageResponse<IotDevice>?>?>?
-
-    //回路控制器列表
-    @GET(RequestPathKey.KEY_GET_LOOP_LIST)
-    fun getLoopCtlList(
-        @Query("keyword") keyword: String,
-        @Query("curPage") curPage: Int,
-        @Query("pageSize") pageSize: Int,
-        @Query("subSystemType") subSystemType: Int
-    ): Call<NewResponseData<PageResponse<IotDevice>?>?>?
 
     @GET(RequestPathKey.KEY_LED_LIST)
     fun getLedList(
@@ -54,13 +38,7 @@ interface DeviceService {
     ): Call<NewResponseData<PageResponse<IotDevice>?>?>?
 
 
-    //分组列表
-    @POST(RequestPathKey.KEY_GET_GROUP_LIST)
-    fun getGroupList()
 
-    //策略列表
-    @POST(RequestPathKey.KEY_GET_STRATEGY_LIST)
-    fun getStrategyList()
 
 
     @POST(RequestPathKey.KEY_LAMP_CTL)
