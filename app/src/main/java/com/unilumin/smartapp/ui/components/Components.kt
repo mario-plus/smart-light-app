@@ -45,10 +45,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.HighlightOff
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -176,6 +179,7 @@ import com.unilumin.smartapp.ui.theme.Gray500
 import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.Green50
 import com.unilumin.smartapp.ui.theme.Green500
+import com.unilumin.smartapp.ui.theme.GreenStatus
 import com.unilumin.smartapp.ui.theme.LineColor
 import com.unilumin.smartapp.ui.theme.OfflineGray
 import com.unilumin.smartapp.ui.theme.Orange50
@@ -183,12 +187,14 @@ import com.unilumin.smartapp.ui.theme.Orange500
 import com.unilumin.smartapp.ui.theme.PrimaryBlue
 import com.unilumin.smartapp.ui.theme.Red50
 import com.unilumin.smartapp.ui.theme.Red500
+import com.unilumin.smartapp.ui.theme.RedStatus
 import com.unilumin.smartapp.ui.theme.SafeBg
 import com.unilumin.smartapp.ui.theme.SafeGreen
 import com.unilumin.smartapp.ui.theme.TextDark
 import com.unilumin.smartapp.ui.theme.TextGray
 import com.unilumin.smartapp.ui.theme.TextPrimary
 import com.unilumin.smartapp.ui.theme.TextSecondary
+import com.unilumin.smartapp.ui.theme.TextSub
 import com.unilumin.smartapp.ui.theme.TextTitle
 import com.unilumin.smartapp.ui.theme.White
 import kotlinx.coroutines.delay
@@ -2139,74 +2145,38 @@ fun DeviceStatusRow(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween, // 关键：一个靠左，一个靠右
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.weight(1f), // 占据一半宽度，保证对齐
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("可用状态: ", fontSize = 12.sp, color = Gray400)
-            Spacer(modifier = Modifier.width(4.dp))
+        // 可用状态 - 靠最左
+        StatusItem(label = "可用状态:", text = if (isDisable) "禁用" else "启用", isError = isDisable)
 
-            if (isDisable) {
-                StatusIconText(
-                    isAbnormal = true,
-                    text = "禁用"
-                )
-            } else {
-                StatusIconText(
-                    isAbnormal = false,
-                    text = "启用"
-                )
-            }
-        }
-
-        Row(
-            modifier = Modifier.weight(1f), // 占据另一半宽度
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("工作状态: ", fontSize = 12.sp, color = Gray400)
-            Spacer(modifier = Modifier.width(4.dp))
-
-            if (hasAlarm) {
-                StatusIconText(
-                    isAbnormal = true,
-                    text = "异常"
-                )
-            } else {
-                StatusIconText(
-                    isAbnormal = false,
-                    text = "正常"
-                )
-            }
-        }
+        // 工作状态 - 靠最右
+        StatusItem(label = "工作状态:", text = if (hasAlarm) "异常" else "正常", isError = hasAlarm)
     }
 }
 
-/**
- * 内部辅助组件：统一图标和文字的样式
- */
 @Composable
-private fun StatusIconText(
-    isAbnormal: Boolean,
-    text: String
-) {
-    val color = if (isAbnormal) Red500 else Green500
-    val icon = if (isAbnormal) Icons.Rounded.Warning else Icons.Rounded.CheckCircle
-    Icon(
-        imageVector = icon,
-        contentDescription = null,
-        tint = color,
-        modifier = Modifier.size(14.dp)
-    )
-    Spacer(modifier = Modifier.width(2.dp))
-    Text(
-        text = text,
-        fontSize = 12.sp,
-        color = color,
-        fontWeight = if (isAbnormal) FontWeight.Bold else FontWeight.Normal
-    )
+private fun StatusItem(label: String, text: String, isError: Boolean) {
+    val color = if (isError) RedStatus else GreenStatus
+    val icon = if (isError) Icons.Default.HighlightOff else Icons.Default.CheckCircle
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(text = label, fontSize = 13.sp, color = TextSub)
+        Spacer(modifier = Modifier.width(6.dp))
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(text = text, fontSize = 13.sp, color = color, fontWeight = FontWeight.Medium)
+    }
 }
+
+
+
 
 
 @Composable

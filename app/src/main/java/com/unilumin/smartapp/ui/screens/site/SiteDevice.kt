@@ -84,7 +84,7 @@ fun SiteDeviceCardItem(device: SiteDevice, onClick: () -> Unit) {
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                Surface( shape = RoundedCornerShape(6.dp)) {
+                Surface(shape = RoundedCornerShape(6.dp)) {
                     DeviceStatus(device.state)
                 }
             }
@@ -102,7 +102,10 @@ fun SiteDeviceCardItem(device: SiteDevice, onClick: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(12.dp))
             //禁用，告警状态
-            DeviceStatusRow(device.deviceState == 0, device.alarmType == 1)
+            DeviceStatusRow(
+                device.deviceState == 0,
+                device.alarmType == 1
+            )
         }
     }
 }
