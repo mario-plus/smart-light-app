@@ -48,10 +48,14 @@ import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GATEWAY
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_LIGHT
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_LOOP
 import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.client.data.SystemConfig
+import com.unilumin.smartapp.ui.components.CommonTopAppBar
+import com.unilumin.smartapp.ui.components.EmptyDataView
 import com.unilumin.smartapp.ui.screens.app.lamp.LampGatewayContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampLightContent
+import com.unilumin.smartapp.ui.screens.app.lamp.LampLoopCtlContent
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.PageBackground
@@ -70,10 +74,8 @@ fun SmartLampScreen(
             return SystemViewModel(retrofitClient, context) as T
         }
     })
-
     // 获取功能列表
     val lampFunctions by systemViewModel.lampFunctions.collectAsState()
-
     var currentFunctionId by remember(lampFunctions) {
         mutableStateOf(
             lampFunctions.firstOrNull { it.isSelected }?.id ?: SMART_LAMP_LIGHT
@@ -111,143 +113,17 @@ fun SmartLampScreen(
                 SMART_LAMP_LIGHT -> {
                     LampLightContent(retrofitClient)
                 }
-                // 这里扩展其他页面 ID
+                // 集中控制器
                 SMART_LAMP_GATEWAY -> {
-                    // GroupContent(retrofitClient)
                     LampGatewayContent(retrofitClient)
                 }
-
-                "SMART_LAMP_STRATEGY" -> {
-                    EmptyContentPlaceholder("策略管理")
+                // 回路控制器
+                SMART_LAMP_LOOP -> {
+                    LampLoopCtlContent(retrofitClient)
                 }
 
                 else -> {
-                    EmptyContentPlaceholder("未开发的功能")
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
-fun EmptyContentPlaceholder(text: String) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("当前页面: $text")
-    }
-}
-
-// --- 下面是你提供的 TopBar 代码，保持不变即可 ---
-
-@Composable
-fun CommonTopAppBar(
-    title: String,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-    height: Dp = 64.dp, // 稍微调小一点，72dp有点太高了，标准通常是56或64
-    menuItems: List<SystemConfig> = emptyList(),
-    onMenuItemClick: (SystemConfig) -> Unit = {}
-) {
-    var menuExpanded by remember { mutableStateOf(false) }
-    val textMain = Color(0xFF1A1C1E)
-    // 这里你需要确保 Gray50 已经定义，如果没有定义，暂时用 Color.LightGray 代替
-    val gradientBrush = Brush.verticalGradient(
-        colors = listOf(Color(0xFFF0F7FF), Gray50), startY = 0f, endY = 500f
-    )
-
-    Surface(
-        modifier = modifier.fillMaxWidth(), color = Color.Transparent
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(height)
-                .background(brush = gradientBrush)
-                .padding(horizontal = 4.dp)
-        ) {
-            IconButton(
-                onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = textMain,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            Text(
-                text = title,
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = textMain,
-                    letterSpacing = 0.5.sp
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.align(Alignment.Center)
-            )
-
-            if (menuItems.isNotEmpty()) {
-                Box(
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                ) {
-                    IconButton(onClick = { menuExpanded = true }) {
-                        Icon(
-                            imageVector = Icons.Rounded.FilterList,
-                            contentDescription = "Menu",
-                            tint = textMain,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    ReferenceStyleDropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false },
-                        items = menuItems,
-                        onItemClick = { systemConfig ->
-                            menuExpanded = false
-                            onMenuItemClick(systemConfig)
-                        })
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ReferenceStyleDropdownMenu(
-    expanded: Boolean,
-    onDismissRequest: () -> Unit,
-    items: List<SystemConfig>,
-    onItemClick: (SystemConfig) -> Unit
-) {
-    val menuShape = RoundedCornerShape(16.dp)
-    MaterialTheme(shapes = Shapes(extraSmall = menuShape)) {
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { onDismissRequest() },
-            modifier = Modifier
-                .widthIn(min = 150.dp)
-                .shadow(
-                    12.dp, menuShape, spotColor = Color.Black.copy(alpha = 0.2f)
-                )
-                .clip(menuShape)
-                .background(Color.White)
-                .border(0.5.dp, Color(0xFFF0F0F0), menuShape)
-        ) {
-            items.forEach { smartApp ->
-                if (smartApp.isSelected) {
-                    DropdownMenuItem(leadingIcon = {
-                        Icon(
-                            smartApp.icon, null, Modifier.size(20.dp), Color.Gray
-                        )
-                    }, text = {
-                        Text(
-                            smartApp.name, fontSize = 14.sp, fontWeight = FontWeight.Medium
-                        )
-                    }, onClick = { onItemClick(smartApp) })
+                    EmptyDataView("未开发的功能")
                 }
             }
         }

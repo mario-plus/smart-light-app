@@ -508,7 +508,7 @@ data class LampGateWayInfo(
 
 data class LampLoopCtlInfo(
     // id
-    var id: Long? = null,
+    var id: Long,
 
     // 产品id
     var productId: Long? = null,
@@ -533,24 +533,6 @@ data class LampLoopCtlInfo(
 
     // 集控的网络状态
     var networkState: Int? = null,
-
-    // A相电压
-    var aPhaseVoltage: Double? = null,
-
-    // B相电压
-    var bPhaseVoltage: Double? = null,
-
-    // C相电压
-    var cPhaseVoltage: Double? = null,
-
-    // A相电流
-    var aPhaseCurrent: Double? = null,
-
-    // B相电流
-    var bPhaseCurrent: Double? = null,
-
-    // C相电流
-    var cPhaseCurrent: Double? = null,
 
     // 回路列表
     var loops: List<LoopInfo>? = null,
