@@ -71,3 +71,11 @@ val RedStatus = Color(0xFFFF4D4F)
 val PageBgColor = Color(0xFFF2F4F7) // 页面底色
 val SearchBarBg = Color.White        // 搜索栏背景
 val PlaceholderColor = Color(0xFF9CA3AF)
+// 定义颜色常量，确保与单灯卡片一致
+val CardBgColor = Color.White
+val DataPanelBgColor = Color(0xFFF7F8FA) // 浅灰背景
+val IconBgColor = Color(0xFFEBF2FF)      // 图标浅蓝底色
+val ThemeBlue = Color(0xFF2F78FF)        // 主题蓝
+val TextMain = Color(0xFF333333)         // 主要文字
+val DividerGrey = Color(0xFFE0E0E0)
+val ErrorRed = Color(0xFFFF4D4F)

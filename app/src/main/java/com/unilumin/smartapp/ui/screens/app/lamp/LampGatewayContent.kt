@@ -1,7 +1,16 @@
 package com.unilumin.smartapp.ui.screens.app.lamp
 
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.Router
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.*
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,10 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,31 +49,23 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.client.constant.DeviceConstant
-import com.unilumin.smartapp.client.data.LampLightInfo
+import com.unilumin.smartapp.client.data.LampGateWayInfo
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.DeviceStatusRow
 import com.unilumin.smartapp.ui.components.PagingList
 
-import com.unilumin.smartapp.ui.theme.BluePrimary
-import com.unilumin.smartapp.ui.theme.DividerColor
-import com.unilumin.smartapp.ui.theme.PageBgColor
-import com.unilumin.smartapp.ui.theme.PlaceholderColor
-import com.unilumin.smartapp.ui.theme.SearchBarBg
+import com.unilumin.smartapp.ui.theme.*
 
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LampLightContent(
+fun LampGatewayContent(
     retrofitClient: RetrofitClient
 ) {
     val context = LocalContext.current
@@ -76,26 +74,20 @@ fun LampLightContent(
             return LampViewModel(retrofitClient, context) as T
         }
     })
-
-
     val statusOptions = remember {
         listOf(-1 to "全部状态", 1 to "设备在线", 0 to "设备离线")
     }
-
     // 设备状态 (-1:全部, 0:离线, 1:在线)
     val deviceState by lampViewModel.state.collectAsState()
-
-
     // 搜索条件
     val searchQuery by lampViewModel.searchQuery.collectAsState()
-
     // 状态下拉框控制
     var statusExpanded by remember { mutableStateOf(false) }
-
     val totalCount = lampViewModel.totalCount.collectAsState()
     val isSwitching = lampViewModel.isSwitch.collectAsState()
+
     // 分页数据
-    val lampLightFlow = lampViewModel.lampLightFlow.collectAsLazyPagingItems()
+    val gateWayFlow = lampViewModel.lampGateWayFlow.collectAsLazyPagingItems()
 
     Column(
         modifier = Modifier
@@ -220,43 +212,42 @@ fun LampLightContent(
             }
         }
 
-        // --- 分页列表展示 ---
-        // 移除原来的 Spacer(modifier = Modifier.width(8.dp))，用 padding 控制
         PagingList(
             totalCount = totalCount.value,
-            lazyPagingItems = lampLightFlow,
+            lazyPagingItems = gateWayFlow,
             forceLoading = isSwitching.value,
             modifier = Modifier.weight(1f),
-            itemKey = { lampLightInfo -> lampLightInfo.id },
+            itemKey = { gatewayInfo -> gatewayInfo.id },
             emptyMessage = "未找到相关设备",
-            // 调整 Padding，让列表内容不顶着搜索框
             contentPadding = PaddingValues(top = 0.dp, bottom = 24.dp, start = 0.dp, end = 0.dp)
-        ) { lampLightInfo ->
-            // 调用之前优化好的卡片
-            LampLightCard(
-                item = lampLightInfo,
-                onDetailClick = { /* 点击事件 */ }
+        ) { gatewayInfo ->
 
-            )
+            LampGatewayCard(item = gatewayInfo, onDetailClick = {})
         }
     }
 }
 
 
+
+
+
+/**
+ * 集控器列表卡片
+ */
 @Composable
-fun LampLightCard(
-    item: LampLightInfo,
-    onDetailClick: (LampLightInfo) -> Unit,
+fun LampGatewayCard(
+    item: LampGateWayInfo,
+    onDetailClick: (LampGateWayInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp) // 减小外部缩进，增加屏幕利用率
-            .clickable { onDetailClick(item) }, // 增加点击反馈
-        shape = RoundedCornerShape(16.dp), // 更圆润的角，符合现代审美
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) // 略微增加阴影增强层次
+            .padding(horizontal = 16.dp, vertical = 6.dp) // 与搜索框对齐，微调垂直间距
+            .clickable { onDetailClick(item) },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardBgColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -270,16 +261,16 @@ fun LampLightCard(
                 verticalAlignment = Alignment.Top
             ) {
                 Row(modifier = Modifier.weight(1f)) {
-                    // 图标容器
+                    // 图标容器 (使用集控器/Hub图标)
                     Surface(
-                        color = Color(0xFFEBF2FF),
+                        color = IconBgColor,
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.size(52.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Lightbulb,
-                            contentDescription = null,
-                            tint = Color(0xFF2F78FF),
+                            imageVector = Icons.Default.Router, // 或者 Icons.Default.DeviceHub
+                            contentDescription = "Gateway Icon",
+                            tint = ThemeBlue,
                             modifier = Modifier.padding(12.dp)
                         )
                     }
@@ -292,7 +283,7 @@ fun LampLightCard(
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 17.sp,
-                                color = Color(0xFF333333)
+                                color = TextMain
                             ),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -300,12 +291,12 @@ fun LampLightCard(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "SN: ${item.serialNum ?: "--"}",
-                            style = TextStyle(fontSize = 13.sp, color = Color(0xFF999999))
+                            style = TextStyle(fontSize = 13.sp, color = TextSub)
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = item.productName ?: "--",
-                            style = TextStyle(fontSize = 13.sp, color = Color(0xFF999999))
+                            style = TextStyle(fontSize = 13.sp, color = TextSub)
                         )
                     }
                 }
@@ -315,15 +306,12 @@ fun LampLightCard(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // --- 第二部分：实时参数面板 (参考图片中的灰色块) ---
-            LampRealTimeDataPanel(item)
-
+            // --- 第二部分：实时参数面板 (三相电压/电流) ---
+            GatewayRealTimeDataPanel(item)
             Spacer(modifier = Modifier.height(16.dp))
-
-
+            //TODO 缺少告警字段
             DeviceStatusRow(
-                isDisable = item.deviceState == 0,
+                isDisable = item.alarmType == 0,
                 hasAlarm = item.alarmType == 1,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -331,59 +319,168 @@ fun LampLightCard(
     }
 }
 
+/**
+ * 实时数据面板：展示三相电压和电流
+ */
 @Composable
-fun LampRealTimeDataPanel(item: LampLightInfo) {
+fun GatewayRealTimeDataPanel(item: LampGateWayInfo) {
     Surface(
-        color = Color(0xFFF7F8FA), // 浅灰色背景分区
+        color = DataPanelBgColor,
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
+                .horizontalScroll(rememberScrollState()) // 支持横向滚动以防数据过长
                 .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val dataItems = mutableListOf(
-                "开关" to if (item.onOff == 1) "开" else "关",
-                "亮度" to "${item.bright1?.toInt() ?: "--"}%"
+            // 数据项列表：标题 - 值 - 单位
+            val dataItems = listOf(
+                Triple("A相电压", item.voltage1, "V"),
+                Triple("B相电压", item.voltage2, "V"),
+                Triple("C相电压", item.voltage3, "V"),
+                Triple("A相电流", item.current1, "A"),
+                Triple("B相电流", item.current2, "A"),
+                Triple("C相电流", item.current3, "A")
             )
-            if (DeviceConstant.colorTempSupportedList.contains(item.productId.toString())) {
-                dataItems.add("色温" to "${item.bright2?.toInt() ?: "--"}%")
-            }
-            dataItems.add("电压" to (item.voltage?.let { "${it}V" } ?: "--"))
-            dataItems.add("电流" to (item.current?.let { "${it}mA" } ?: "--"))
-            dataItems.add("功率" to (item.power?.let { "${it}W" } ?: "--"))
 
-
-            dataItems.forEachIndexed { index, pair ->
+            dataItems.forEachIndexed { index, (label, value, unit) ->
                 Column(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = pair.first, fontSize = 12.sp, color = Color(0xFF999999))
+                    Text(
+                        text = label,
+                        fontSize = 12.sp,
+                        color = TextSub
+                    )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = pair.second,
+                        text = value?.let { "$it$unit" } ?: "--",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (pair.first == "开关" || pair.first == "亮度") Color(0xFF2F78FF) else Color(
-                            0xFF333333
-                        )
+                        color = TextMain
                     )
                 }
-                // 只有不是最后一项时才显示分割线
+
+                // 分割线 (最后一项不显示)
                 if (index < dataItems.size - 1) {
                     VerticalDivider(
                         modifier = Modifier.height(24.dp),
                         thickness = 1.dp,
-                        color = Color(0xFFE0E0E0)
+                        color = DividerGrey
                     )
                 }
             }
         }
     }
 }
+
+/**
+ * 底部信息栏：告警状态、绑定统计、白名单状态
+ */
+@Composable
+fun GatewayFooterInfo(item: LampGateWayInfo) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        // 左侧：绑定统计信息
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "已绑: ${item.boundDevCount ?: 0}",
+                fontSize = 12.sp,
+                color = TextSub
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            VerticalDivider(modifier = Modifier.height(10.dp), color = DividerGrey)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "未绑: ${item.unboundDevCount ?: 0}",
+                fontSize = 12.sp,
+                color = TextSub
+            )
+        }
+
+        // 右侧：状态标签组合
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // 1. 白名单状态
+            // 0未同步 1同步中 2已同步 3同步失败
+            val (whiteListText, whiteListColor) = when (item.whiteListState) {
+                1 -> "同步中" to ThemeBlue
+                2 -> "已同步" to SuccessGreen
+                3 -> "同步失败" to ErrorRed
+                else -> "未同步" to TextSub
+            }
+
+            Surface(
+                color = whiteListColor.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(4.dp),
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Text(
+                    text = whiteListText,
+                    color = whiteListColor,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+
+            // 2. 告警状态 (如果有告警才显示)
+            if (item.alarmType == 1) {
+                Surface(
+                    color = ErrorRed.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = ErrorRed,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = "告警",
+                            color = ErrorRed,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 在线/离线 状态标签组件
+ */
+@Composable
+fun GatewayStatusBadge(state: Int?) {
+    val isOnline = state == 1
+    val bgColor = if (isOnline) SuccessGreen.copy(alpha = 0.1f) else Color(0xFFF5F5F5)
+    val textColor = if (isOnline) SuccessGreen else Color(0xFF999999)
+    val text = if (isOnline) "在线" else "离线"
+
+    Surface(
+        color = bgColor,
+        shape = RoundedCornerShape(4.dp)
+    ) {
+        Text(
+            text = text,
+            color = textColor,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+    }
+}
+
 
 

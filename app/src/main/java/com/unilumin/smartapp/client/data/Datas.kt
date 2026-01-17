@@ -457,7 +457,7 @@ data class LampLightInfo(
 
 data class LampGateWayInfo(
     // 设备id
-    var id: Long? = null,
+    var id: Long,
 
     // 设备名称
     var name: String? = null,

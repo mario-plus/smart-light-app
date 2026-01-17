@@ -46,9 +46,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GATEWAY
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_LIGHT
 import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.client.data.SystemConfig
+import com.unilumin.smartapp.ui.screens.app.lamp.LampGatewayContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampLightContent
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.Gray50
@@ -110,9 +112,9 @@ fun SmartLampScreen(
                     LampLightContent(retrofitClient)
                 }
                 // 这里扩展其他页面 ID
-                "SMART_LAMP_GROUP" -> {
+                SMART_LAMP_GATEWAY -> {
                     // GroupContent(retrofitClient)
-                    EmptyContentPlaceholder("分组管理")
+                    LampGatewayContent(retrofitClient)
                 }
 
                 "SMART_LAMP_STRATEGY" -> {
@@ -126,7 +128,6 @@ fun SmartLampScreen(
         }
     }
 }
-
 
 
 @Composable
