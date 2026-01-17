@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
+import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.LampGateWayInfo
 import com.unilumin.smartapp.client.data.LampGroupInfo
 import com.unilumin.smartapp.client.data.LampLightInfo
@@ -25,6 +26,10 @@ interface RoadService {
     @POST(RequestPathKey.KEY_GET_GW_LIST)
     fun getGwCtlList(@Body param: RequestParam?): Call<NewResponseData<PageResponse<LampGateWayInfo>?>?>?
 
+    //灯控网关
+    @POST(RequestPathKey.KEY_GET_LIGHT_GW_LIST)
+    fun getLightGwList(@Body param: RequestParam?): Call<NewResponseData<PageResponse<LampGateWayInfo>?>?>?
+
     //回路控制器列表
     @GET(RequestPathKey.KEY_GET_LOOP_LIST)
     fun getLoopCtlList(
@@ -37,7 +42,9 @@ interface RoadService {
 
     //分组列表
     @POST(RequestPathKey.KEY_GET_GROUP_LIST)
-    fun getGroupList(): Call<NewResponseData<PageResponse<LampGroupInfo>?>?>?
+    fun getGroupList(
+        @Body param: GroupRequestParam?
+    ): Call<NewResponseData<PageResponse<LampGroupInfo>?>?>?
 
     //策略列表
     @POST(RequestPathKey.KEY_GET_STRATEGY_LIST)

@@ -47,14 +47,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GATEWAY
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GROUP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_LIGHT
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_LOOP
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LIGHT_GATEWAY
 import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.EmptyDataView
 import com.unilumin.smartapp.ui.screens.app.lamp.LampGatewayContent
+import com.unilumin.smartapp.ui.screens.app.lamp.LampGroupContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampLightContent
+import com.unilumin.smartapp.ui.screens.app.lamp.LampLightGwContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampLoopCtlContent
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.Gray50
@@ -92,7 +96,7 @@ fun SmartLampScreen(
             Surface(shadowElevation = 3.dp) {
                 Column(modifier = Modifier.background(CardWhite)) {
                     CommonTopAppBar(
-                        title = currentTitle, // 标题可以动态变化，也可以固定
+                        title = currentTitle,
                         onBack = { onBack() },
                         menuItems = lampFunctions,
                         onMenuItemClick = { systemConfig ->
@@ -120,6 +124,14 @@ fun SmartLampScreen(
                 // 回路控制器
                 SMART_LAMP_LOOP -> {
                     LampLoopCtlContent(retrofitClient)
+                }
+
+                SMART_LIGHT_GATEWAY -> {
+                    LampLightGwContent(retrofitClient)
+                }
+
+                SMART_LAMP_GROUP -> {
+                    LampGroupContent(retrofitClient)
                 }
 
                 else -> {

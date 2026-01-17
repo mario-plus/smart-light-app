@@ -52,6 +52,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant
+import com.unilumin.smartapp.client.constant.DeviceConstant.statusOptions
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.DeviceStatusRow
@@ -76,11 +77,6 @@ fun LampLightContent(
             return LampViewModel(retrofitClient, context) as T
         }
     })
-
-
-    val statusOptions = remember {
-        listOf(-1 to "全部状态", 1 to "设备在线", 0 to "设备离线")
-    }
 
     // 设备状态 (-1:全部, 0:离线, 1:在线)
     val deviceState by lampViewModel.state.collectAsState()

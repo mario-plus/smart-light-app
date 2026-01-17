@@ -81,7 +81,16 @@ data class RequestParam(
     val curPage: Int,
     val pageSize: Int,
     val state: Int? = null,
-    val subSystemType: Int? = null,
+    val subSystemType: Int?,
+)
+
+data class GroupRequestParam(
+    val keyword: String,
+    val curPage: Int,
+    val pageSize: Int,
+    val groupType: Int? = null,
+    val subSystemType: Int? = 1,
+    val tagCondition: String? = "or"
 )
 
 data class ProjectInfo(
@@ -547,7 +556,7 @@ data class LampLoopCtlInfo(
 data class LampGroupInfo(
 
     // 分组id
-    var id: Long? = null,
+    var id: Long,
 
     // 分组名称
     var groupName: String? = null,

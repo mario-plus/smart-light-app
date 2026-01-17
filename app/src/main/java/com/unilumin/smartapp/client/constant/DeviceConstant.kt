@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.mock.ServerConfig
@@ -56,18 +57,22 @@ object DeviceConstant {
 
     const val SMART_LAMP_LIGHT = "lampLight"
     const val SMART_LAMP_GATEWAY = "lightGateway"
+    const val SMART_LIGHT_GATEWAY = "lampGw"
     const val SMART_LAMP_LOOP = "lightLoop"
     const val SMART_LAMP_GROUP = "lightGroup"
     const val SMART_LAMP_STRATEGY = "lightStrategy"
     const val SMART_LAMP_JOB = "lightJob"
+    const val SMART_LAMP_STATISTIC= "lightJob"
 
     val SMART_LAMP_FUNC_LIST = listOf<SystemConfig>(
         SystemConfig(SMART_LAMP_LIGHT, "单灯管理", getIconForName(SMART_LAMP_LIGHT), true),
+        SystemConfig(SMART_LIGHT_GATEWAY, "灯控网关", getIconForName(SMART_LIGHT_GATEWAY), true),
         SystemConfig(SMART_LAMP_GATEWAY, "集控管理", getIconForName(SMART_LAMP_GATEWAY), true),
         SystemConfig(SMART_LAMP_LOOP, "回路管理", getIconForName(SMART_LAMP_LOOP), true),
         SystemConfig(SMART_LAMP_GROUP, "分组管理", getIconForName(SMART_LAMP_GROUP), true),
         SystemConfig(SMART_LAMP_STRATEGY, "策略管理", getIconForName(SMART_LAMP_STRATEGY), true),
-        SystemConfig(SMART_LAMP_JOB, "任务管理", getIconForName(SMART_LAMP_JOB), true)
+        SystemConfig(SMART_LAMP_JOB, "任务管理", getIconForName(SMART_LAMP_JOB), true),
+        SystemConfig(SMART_LAMP_STATISTIC, "业务统计", getIconForName(SMART_LAMP_STATISTIC), true)
     )
 
 
@@ -153,6 +158,10 @@ object DeviceConstant {
         TELEMETRY to "遥测数据",
         EVENT to "事件数据"
     )
+
+    val statusOptions = listOf(-1 to "全部状态", 1 to "设备在线", 0 to "设备离线")
+    val groupTypeOptions = listOf(-1 to "全部",1 to "单灯分组", 25 to "集控分组", 56 to "回路分组")
+
 
     //双色温单灯产品id
     val colorTempSupportedList = listOf("107", "125")

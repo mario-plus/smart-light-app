@@ -9,7 +9,9 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
+import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.LampGateWayInfo
+import com.unilumin.smartapp.client.data.LampGroupInfo
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampLoopCtlInfo
 import com.unilumin.smartapp.client.data.PageResponse
@@ -30,7 +32,6 @@ class LampViewModel(
     private val _totalCount = MutableStateFlow<Int>(0)
     val totalCount = _totalCount.asStateFlow()
 
-
     private val _isSwitch = MutableStateFlow<Boolean>(false)
     val isSwitch = _isSwitch.asStateFlow()
 
@@ -46,6 +47,12 @@ class LampViewModel(
         state.value = s
     }
 
+
+    //0离线，1在线
+    val groupType = MutableStateFlow(-1)
+    fun updateGroupType(s: Int) {
+        groupType.value = s
+    }
 
     //设备列表查询参数(关键词)
     val searchQuery = MutableStateFlow("")
@@ -94,6 +101,33 @@ class LampViewModel(
     }.cachedIn(viewModelScope)
 
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val lampLightGwFlow = combine(state, searchQuery) { state, keywords ->
+        Pair(state, keywords)
+    }.flatMapLatest { (state, keywords) ->
+        Pager(
+            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+            pagingSourceFactory = {
+                GenericPagingSource { page, pageSize ->
+                    getLampLightGwInfoList(state, keywords, page, pageSize, context)
+                }
+            }).flow
+    }.cachedIn(viewModelScope)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val lampGroupFlow = combine(groupType, searchQuery) { groupType, keywords ->
+        Pair(groupType, keywords)
+    }.flatMapLatest { (groupType, keywords) ->
+        Pager(
+            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+            pagingSourceFactory = {
+                GenericPagingSource { page, pageSize ->
+                    getLampGroupList(groupType, keywords, page, pageSize, context)
+                }
+            }).flow
+    }.cachedIn(viewModelScope)
+
+
     /**
      * 核心优化 1: 通用的 Flow 创建器
      * @param fetcher 数据获取逻辑，传入 (page, pageSize, state, query)
@@ -102,33 +136,25 @@ class LampViewModel(
     private fun <T : Any> createPagingFlow(
         fetcher: suspend (Int, Int, Int?, String) -> List<T>
     ): Flow<PagingData<T>> {
-        return combine(state, searchQuery, ::Pair)
-            .flatMapLatest { (currentState, currentQuery) ->
-                val filterState = currentState.takeIf { it != -1 }
-                Pager(
-                    config = PagingConfig(
-                        pageSize = 20,
-                        initialLoadSize = 20,
-                        prefetchDistance = 2
-                    ),
-                    pagingSourceFactory = {
-                        GenericPagingSource { page, pageSize ->
-                            fetcher(page, pageSize, filterState, currentQuery)
-                        }
+        return combine(state, searchQuery, ::Pair).flatMapLatest { (currentState, currentQuery) ->
+            val filterState = currentState.takeIf { it != -1 }
+            Pager(
+                config = PagingConfig(
+                    pageSize = 20, initialLoadSize = 20, prefetchDistance = 2
+                ), pagingSourceFactory = {
+                    GenericPagingSource { page, pageSize ->
+                        fetcher(page, pageSize, filterState, currentQuery)
                     }
-                ).flow
-            }
-            .cachedIn(viewModelScope)
+                }).flow
+        }.cachedIn(viewModelScope)
     }
-
-
 
 
     suspend fun getLampLightInfoList(
         state: Int, searchQuery: String, page: Int, pageSize: Int, context: Context
     ): List<LampLightInfo> {
         val s = state.takeIf { it != -1 }
-        var parseDataNewSuspend =
+        val parseDataNewSuspend =
             UniCallbackService<PageResponse<LampLightInfo>>().parseDataNewSuspend(
                 roadService.getLightCtlList(
                     RequestParam(
@@ -144,7 +170,7 @@ class LampViewModel(
         state: Int, searchQuery: String, page: Int, pageSize: Int, context: Context
     ): List<LampLoopCtlInfo> {
         val s = state.takeIf { it != -1 }
-        var parseDataNewSuspend =
+        val parseDataNewSuspend =
             UniCallbackService<PageResponse<LampLoopCtlInfo>>().parseDataNewSuspend(
                 roadService.getLoopCtlList(
                     keyword = searchQuery,
@@ -162,11 +188,47 @@ class LampViewModel(
         state: Int, searchQuery: String, page: Int, pageSize: Int, context: Context
     ): List<LampGateWayInfo> {
         val s = state.takeIf { it != -1 }
-        var parseDataNewSuspend =
+        val parseDataNewSuspend =
             UniCallbackService<PageResponse<LampGateWayInfo>>().parseDataNewSuspend(
                 roadService.getGwCtlList(
                     RequestParam(
                         keyword = searchQuery, curPage = page, pageSize = pageSize, state = s, 1
+                    )
+                ), context
+            )
+        _totalCount.value = parseDataNewSuspend?.total!!
+        return parseDataNewSuspend.list
+    }
+
+    suspend fun getLampLightGwInfoList(
+        state: Int, searchQuery: String, page: Int, pageSize: Int, context: Context
+    ): List<LampGateWayInfo> {
+        val s = state.takeIf { it != -1 }
+        val parseDataNewSuspend =
+            UniCallbackService<PageResponse<LampGateWayInfo>>().parseDataNewSuspend(
+                roadService.getLightGwList(
+                    RequestParam(
+                        keyword = searchQuery, curPage = page, pageSize = pageSize, state = s, 1
+                    )
+                ), context
+            )
+        _totalCount.value = parseDataNewSuspend?.total!!
+        return parseDataNewSuspend.list
+    }
+
+
+    suspend fun getLampGroupList(
+        groupType: Int, searchQuery: String, page: Int, pageSize: Int, context: Context
+    ): List<LampGroupInfo> {
+        val s = groupType.takeIf { it != -1 }
+        val parseDataNewSuspend =
+            UniCallbackService<PageResponse<LampGroupInfo>>().parseDataNewSuspend(
+                roadService.getGroupList(
+                    GroupRequestParam(
+                        keyword = searchQuery,
+                        curPage = page,
+                        pageSize = pageSize,
+                        groupType = s
                     )
                 ), context
             )

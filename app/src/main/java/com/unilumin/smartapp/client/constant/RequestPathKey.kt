@@ -35,6 +35,9 @@ object RequestPathKey {
 
     const val KEY_GET_LIGHT_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getLightList"
     const val KEY_GET_GW_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getLightGatewayList"
+
+    const val KEY_GET_LIGHT_GW_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getLightControlGatewayList"
+
     const val KEY_GET_LOOP_LIST: String = "$SMART_ROAD_LAMPS/uni_light_loop_page_list"
 
     const val KEY_GET_GROUP_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getGroupList"
