@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -22,10 +23,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import coil.ImageLoader
 import com.amap.api.maps.MapsInitializer
+import com.google.gson.Gson
 import com.unilumin.smartapp.auth.TokenManagerFactory
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant
@@ -52,6 +56,10 @@ import com.unilumin.smartapp.ui.screens.site.SitesScreen
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.Gray900
+import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
+import com.unilumin.smartapp.ui.viewModel.ViewModelFactory
+import java.net.URLDecoder
+import java.net.URLEncoder
 
 
 class MainActivity : ComponentActivity() {
@@ -81,6 +89,12 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
     var sessionKey by remember { mutableIntStateOf(0) }
     var isLoggedIn by remember { mutableStateOf(false) }
 
+    val profileViewModel: ProfileViewModel = viewModel(
+        factory = ViewModelFactory {
+            ProfileViewModel(retrofitClient, context)
+        })
+
+    var imageLoader: ImageLoader = retrofitClient.getImageLoader(context)
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = Blue600, background = Gray50, surface = Color.White, onSurface = Gray900
@@ -96,6 +110,9 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         sessionKey++
                     })
             } else {
+                LaunchedEffect(Unit) {
+                    profileViewModel.loadData()
+                }
                 Scaffold(
                     bottomBar = { BottomNavBar(navController) }) { innerPadding ->
                     NavHost(
@@ -111,19 +128,19 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                             DevicesScreen(
                                 retrofitClient = retrofitClient,
                                 onDetailClick = { lightDevice ->
-                                    val deviceJson = com.google.gson.Gson().toJson(lightDevice)
+                                    val deviceJson = Gson().toJson(lightDevice)
                                     val encodedJson =
-                                        java.net.URLEncoder.encode(deviceJson, "UTF-8")
+                                        URLEncoder.encode(deviceJson, "UTF-8")
                                     navController.navigate("deviceDetail/$encodedJson")
                                 },
                                 onMenuClick = { e ->
                                     when (e) {
                                         OFFLINE_ANALYSIS -> navController.navigate("deviceStatusChart")
-                                        SMART_LAMP-> navController.navigate("smartLampScreen")
-                                        SMART_MONITOR-> navController.navigate("smartMonitorScreen")
+                                        SMART_LAMP -> navController.navigate("smartLampScreen")
+                                        SMART_MONITOR -> navController.navigate("smartMonitorScreen")
                                         SMART_ENV -> navController.navigate("smartEnvScreen")
-                                        SMART_BROAD-> navController.navigate("smartBroadScreen")
-                                        SMART_PLAY_BOX-> navController.navigate("smartPlayBoxScreen")
+                                        SMART_BROAD -> navController.navigate("smartBroadScreen")
+                                        SMART_PLAY_BOX -> navController.navigate("smartPlayBoxScreen")
                                     }
                                 })
                         }
@@ -162,15 +179,13 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         }
 
 
-
-
                         //设备详情页面
                         composable("deviceDetail/{deviceJson}") { backStackEntry ->
                             //如果此处的json过大，可以改成deviceId，deviceName进行传递
                             val encodedJson = backStackEntry.arguments?.getString("deviceJson")
-                            val deviceJson = java.net.URLDecoder.decode(encodedJson, "UTF-8")
+                            val deviceJson = URLDecoder.decode(encodedJson, "UTF-8")
                             val iotDevice =
-                                com.google.gson.Gson().fromJson(deviceJson, IotDevice::class.java)
+                                Gson().fromJson(deviceJson, IotDevice::class.java)
                             DeviceDetailScreen(
                                 iotDevice = iotDevice,
                                 retrofitClient = retrofitClient,
@@ -181,22 +196,28 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
 
                         //我的
                         composable("profile") {
-                            ProfileScreen(retrofitClient = retrofitClient, onLogout = {
-                                TokenManagerFactory.getInstance(context).clear()
-                                isLoggedIn = false
-                                sessionKey++
-                            }, onItemClick = { name, profileViewModel ->
-                                if (name == DeviceConstant.SYSTEM_INFO) {
-                                    navController.navigate("systemInfo")
-                                } else if (name == DeviceConstant.SYSTEM_CONFIG) {
-                                    navController.navigate("systemConfig")
+
+
+                            ProfileScreen(
+                                imageLoader = imageLoader,
+                                profileViewModel = profileViewModel, onLogout = {
+                                    TokenManagerFactory.getInstance(context).clear()
+                                    isLoggedIn = false
+                                    sessionKey++
+                                }, onItemClick = { name, _ ->
+                                    if (name == DeviceConstant.SYSTEM_INFO) {
+                                        navController.navigate("systemInfo")
+                                    } else if (name == DeviceConstant.SYSTEM_CONFIG) {
+                                        navController.navigate("systemConfig")
+                                    }
                                 }
-                            })
+
+                            )
                         }
                         //系统信息
                         composable("systemInfo") { e ->
                             SystemInfoScreen(
-                                retrofitClient = retrofitClient,
+                                profileViewModel = profileViewModel,
                                 onBack = { navController.popBackStack() })
                         }
                         //系统配置

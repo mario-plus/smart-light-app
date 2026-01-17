@@ -55,10 +55,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.menuItems
 import com.unilumin.smartapp.ui.components.ProfileMenuItem
 import com.unilumin.smartapp.ui.theme.Blue600
@@ -76,19 +75,14 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    retrofitClient: RetrofitClient,
+    imageLoader: ImageLoader,
+    profileViewModel: ProfileViewModel,
     onLogout: () -> Unit,
     onItemClick: (name: String, profileViewModel: ProfileViewModel) -> Unit
 ) {
     val context = LocalContext.current
 
     val scope = rememberCoroutineScope()
-    val profileViewModel: ProfileViewModel = viewModel(
-        factory = ViewModelFactory {
-            ProfileViewModel(retrofitClient, context)
-        }
-    )
-
     val currentProject by profileViewModel.currentProject.collectAsState()
     val projectList by profileViewModel.projectList.collectAsState()
     val userInfo by profileViewModel.userInfo.collectAsState()
@@ -103,8 +97,7 @@ fun ProfileScreen(
             onDismissRequest = { showBottomSheet = false },
             sheetState = sheetState,
             containerColor = Color.White,
-            dragHandle = { BottomSheetDefaults.DragHandle() }
-        ) {
+            dragHandle = { BottomSheetDefaults.DragHandle() }) {
             Column(modifier = Modifier.padding(bottom = 32.dp)) {
                 Text(
                     "切换项目",
@@ -113,21 +106,20 @@ fun ProfileScreen(
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
                 )
                 LazyColumn {
-                    items(projectList) { project ->
+                    items(
+                        items = projectList, key = { it.id }) { project ->
                         val isSelected = project.id == currentProject?.id
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    profileViewModel.switchProject(project)
-                                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                        if (!sheetState.isVisible) showBottomSheet = false
-                                    }
+                        Row(modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                profileViewModel.switchProject(project)
+                                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                    if (!sheetState.isVisible) showBottomSheet = false
                                 }
-                                .padding(horizontal = 24.dp, vertical = 16.dp),
+                            }
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
+                            horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = project.name,
@@ -167,9 +159,7 @@ fun ProfileScreen(
                 .height(220.dp)
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFFF0F7FF), Gray50),
-                        startY = 0f,
-                        endY = 500f
+                        colors = listOf(Color(0xFFF0F7FF), Gray50), startY = 0f, endY = 500f
                     )
                 )
         )
@@ -194,11 +184,9 @@ fun ProfileScreen(
                     ) {
                         if (!userAvatarUrl.isNullOrEmpty()) {
                             AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data(userAvatarUrl)
-                                    .crossfade(true)
-                                    .build(),
-                                imageLoader = retrofitClient.getImageLoader(context),
+                                model = ImageRequest.Builder(context).data(userAvatarUrl)
+                                    .crossfade(true).build(),
+                                imageLoader = imageLoader,
                                 contentDescription = "User Avatar",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
@@ -236,8 +224,7 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
-                            color = Color(0xFFDBEAFE),
-                            shape = RoundedCornerShape(8.dp)
+                            color = Color(0xFFDBEAFE), shape = RoundedCornerShape(8.dp)
                         ) { // Blue100
                             Text(
                                 text = userInfo?.username ?: "--",
@@ -255,16 +242,14 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(36.dp))
 
             Surface(
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier
+                shape = RoundedCornerShape(24.dp), modifier = Modifier
                     .fillMaxWidth()
                     .shadow(
                         12.dp,
                         RoundedCornerShape(24.dp),
                         spotColor = Color(0xFFBFDBFE).copy(alpha = 0.6f)
                     )
-                    .clickable { showBottomSheet = true }
-            ) {
+                    .clickable { showBottomSheet = true }) {
                 Box(
                     modifier = Modifier
                         .background(
@@ -355,8 +340,7 @@ fun ProfileScreen(
                                 if (!canClick) {
                                     onItemClick(item.first, profileViewModel)
                                 }
-                            }
-                        )
+                            })
                         if (index < menuItems.size - 1) {
                             Divider(
                                 color = Gray100.copy(alpha = 0.5f),
@@ -376,8 +360,7 @@ fun ProfileScreen(
                     onLogout()
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFEF2F2),
-                    contentColor = Red500
+                    containerColor = Color(0xFFFEF2F2), contentColor = Red500
                 ),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier

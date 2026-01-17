@@ -15,7 +15,4 @@ object ServerConfig {
         return "$protocol://$ipAddress:$port"
     }
 
-    fun getBaseUrlNotPort(): String {
-        return "$protocol://$ipAddress"
-    }
 }

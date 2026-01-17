@@ -159,7 +159,7 @@ object DeviceConstant {
 
     const val SYSTEM_INFO = "系统信息"
     const val SYSTEM_CONFIG = "系统配置"
-    const val SERVER_ADDRESS = "服务器地址"
+    const val SERVER_ADDRESS = "服务器"
 
     val menuItems = listOf(
         Triple(SYSTEM_INFO, Icons.Rounded.Settings, null),

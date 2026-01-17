@@ -66,15 +66,9 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SystemInfoScreen(
-    retrofitClient: RetrofitClient,
+    profileViewModel: ProfileViewModel,
     onBack: () -> Unit
 ) {
-    val context = LocalContext.current
-    val profileViewModel: ProfileViewModel = viewModel(
-        factory = ViewModelFactory {
-            ProfileViewModel(retrofitClient, context)
-        }
-    )
 
     // 使用 collectAsState 观察数据流
     val systemInfo by profileViewModel.systemInfo.collectAsState()

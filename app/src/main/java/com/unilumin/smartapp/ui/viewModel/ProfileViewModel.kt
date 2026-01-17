@@ -34,7 +34,7 @@ class ProfileViewModel(
     val isLoading = _isLoading.asStateFlow()
 
     //系统信息
-    private val _systemInfo = MutableStateFlow<SystemInfo>(SystemInfo())
+    private val _systemInfo = MutableStateFlow(SystemInfo())
     val systemInfo = _systemInfo.asStateFlow()
 
     //项目列表
@@ -55,7 +55,7 @@ class ProfileViewModel(
 
 
 
-    init {
+    fun loadData() {
         fetchProjects()
         fetchUserInfo()
     }
@@ -73,10 +73,18 @@ class ProfileViewModel(
                 )
                 if (list != null) {
                     _projectList.value = list
-                    if (_currentProject.value == null && list.isNotEmpty()) {
+                    val current = _currentProject.value
+
+                    if (current == null && list.isNotEmpty()) {
                         _currentProject.value = list[0]
-                    }
-                    if (list.isEmpty()) {
+                    } else if (current != null && list.isNotEmpty()) {
+                        val found = list.find { it.id == current.id }
+                        if (found != null) {
+                            _currentProject.value = found
+                        } else {
+                            _currentProject.value = list[0]
+                        }
+                    } else {
                         _currentProject.value = null
                     }
                 }
@@ -112,12 +120,13 @@ class ProfileViewModel(
     }
 
     fun switchProject(project: ProjectInfo) {
+        _currentProject.value = project
         launchWithLoading {
             UniCallbackService<String>().parseDataSuspend(
                 projectService.switchProject(project.id),
                 context
             )
-            _currentProject.value = project
+
         }
     }
 
