@@ -10,6 +10,7 @@ import com.unilumin.smartapp.client.data.LampStrategyInfo
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
+import com.unilumin.smartapp.client.data.StrategyRequestParam
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -48,6 +49,6 @@ interface RoadService {
 
     //策略列表
     @POST(RequestPathKey.KEY_GET_STRATEGY_LIST)
-    fun getStrategyList(): Call<NewResponseData<PageResponse<LampStrategyInfo>?>?>?
+    fun getStrategyList(@Body strategyParam: StrategyRequestParam): Call<NewResponseData<PageResponse<LampStrategyInfo>?>?>?
 
 }

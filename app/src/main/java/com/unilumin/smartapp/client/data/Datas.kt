@@ -93,6 +93,16 @@ data class GroupRequestParam(
     val tagCondition: String? = "or"
 )
 
+data class StrategyRequestParam(
+    val keyword: String,
+    val curPage: Int,
+    val pageSize: Int,
+    val syncState: Int? = null,
+    val taskState: Int? = null,
+    val subSystemType: Int? = 1,
+    val tagCondition: String? = "or"
+)
+
 data class ProjectInfo(
     val id: Long, val name: String
 )
@@ -601,7 +611,7 @@ data class LampGroupInfo(
 data class LampStrategyInfo(
 
     // 策略id
-    var id: Long? = null,
+    var id: Long,
 
     // 策略名称
     var name: String? = null,

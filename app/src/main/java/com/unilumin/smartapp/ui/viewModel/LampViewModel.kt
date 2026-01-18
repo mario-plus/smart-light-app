@@ -19,6 +19,7 @@ import com.unilumin.smartapp.client.data.LampLoopCtlInfo
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
+import com.unilumin.smartapp.client.data.StrategyRequestParam
 import com.unilumin.smartapp.client.service.RoadService
 import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,8 +31,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import retrofit2.Call
 
 class LampViewModel(
-    retrofitClient: RetrofitClient,
-    application: Application
+    retrofitClient: RetrofitClient, application: Application
 ) : AndroidViewModel(application) {
 
     val context = getApplication<Application>()
@@ -76,7 +76,7 @@ class LampViewModel(
 
     // 1. 单灯列表
     val lampLightFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
-        fetchPageData<LampLightInfo>(page, size) {
+        fetchPageData(page, size) {
             roadService.getLightCtlList(
                 RequestParam(keyword = query, curPage = page, pageSize = size, state = filter)
             )
@@ -85,7 +85,7 @@ class LampViewModel(
 
     // 2. 回路列表
     val lampLoopCtlFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
-        fetchPageData<LampLoopCtlInfo>(page, size) {
+        fetchPageData(page, size) {
             roadService.getLoopCtlList(
                 keyword = query, curPage = page, pageSize = size, networkState = filter
             )
@@ -94,7 +94,7 @@ class LampViewModel(
 
     // 3. 网关列表
     val lampGateWayFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
-        fetchPageData<LampGateWayInfo>(page, size) {
+        fetchPageData(page, size) {
             roadService.getGwCtlList(
                 RequestParam(keyword = query, curPage = page, pageSize = size, state = filter)
             )
@@ -103,7 +103,7 @@ class LampViewModel(
 
     // 4. 光控网关列表
     val lampLightGwFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
-        fetchPageData<LampGateWayInfo>(page, size) {
+        fetchPageData(page, size) {
             roadService.getLightGwList(
                 RequestParam(keyword = query, curPage = page, pageSize = size, state = filter)
             )
@@ -112,17 +112,25 @@ class LampViewModel(
 
     // 5. 分组列表
     val lampGroupFlow = createPagingFlow(groupType, searchQuery) { page, size, filter, query ->
-        fetchPageData<LampGroupInfo>(page, size) {
+        fetchPageData(page, size) {
             roadService.getGroupList(
                 GroupRequestParam(
-                    keyword = query,
-                    curPage = page,
-                    pageSize = size,
-                    groupType = filter
+                    keyword = query, curPage = page, pageSize = size, groupType = filter
                 )
             )
         }
     }
+
+    val lampStrategyFlow = createPagingFlow(groupType, searchQuery) { page, size, filter, query ->
+        fetchPageData(page, size) {
+            roadService.getStrategyList(
+                StrategyRequestParam(
+                    keyword = query, curPage = page, pageSize = size
+                )
+            )
+        }
+    }
+
 
     // =================================================================================
     // 核心工具方法
@@ -134,21 +142,22 @@ class LampViewModel(
         queryFlow: Flow<String>,
         fetcher: suspend (page: Int, pageSize: Int, filter: Int?, query: String) -> List<T>
     ): Flow<PagingData<T>> {
-        return combine(filterFlow, queryFlow, ::Pair)
-            .flatMapLatest { (currentFilter, currentQuery) ->
+        return combine(
+            filterFlow,
+            queryFlow,
+            ::Pair
+        ).flatMapLatest { (currentFilter, currentQuery) ->
                 val validFilter = currentFilter.takeIf { it != FILTER_NONE }
                 Pager(
                     config = PagingConfig(
                         pageSize = PAGE_SIZE,
                         initialLoadSize = PAGE_SIZE,
                         prefetchDistance = PREFETCH_DIST
-                    ),
-                    pagingSourceFactory = {
+                    ), pagingSourceFactory = {
                         GenericPagingSource { page, pageSize ->
                             fetcher(page, pageSize, validFilter, currentQuery)
                         }
-                    }
-                ).flow
+                    }).flow
             }.cachedIn(viewModelScope)
     }
 
@@ -159,8 +168,7 @@ class LampViewModel(
      * Call<NewResponseData<PageResponse<T>?>?>?
      */
     private suspend fun <T : Any> fetchPageData(
-        page: Int,
-        pageSize: Int,
+        page: Int, pageSize: Int,
         // 【关键修复】这里完全照抄报错提示中的类型结构，允许所有层级为空
         apiCall: suspend () -> Call<NewResponseData<PageResponse<T>?>?>?
     ): List<T> {

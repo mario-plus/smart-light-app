@@ -51,6 +51,7 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GATEWAY
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GROUP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_LIGHT
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_LOOP
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_STRATEGY
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LIGHT_GATEWAY
 import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.client.data.SystemConfig
@@ -61,6 +62,7 @@ import com.unilumin.smartapp.ui.screens.app.lamp.LampGroupContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampLightContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampLightGwContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampLoopCtlContent
+import com.unilumin.smartapp.ui.screens.app.lamp.LampStrategyContent
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.PageBackground
@@ -143,6 +145,10 @@ fun SmartLampScreen(
 
                 SMART_LAMP_GROUP -> {
                     LampGroupContent(lampViewModel)
+                }
+
+                SMART_LAMP_STRATEGY -> {
+                    LampStrategyContent(lampViewModel)
                 }
 
                 else -> {
