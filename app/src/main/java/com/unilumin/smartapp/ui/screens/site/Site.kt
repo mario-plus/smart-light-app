@@ -1,5 +1,6 @@
 package com.unilumin.smartapp.ui.screens.site
 
+import android.app.Application
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.BackHandler
@@ -79,10 +80,11 @@ import kotlinx.coroutines.flow.collectLatest
 fun SitesScreen(retrofitClient: RetrofitClient) {
 
     val context = LocalContext.current
+    val application = context.applicationContext as Application
     val focusManager = LocalFocusManager.current
 
     val siteViewModel: SiteViewModel = viewModel(
-        factory = ViewModelFactory { SiteViewModel(retrofitClient, context) }
+        factory = ViewModelFactory { SiteViewModel(retrofitClient, application) }
     )
 
     // Data Sources

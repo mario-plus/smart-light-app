@@ -78,7 +78,7 @@ fun SmartLampScreen(
     // 初始化 ViewModel
     val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SystemViewModel(retrofitClient, context) as T
+            return SystemViewModel(retrofitClient, application) as T
         }
     })
 

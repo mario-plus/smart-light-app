@@ -1,5 +1,6 @@
 package com.unilumin.smartapp.ui.screens.device
 
+import android.app.Application
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -71,10 +72,11 @@ fun DeviceDetailScreen(
 ) {
 
     val context = LocalContext.current
+    val application = context.applicationContext as Application
 
     val deviceViewModel: DeviceViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return DeviceViewModel(retrofitClient, context) as T
+            return DeviceViewModel(retrofitClient, application) as T
         }
     })
     // 状态管理

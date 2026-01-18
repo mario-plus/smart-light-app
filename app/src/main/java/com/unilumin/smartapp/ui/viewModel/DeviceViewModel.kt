@@ -1,9 +1,11 @@
 package com.unilumin.smartapp.ui.viewModel
 
+import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -41,9 +43,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class DeviceViewModel(
-    retrofitClient: RetrofitClient, val context: Context
-) : ViewModel() {
-
+    retrofitClient: RetrofitClient,application: Application
+) : AndroidViewModel(application) {
+    val context = getApplication<Application>()
 
 
 

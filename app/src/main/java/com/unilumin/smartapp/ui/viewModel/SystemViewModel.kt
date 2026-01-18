@@ -1,6 +1,8 @@
 package com.unilumin.smartapp.ui.viewModel
 
+import android.app.Application
 import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unilumin.smartapp.client.RetrofitClient
@@ -15,8 +17,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SystemViewModel(
-    val retrofitClient: RetrofitClient, val context: Context
-) : ViewModel() {
+    val retrofitClient: RetrofitClient,application: Application
+) : AndroidViewModel(application) {
+
+    val context = getApplication<Application>()
 
     var configStore = SystemConfigManager(context)
 

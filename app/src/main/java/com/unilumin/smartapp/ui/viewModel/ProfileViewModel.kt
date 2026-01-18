@@ -1,7 +1,9 @@
 package com.unilumin.smartapp.ui.viewModel
 
 
+import android.app.Application
 import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unilumin.smartapp.client.RetrofitClient
@@ -20,9 +22,9 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 
 class ProfileViewModel(
-    val retrofitClient: RetrofitClient, val context: Context
-) : ViewModel() {
-
+    val retrofitClient: RetrofitClient, application: Application
+) : AndroidViewModel(application) {
+    val context = getApplication<Application>()
 
     val userService = retrofitClient.getService(UserService::class.java)
     val projectService = retrofitClient.getService(ProjectService::class.java)

@@ -1,3 +1,4 @@
+import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -56,9 +57,12 @@ fun SystemConfigScreen(
 ) {
 
     val context = LocalContext.current
+
+    val application = context.applicationContext as Application
+
     val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SystemViewModel(retrofitClient, context) as T
+            return SystemViewModel(retrofitClient, application) as T
         }
     })
     val productTypes by systemViewModel.productTypes.collectAsState()

@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.ui.screens.device
 
 import android.annotation.SuppressLint
+import android.app.Application
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -84,18 +85,21 @@ fun DevicesScreen(
     onDetailClick: (IotDevice) -> Unit,
     onMenuClick: (String) -> Unit
 ) {
+
+
     var showMenu by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val application = context.applicationContext as Application
     val deviceViewModel: DeviceViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return DeviceViewModel(retrofitClient, context) as T
+            return DeviceViewModel(retrofitClient, application) as T
         }
     })
 
     val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SystemViewModel(retrofitClient, context) as T
+            return SystemViewModel(retrofitClient, application) as T
         }
     })
 

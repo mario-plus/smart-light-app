@@ -3,6 +3,7 @@ package com.unilumin.smartapp
 import SmartLampScreen
 import SystemConfigScreen
 import SystemInfoScreen
+import android.app.Application
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -85,13 +86,15 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
     val context = LocalContext.current
+    val application = context.applicationContext as Application
+
     // 使用 sessionKey 来强制重置整个 App 的状态
     var sessionKey by remember { mutableIntStateOf(0) }
     var isLoggedIn by remember { mutableStateOf(false) }
 
     val profileViewModel: ProfileViewModel = viewModel(
         factory = ViewModelFactory {
-            ProfileViewModel(retrofitClient, context)
+            ProfileViewModel(retrofitClient, application)
         })
 
     var imageLoader: ImageLoader = retrofitClient.getImageLoader(context)

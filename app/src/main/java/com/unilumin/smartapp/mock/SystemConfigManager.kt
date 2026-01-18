@@ -11,7 +11,7 @@ import com.unilumin.smartapp.client.data.SystemConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-// 顶层扩展属性，保持单例模式
+
 private val Context.dataStore by preferencesDataStore(name = "device_settings")
 class SystemConfigManager(private val context: Context) {
     companion object {

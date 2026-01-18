@@ -34,6 +34,7 @@ class LampViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
+    val context = getApplication<Application>()
 
     //分页数据总数
     companion object {
@@ -72,6 +73,7 @@ class LampViewModel(
     fun updateSearch(query: String) {
         searchQuery.value = query
     }
+
     // 1. 单灯列表
     val lampLightFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
         fetchPageData<LampLightInfo>(page, size) {
@@ -112,7 +114,12 @@ class LampViewModel(
     val lampGroupFlow = createPagingFlow(groupType, searchQuery) { page, size, filter, query ->
         fetchPageData<LampGroupInfo>(page, size) {
             roadService.getGroupList(
-                GroupRequestParam(keyword = query, curPage = page, pageSize = size, groupType = filter)
+                GroupRequestParam(
+                    keyword = query,
+                    curPage = page,
+                    pageSize = size,
+                    groupType = filter
+                )
             )
         }
     }
@@ -131,7 +138,11 @@ class LampViewModel(
             .flatMapLatest { (currentFilter, currentQuery) ->
                 val validFilter = currentFilter.takeIf { it != FILTER_NONE }
                 Pager(
-                    config = PagingConfig(pageSize = PAGE_SIZE, initialLoadSize = PAGE_SIZE, prefetchDistance = PREFETCH_DIST),
+                    config = PagingConfig(
+                        pageSize = PAGE_SIZE,
+                        initialLoadSize = PAGE_SIZE,
+                        prefetchDistance = PREFETCH_DIST
+                    ),
                     pagingSourceFactory = {
                         GenericPagingSource { page, pageSize ->
                             fetcher(page, pageSize, validFilter, currentQuery)
@@ -153,7 +164,7 @@ class LampViewModel(
         // 【关键修复】这里完全照抄报错提示中的类型结构，允许所有层级为空
         apiCall: suspend () -> Call<NewResponseData<PageResponse<T>?>?>?
     ): List<T> {
-        val context = getApplication<Application>()
+
 
         // 1. 获取 Call 对象
         val rawCall = apiCall()

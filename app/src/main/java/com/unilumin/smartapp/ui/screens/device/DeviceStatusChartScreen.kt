@@ -2,6 +2,7 @@ package com.unilumin.smartapp.ui.screens.device
 
 
 import android.annotation.SuppressLint
+import android.app.Application
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -78,9 +79,10 @@ fun DeviceStatusChartScreen(
 ) {
 
     val context = LocalContext.current
+    val application = context.applicationContext as Application
     val deviceViewModel: DeviceViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return DeviceViewModel(retrofitClient, context) as T
+            return DeviceViewModel(retrofitClient, application) as T
         }
     })
 

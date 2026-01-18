@@ -1,7 +1,9 @@
 package com.unilumin.smartapp.ui.viewModel
 
+import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -32,9 +34,10 @@ import kotlinx.coroutines.launch
 
 class SiteViewModel(
     val retrofitClient: RetrofitClient,
-    val context: Context
-) : ViewModel() {
+    application: Application
+) : AndroidViewModel(application) {
 
+    val context = getApplication<Application>()
     private val siteService = retrofitClient.getService(SiteService::class.java)
 
     // ================== 1. 地图相关状态 ==================
@@ -197,6 +200,7 @@ class SiteViewModel(
     }.cachedIn(viewModelScope)
 
     private suspend fun getSitePages(roadId: String?, keyword: String, page: Int, pageSize: Int): List<SiteInfo> {
+
         val rawResponse = siteService.getSiteList(
             curPage = page,
             pageSize = pageSize,
