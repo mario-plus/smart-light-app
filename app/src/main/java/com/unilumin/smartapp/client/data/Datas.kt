@@ -81,7 +81,7 @@ data class RequestParam(
     val curPage: Int,
     val pageSize: Int,
     val state: Int? = null,
-    val subSystemType: Int?,
+    val subSystemType: Int? = 1,
 )
 
 data class GroupRequestParam(

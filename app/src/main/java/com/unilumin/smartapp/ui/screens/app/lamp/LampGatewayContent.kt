@@ -66,14 +66,9 @@ import com.unilumin.smartapp.ui.viewModel.LampViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LampGatewayContent(
-    retrofitClient: RetrofitClient
+    lampViewModel: LampViewModel
 ) {
-    val context = LocalContext.current
-    val lampViewModel: LampViewModel = viewModel(factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return LampViewModel(retrofitClient, context) as T
-        }
-    })
+
     val statusOptions = remember {
         listOf(-1 to "全部状态", 1 to "设备在线", 0 to "设备离线")
     }

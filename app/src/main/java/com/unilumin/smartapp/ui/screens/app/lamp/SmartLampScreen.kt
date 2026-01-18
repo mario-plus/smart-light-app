@@ -1,3 +1,4 @@
+import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -63,6 +64,7 @@ import com.unilumin.smartapp.ui.screens.app.lamp.LampLoopCtlContent
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.PageBackground
+import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,12 +74,21 @@ fun SmartLampScreen(
 ) {
     val context = LocalContext.current
 
+    val application = context.applicationContext as Application
     // 初始化 ViewModel
     val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return SystemViewModel(retrofitClient, context) as T
         }
     })
+
+    val lampViewModel: LampViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return LampViewModel(retrofitClient, application) as T
+        }
+    })
+
+
     // 获取功能列表
     val lampFunctions by systemViewModel.lampFunctions.collectAsState()
     var currentFunctionId by remember(lampFunctions) {
@@ -115,23 +126,23 @@ fun SmartLampScreen(
             when (currentFunctionId) {
                 // 单灯管理页面
                 SMART_LAMP_LIGHT -> {
-                    LampLightContent(retrofitClient)
+                    LampLightContent(lampViewModel)
                 }
                 // 集中控制器
                 SMART_LAMP_GATEWAY -> {
-                    LampGatewayContent(retrofitClient)
+                    LampGatewayContent(lampViewModel)
                 }
                 // 回路控制器
                 SMART_LAMP_LOOP -> {
-                    LampLoopCtlContent(retrofitClient)
+                    LampLoopCtlContent(lampViewModel)
                 }
 
                 SMART_LIGHT_GATEWAY -> {
-                    LampLightGwContent(retrofitClient)
+                    LampLightGwContent(lampViewModel)
                 }
 
                 SMART_LAMP_GROUP -> {
-                    LampGroupContent(retrofitClient)
+                    LampGroupContent(lampViewModel)
                 }
 
                 else -> {

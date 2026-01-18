@@ -69,14 +69,9 @@ import com.unilumin.smartapp.ui.viewModel.LampViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LampLightContent(
-    retrofitClient: RetrofitClient
+    lampViewModel: LampViewModel
 ) {
-    val context = LocalContext.current
-    val lampViewModel: LampViewModel = viewModel(factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return LampViewModel(retrofitClient, context) as T
-        }
-    })
+
 
     // 设备状态 (-1:全部, 0:离线, 1:在线)
     val deviceState by lampViewModel.state.collectAsState()

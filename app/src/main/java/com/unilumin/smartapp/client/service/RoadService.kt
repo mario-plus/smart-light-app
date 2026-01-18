@@ -36,7 +36,7 @@ interface RoadService {
         @Query("keyword") keyword: String,
         @Query("curPage") curPage: Int,
         @Query("pageSize") pageSize: Int,
-        @Query("subSystemType") subSystemType: Int,
+        @Query("subSystemType") subSystemType: Int? = 1,
         @Query("networkState") networkState: Int? = null
     ): Call<NewResponseData<PageResponse<LampLoopCtlInfo>?>?>?
 

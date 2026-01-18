@@ -44,14 +44,9 @@ import com.unilumin.smartapp.ui.viewModel.LampViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LampGroupContent(
-    retrofitClient: RetrofitClient
+    lampViewModel: LampViewModel
 ) {
-    val context = LocalContext.current
-    val lampViewModel: LampViewModel = viewModel(factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return LampViewModel(retrofitClient, context) as T
-        }
-    })
+
 
     val groupType by lampViewModel.groupType.collectAsState()
     val searchQuery by lampViewModel.searchQuery.collectAsState()
