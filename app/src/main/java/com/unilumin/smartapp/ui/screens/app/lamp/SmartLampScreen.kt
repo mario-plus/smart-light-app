@@ -3,6 +3,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,6 +46,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GATEWAY
@@ -57,6 +60,8 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.EmptyDataView
+import com.unilumin.smartapp.ui.components.PagingList
+import com.unilumin.smartapp.ui.components.SearchHeader
 import com.unilumin.smartapp.ui.screens.app.lamp.LampGatewayContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampGroupContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampLightContent
@@ -66,6 +71,7 @@ import com.unilumin.smartapp.ui.screens.app.lamp.LampStrategyContent
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.PageBackground
+import com.unilumin.smartapp.ui.theme.PageBgColor
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 
@@ -158,3 +164,8 @@ fun SmartLampScreen(
         }
     }
 }
+
+
+
+
+

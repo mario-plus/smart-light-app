@@ -22,17 +22,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
+
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.groupTypeOptions
 import com.unilumin.smartapp.client.data.LampGroupInfo
 import com.unilumin.smartapp.ui.components.PagingList
@@ -46,8 +42,6 @@ import com.unilumin.smartapp.ui.viewModel.LampViewModel
 fun LampGroupContent(
     lampViewModel: LampViewModel
 ) {
-
-
     val groupType by lampViewModel.groupType.collectAsState()
     val searchQuery by lampViewModel.searchQuery.collectAsState()
     var statusExpanded by remember { mutableStateOf(false) }

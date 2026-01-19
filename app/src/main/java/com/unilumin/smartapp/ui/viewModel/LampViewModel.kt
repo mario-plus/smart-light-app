@@ -132,10 +132,6 @@ class LampViewModel(
     }
 
 
-    // =================================================================================
-    // 核心工具方法
-    // =================================================================================
-
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun <T : Any> createPagingFlow(
         filterFlow: Flow<Int>,

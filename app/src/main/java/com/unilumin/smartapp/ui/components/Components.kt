@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -45,6 +46,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -57,6 +59,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.LocationOn
@@ -101,11 +104,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -151,6 +156,7 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
+import com.unilumin.smartapp.client.constant.DeviceConstant
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.LoopInfo
@@ -166,9 +172,11 @@ import com.unilumin.smartapp.ui.theme.BackgroundGray
 import com.unilumin.smartapp.ui.theme.BgLightGray
 import com.unilumin.smartapp.ui.theme.Blue50
 import com.unilumin.smartapp.ui.theme.Blue600
+import com.unilumin.smartapp.ui.theme.BluePrimary
 import com.unilumin.smartapp.ui.theme.CardBorder
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.ControlBlue
+import com.unilumin.smartapp.ui.theme.DividerColor
 import com.unilumin.smartapp.ui.theme.Emerald50
 import com.unilumin.smartapp.ui.theme.Emerald600
 import com.unilumin.smartapp.ui.theme.Gray100
@@ -184,12 +192,15 @@ import com.unilumin.smartapp.ui.theme.LineColor
 import com.unilumin.smartapp.ui.theme.OfflineGray
 import com.unilumin.smartapp.ui.theme.Orange50
 import com.unilumin.smartapp.ui.theme.Orange500
+import com.unilumin.smartapp.ui.theme.PageBgColor
+import com.unilumin.smartapp.ui.theme.PlaceholderColor
 import com.unilumin.smartapp.ui.theme.PrimaryBlue
 import com.unilumin.smartapp.ui.theme.Red50
 import com.unilumin.smartapp.ui.theme.Red500
 import com.unilumin.smartapp.ui.theme.RedStatus
 import com.unilumin.smartapp.ui.theme.SafeBg
 import com.unilumin.smartapp.ui.theme.SafeGreen
+import com.unilumin.smartapp.ui.theme.SearchBarBg
 import com.unilumin.smartapp.ui.theme.TextDark
 import com.unilumin.smartapp.ui.theme.TextGray
 import com.unilumin.smartapp.ui.theme.TextPrimary
@@ -197,6 +208,7 @@ import com.unilumin.smartapp.ui.theme.TextSecondary
 import com.unilumin.smartapp.ui.theme.TextSub
 import com.unilumin.smartapp.ui.theme.TextTitle
 import com.unilumin.smartapp.ui.theme.White
+import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.time.Instant
@@ -2149,7 +2161,11 @@ fun DeviceStatusRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 可用状态 - 靠最左
-        StatusItem(label = "可用状态:", text = if (isDisable) "禁用" else "启用", isError = isDisable)
+        StatusItem(
+            label = "可用状态:",
+            text = if (isDisable) "禁用" else "启用",
+            isError = isDisable
+        )
 
         // 工作状态 - 靠最右
         StatusItem(label = "工作状态:", text = if (hasAlarm) "异常" else "正常", isError = hasAlarm)
@@ -2174,9 +2190,6 @@ private fun StatusItem(label: String, text: String, isError: Boolean) {
         Text(text = text, fontSize = 13.sp, color = color, fontWeight = FontWeight.Medium)
     }
 }
-
-
-
 
 
 @Composable
@@ -2305,4 +2318,178 @@ fun ReferenceStyleDropdownMenu(
         }
     }
 
+}
+
+
+/**
+ * 网络状态+搜索栏
+ * @param currentStatus 网络状态
+ * @param searchQuery 关键词
+ * @param searchTitle 搜索框提示词
+ * @param onStatusChanged 网络状态更改
+ * @param onSearchChanged 关键词更改
+ * */
+@Composable
+fun SearchHeader(
+    currentStatus: Int,
+    searchQuery: String,
+    searchTitle: String,
+    onStatusChanged: (Int) -> Unit,
+    onSearchChanged: (String) -> Unit
+) {
+    var statusExpanded by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(26.dp),
+            color = SearchBarBg,
+            shadowElevation = 3.dp
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 左侧：状态筛选下拉
+                Box(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .fillMaxHeight()
+                        .clickable { statusExpanded = true }
+                        .padding(start = 16.dp, end = 8.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = DeviceConstant.statusOptions.find { it.first == currentStatus }?.second
+                                ?.replace("设备", "") ?: "全部",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF333333)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = null,
+                            tint = Color(0xFF666666),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = statusExpanded,
+                        onDismissRequest = { statusExpanded = false },
+                        modifier = Modifier.background(Color.White)
+                    ) {
+                        DeviceConstant.statusOptions.forEach { (value, label) ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = label,
+                                        color = if (value == currentStatus) BluePrimary else Color(
+                                            0xFF333333
+                                        ),
+                                        fontWeight = if (value == currentStatus) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                onClick = {
+                                    onStatusChanged(value)
+                                    statusExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // 中间：分割线
+                VerticalDivider(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .width(1.dp),
+                    color = DividerColor
+                )
+
+                // 右侧：搜索框
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = Color(0xFF999999),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                text = searchTitle,
+                                color = PlaceholderColor,
+                                fontSize = 14.sp
+                            )
+                        }
+                        BasicTextField(
+                            value = searchQuery,
+                            onValueChange = onSearchChanged,
+                            textStyle = TextStyle(fontSize = 14.sp, color = Color.Black),
+                            singleLine = true,
+                            cursorBrush = SolidColor(BluePrimary),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun <T : Any> BaseLampListScreen(
+    searchTitle: String,
+    viewModel: LampViewModel,
+    pagingItems: LazyPagingItems<T>,
+    keySelector: ((T) -> Any)? = null,
+    itemContent: @Composable (T) -> Unit
+) {
+    // 统一订阅 ViewModel 状态
+    val deviceState by viewModel.state.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val totalCount by viewModel.totalCount.collectAsState()
+    val isSwitching by viewModel.isSwitch.collectAsState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(PageBgColor)
+    ) {
+        // 1. 通用搜索头
+        SearchHeader(
+            currentStatus = deviceState,
+            searchQuery = searchQuery,
+            searchTitle = searchTitle,
+            onStatusChanged = { viewModel.updateState(it) },
+            onSearchChanged = { viewModel.updateSearch(it) }
+        )
+
+        // 2. 通用分页列表
+        PagingList(
+            totalCount = totalCount,
+            lazyPagingItems = pagingItems,
+            forceLoading = isSwitching,
+            modifier = Modifier.weight(1f),
+            itemKey = keySelector,
+            emptyMessage = "未找到相关设备",
+            contentPadding = PaddingValues(bottom = 24.dp),
+            itemContent = itemContent
+        )
+    }
 }

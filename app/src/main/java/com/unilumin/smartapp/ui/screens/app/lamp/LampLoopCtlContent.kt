@@ -59,9 +59,11 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.statusOptions
 import com.unilumin.smartapp.client.data.LampLoopCtlInfo
+import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.LoopCircleItem
 import com.unilumin.smartapp.ui.components.PagingList
+import com.unilumin.smartapp.ui.components.SearchHeader
 
 import com.unilumin.smartapp.ui.theme.*
 
@@ -73,149 +75,18 @@ fun LampLoopCtlContent(
     lampViewModel: LampViewModel
 ) {
 
-    // 设备状态 (-1:全部, 0:离线, 1:在线)
-    val deviceState by lampViewModel.state.collectAsState()
-    // 搜索条件
-    val searchQuery by lampViewModel.searchQuery.collectAsState()
-    // 状态下拉框控制
-    var statusExpanded by remember { mutableStateOf(false) }
-
-    val totalCount = lampViewModel.totalCount.collectAsState()
-
-    val isSwitching = lampViewModel.isSwitch.collectAsState()
 
     // 分页数据
     val loopCtlFlow = lampViewModel.lampLoopCtlFlow.collectAsLazyPagingItems()
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(PageBgColor)
-    ) {
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(26.dp),
-                color = SearchBarBg,
-                shadowElevation = 3.dp
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .wrapContentWidth()
-                            .fillMaxHeight()
-                            .clickable { statusExpanded = true }
-                            .padding(start = 16.dp, end = 8.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = statusOptions.find { it.first == deviceState }?.second?.replace(
-                                    "设备",
-                                    ""
-                                ) ?: "全部",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF333333)
-                            )
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = null,
-                                tint = Color(0xFF666666),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = statusExpanded,
-                            onDismissRequest = { statusExpanded = false },
-                            modifier = Modifier.background(Color.White)
-                        ) {
-                            statusOptions.forEach { (value, label) ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = label,
-                                            color = if (value == deviceState) BluePrimary else Color(
-                                                0xFF333333
-                                            ),
-                                            fontWeight = if (value == deviceState) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    },
-                                    onClick = {
-                                        lampViewModel.updateState(value)
-                                        statusExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    VerticalDivider(
-                        modifier = Modifier
-                            .height(24.dp)
-                            .width(1.dp),
-                        color = DividerColor
-                    )
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = Color(0xFF999999),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Box(contentAlignment = Alignment.CenterStart) {
-                            if (searchQuery.isEmpty()) {
-                                Text(
-                                    text = "搜索设备名称或地址...",
-                                    color = PlaceholderColor,
-                                    fontSize = 14.sp
-                                )
-                            }
-                            BasicTextField(
-                                value = searchQuery,
-                                onValueChange = { lampViewModel.updateSearch(it) },
-                                textStyle = TextStyle(
-                                    fontSize = 14.sp,
-                                    color = Color.Black
-                                ),
-                                singleLine = true,
-                                cursorBrush = SolidColor(BluePrimary),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        PagingList(
-            totalCount = totalCount.value,
-            lazyPagingItems = loopCtlFlow,
-            forceLoading = isSwitching.value,
-            modifier = Modifier.weight(1f),
-            itemKey = { loopCtlInfo -> loopCtlInfo.id },
-            emptyMessage = "未找到相关设备",
-            contentPadding = PaddingValues(top = 0.dp, bottom = 24.dp, start = 0.dp, end = 0.dp)
-        ) { loopCtlInfo ->
-            LampLoopCtlCard(loopCtlInfo)
-        }
+    BaseLampListScreen(
+        viewModel = lampViewModel,
+        pagingItems = loopCtlFlow,
+        keySelector = { it.id },
+        searchTitle = "搜索设备名称或序列码"
+    ) { item ->
+        LampLoopCtlCard(loopCtlInfo = item, onDetailClick = {})
     }
+
 }
 
 
