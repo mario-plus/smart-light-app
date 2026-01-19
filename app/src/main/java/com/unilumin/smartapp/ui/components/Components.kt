@@ -2452,6 +2452,10 @@ fun SearchHeader(
     }
 }
 
+
+/**
+ * 智慧路灯设备基础组件
+ * */
 @Composable
 fun <T : Any> BaseLampListScreen(
     searchTitle: String,
