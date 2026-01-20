@@ -36,7 +36,8 @@ object RequestPathKey {
     const val KEY_GET_LIGHT_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getLightList"
     const val KEY_GET_GW_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getLightGatewayList"
 
-    const val KEY_GET_LIGHT_GW_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getLightControlGatewayList"
+    const val KEY_GET_LIGHT_GW_LIST: String =
+        "$SMART_ROAD_LAMPS/uni_light_getLightControlGatewayList"
 
     const val KEY_GET_LOOP_LIST: String = "$SMART_ROAD_LAMPS/uni_light_loop_page_list"
 
@@ -44,6 +45,10 @@ object RequestPathKey {
     const val KEY_GET_STRATEGY_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getStrategyList"
     const val KEY_LAMP_CTL: String = "$SMART_ROAD_LAMPS/uni_light_lightCtl"
     const val KEY_LOOP_CTL: String = "$SMART_ROAD_LAMPS/uni_light_loop_cmd"
+
+    const val KEY_JOB_SCENE_LIST: String = "$SMART_ROAD_LAMPS/uni_light_selectTaskKey"
+
+    const val KEY_JOB_LIST: String = "$SMART_ROAD_LAMPS/uni_light_selectTaskList"
 
     //设备列表
     const val KEY_GET_DEVICE: String = "$IOT_HUB_MANAGER/iot_device_page"
@@ -68,7 +73,6 @@ object RequestPathKey {
 
     //离线设备
     const val KEY_GET_OFFLINE_DEVICE_LIST: String = "$IOT_HUB_MANAGER/offline_device_list"
-
 
 
 }

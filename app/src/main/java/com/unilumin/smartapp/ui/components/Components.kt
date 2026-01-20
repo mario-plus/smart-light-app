@@ -2334,6 +2334,7 @@ fun SearchHeader(
     currentStatus: Int,
     searchQuery: String,
     searchTitle: String,
+    statusOptions: List<Pair<Int, String>> = DeviceConstant.statusOptions,
     onStatusChanged: (Int) -> Unit,
     onSearchChanged: (String) -> Unit
 ) {
@@ -2366,9 +2367,9 @@ fun SearchHeader(
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        // ✅ 修改点1：使用传入的 statusOptions 查找当前显示的文本
                         Text(
-                            text = DeviceConstant.statusOptions.find { it.first == currentStatus }?.second
-                                ?.replace("设备", "") ?: "全部",
+                            text = statusOptions.find { it.first == currentStatus }?.second ?: "",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF333333)
@@ -2386,7 +2387,7 @@ fun SearchHeader(
                         onDismissRequest = { statusExpanded = false },
                         modifier = Modifier.background(Color.White)
                     ) {
-                        DeviceConstant.statusOptions.forEach { (value, label) ->
+                        statusOptions.forEach { (value, label) ->
                             DropdownMenuItem(
                                 text = {
                                     Text(
@@ -2458,10 +2459,12 @@ fun SearchHeader(
  * */
 @Composable
 fun <T : Any> BaseLampListScreen(
+    statusOptions: List<Pair<Int, String>> = DeviceConstant.statusOptions,
     searchTitle: String,
     viewModel: LampViewModel,
     pagingItems: LazyPagingItems<T>,
     keySelector: ((T) -> Any)? = null,
+    middleContent: (@Composable () -> Unit)? = null,
     itemContent: @Composable (T) -> Unit
 ) {
     // 统一订阅 ViewModel 状态
@@ -2477,12 +2480,16 @@ fun <T : Any> BaseLampListScreen(
     ) {
         // 1. 通用搜索头
         SearchHeader(
+            statusOptions = statusOptions,
             currentStatus = deviceState,
             searchQuery = searchQuery,
             searchTitle = searchTitle,
             onStatusChanged = { viewModel.updateState(it) },
             onSearchChanged = { viewModel.updateSearch(it) }
         )
+
+        //中间组件
+        middleContent?.invoke()
 
         // 2. 通用分页列表
         PagingList(

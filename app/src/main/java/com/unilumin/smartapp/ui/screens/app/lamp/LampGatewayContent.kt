@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -51,6 +52,11 @@ import com.unilumin.smartapp.ui.viewModel.LampViewModel
 fun LampGatewayContent(
     lampViewModel: LampViewModel
 ) {
+
+    LaunchedEffect(Unit) {
+        lampViewModel.updateSearch("")
+        lampViewModel.updateState(-1)
+    }
     val gateWayFlow = lampViewModel.lampGateWayFlow.collectAsLazyPagingItems()
     BaseLampListScreen(
         viewModel = lampViewModel,

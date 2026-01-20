@@ -63,6 +63,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
+import com.unilumin.smartapp.client.constant.DeviceConstant
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.ui.components.FilterChip
@@ -123,9 +124,6 @@ fun DevicesScreen(
 
     // 状态下拉框控制
     var statusExpanded by remember { mutableStateOf(false) }
-    val statusOptions = remember {
-        listOf(-1 to "全部状态", 1 to "设备在线", 0 to "设备离线")
-    }
 
     // --- Loading 状态控制逻辑 ---
     // 条件同步记录，用于判断是否在切换查询条件
@@ -206,10 +204,7 @@ fun DevicesScreen(
                         ) {
                             Text(
                                 // 显示简化后的文本，例如去掉 "设备" 二字以节省空间
-                                text = statusOptions.find { it.first == deviceState }?.second?.replace(
-                                    "设备",
-                                    ""
-                                ) ?: "状态",
+                                text = DeviceConstant.statusOptions.find { it.first == deviceState }?.second?: "状态",
                                 fontSize = 14.sp,
                                 color = Gray900,
                                 fontWeight = FontWeight.Medium
@@ -227,7 +222,7 @@ fun DevicesScreen(
                             onDismissRequest = { statusExpanded = false },
                             modifier = Modifier.background(Color.White)
                         ) {
-                            statusOptions.forEach { (value, label) ->
+                            DeviceConstant.statusOptions.forEach { (value, label) ->
                                 DropdownMenuItem(
                                     text = {
                                         Text(

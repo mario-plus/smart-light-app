@@ -32,21 +32,23 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.runtime.Composable
+import com.unilumin.smartapp.client.constant.DeviceConstant
+import com.unilumin.smartapp.client.constant.DeviceConstant.groupTypeOptions
+import com.unilumin.smartapp.ui.components.BaseLampListScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LampStrategyContent(
     lampViewModel: LampViewModel
 ) {
-    // 状态定义
-    val statusOptions = remember {
-        listOf(-1 to "全部状态", 1 to "任务成功", 2 to "执行中", 4 to "任务失败")
-    }
 
     // ViewModel 状态绑定
     val deviceState by lampViewModel.state.collectAsState() // 这里复用 state 字段作为任务状态筛选
+
     val searchQuery by lampViewModel.searchQuery.collectAsState()
+
     val totalCount = lampViewModel.totalCount.collectAsState()
+
     val isSwitching = lampViewModel.isSwitch.collectAsState()
 
     // 下拉框控制
@@ -55,139 +57,157 @@ fun LampStrategyContent(
     // 分页数据
     val lampStrategyFlow = lampViewModel.lampStrategyFlow.collectAsLazyPagingItems()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(PageBgColor)
-    ) {
-        // --- 顶部搜索区域 (保持风格一致性) ---
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(26.dp),
-                color = SearchBarBg,
-                shadowElevation = 2.dp
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // 1. 左侧：状态筛选下拉
-                    Box(
-                        modifier = Modifier
-                            .wrapContentWidth()
-                            .fillMaxHeight()
-                            .clickable { statusExpanded = true }
-                            .padding(start = 16.dp, end = 8.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = statusOptions.find { it.first == deviceState }?.second ?: "全部",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF333333)
-                            )
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = null,
-                                tint = Color(0xFF666666),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = statusExpanded,
-                            onDismissRequest = { statusExpanded = false },
-                            modifier = Modifier.background(Color.White)
-                        ) {
-                            statusOptions.forEach { (value, label) ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = label,
-                                            color = if (value == deviceState) BluePrimary else Color(0xFF333333),
-                                            fontWeight = if (value == deviceState) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    },
-                                    onClick = {
-                                        lampViewModel.updateState(value)
-                                        statusExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
 
-                    // 2. 分割线
-                    VerticalDivider(
-                        modifier = Modifier
-                            .height(24.dp)
-                            .width(1.dp),
-                        color = DividerColor
-                    )
-
-                    // 3. 搜索框
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = Color(0xFF999999),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Box(contentAlignment = Alignment.CenterStart) {
-                            if (searchQuery.isEmpty()) {
-                                Text(
-                                    text = "搜索策略名称...",
-                                    color = PlaceholderColor,
-                                    fontSize = 14.sp
-                                )
-                            }
-                            BasicTextField(
-                                value = searchQuery,
-                                onValueChange = { lampViewModel.updateSearch(it) },
-                                textStyle = TextStyle(
-                                    fontSize = 14.sp,
-                                    color = Color.Black
-                                ),
-                                singleLine = true,
-                                cursorBrush = SolidColor(BluePrimary),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- 列表区域 ---
-        PagingList(
-            totalCount = totalCount.value,
-            lazyPagingItems = lampStrategyFlow,
-            forceLoading = isSwitching.value,
-            modifier = Modifier.weight(1f),
-            itemKey = { info -> info.id },
-            emptyMessage = "暂无策略数据",
-            contentPadding = PaddingValues(top = 0.dp, bottom = 24.dp, start = 16.dp, end = 16.dp)
-        ) { strategyInfo ->
-            LampStrategyCard(item = strategyInfo)
-        }
+    LaunchedEffect(Unit) {
+        lampViewModel.updateSearch("")
+        lampViewModel.updateState(-1)
     }
+
+    BaseLampListScreen(
+        viewModel = lampViewModel,
+        pagingItems = lampStrategyFlow,
+        keySelector = { it.id },
+        searchTitle = "搜索策略名称或产品名称",
+        middleContent = {
+
+        }
+    ) { item ->
+        LampStrategyCard(item = item, onClick = {})
+    }
+
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .background(PageBgColor)
+//    ) {
+//        // --- 顶部搜索区域 (保持风格一致性) ---
+//        Box(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(16.dp)
+//        ) {
+//            Surface(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(52.dp),
+//                shape = RoundedCornerShape(26.dp),
+//                color = SearchBarBg,
+//                shadowElevation = 2.dp
+//            ) {
+//                Row(
+//                    modifier = Modifier.fillMaxSize(),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    // 1. 左侧：状态筛选下拉
+//                    Box(
+//                        modifier = Modifier
+//                            .wrapContentWidth()
+//                            .fillMaxHeight()
+//                            .clickable { statusExpanded = true }
+//                            .padding(start = 16.dp, end = 8.dp),
+//                        contentAlignment = Alignment.CenterStart
+//                    ) {
+//                        Row(verticalAlignment = Alignment.CenterVertically) {
+//                            Text(
+//                                text = DeviceConstant.statusOptions.find { it.first == deviceState }?.second.toString(),
+//                                fontSize = 14.sp,
+//                                fontWeight = FontWeight.SemiBold,
+//                                color = Color(0xFF333333)
+//                            )
+//                            Icon(
+//                                imageVector = Icons.Default.ArrowDropDown,
+//                                contentDescription = null,
+//                                tint = Color(0xFF666666),
+//                                modifier = Modifier.size(20.dp)
+//                            )
+//                        }
+//                        DropdownMenu(
+//                            expanded = statusExpanded,
+//                            onDismissRequest = { statusExpanded = false },
+//                            modifier = Modifier.background(Color.White)
+//                        ) {
+//                            DeviceConstant.statusOptions.forEach { (value, label) ->
+//                                DropdownMenuItem(
+//                                    text = {
+//                                        Text(
+//                                            text = label,
+//                                            color = if (value == deviceState) BluePrimary else Color(
+//                                                0xFF333333
+//                                            ),
+//                                            fontWeight = if (value == deviceState) FontWeight.Bold else FontWeight.Normal
+//                                        )
+//                                    },
+//                                    onClick = {
+//                                        lampViewModel.updateState(value)
+//                                        statusExpanded = false
+//                                    }
+//                                )
+//                            }
+//                        }
+//                    }
+//
+//                    // 2. 分割线
+//                    VerticalDivider(
+//                        modifier = Modifier
+//                            .height(24.dp)
+//                            .width(1.dp),
+//                        color = DividerColor
+//                    )
+//
+//                    // 3. 搜索框
+//                    Row(
+//                        modifier = Modifier
+//                            .weight(1f)
+//                            .padding(horizontal = 12.dp),
+//                        verticalAlignment = Alignment.CenterVertically
+//                    ) {
+//                        Icon(
+//                            imageVector = Icons.Default.Search,
+//                            contentDescription = "Search",
+//                            tint = Color(0xFF999999),
+//                            modifier = Modifier.size(20.dp)
+//                        )
+//                        Spacer(modifier = Modifier.width(8.dp))
+//
+//                        Box(contentAlignment = Alignment.CenterStart) {
+//                            if (searchQuery.isEmpty()) {
+//                                Text(
+//                                    text = "搜索策略名称...",
+//                                    color = PlaceholderColor,
+//                                    fontSize = 14.sp
+//                                )
+//                            }
+//                            BasicTextField(
+//                                value = searchQuery,
+//                                onValueChange = { lampViewModel.updateSearch(it) },
+//                                textStyle = TextStyle(
+//                                    fontSize = 14.sp,
+//                                    color = Color.Black
+//                                ),
+//                                singleLine = true,
+//                                cursorBrush = SolidColor(BluePrimary),
+//                                modifier = Modifier.fillMaxWidth()
+//                            )
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        // --- 列表区域 ---
+//        PagingList(
+//            totalCount = totalCount.value,
+//            lazyPagingItems = lampStrategyFlow,
+//            forceLoading = isSwitching.value,
+//            modifier = Modifier.weight(1f),
+//            itemKey = { info -> info.id },
+//            emptyMessage = "暂无策略数据",
+//            contentPadding = PaddingValues(top = 0.dp, bottom = 24.dp, start = 16.dp, end = 16.dp)
+//        ) { strategyInfo ->
+//            LampStrategyCard(item = strategyInfo)
+//        }
+//    }
 }
-
-
 
 
 /**
@@ -260,7 +280,7 @@ fun LampStrategyCard(
                     Spacer(modifier = Modifier.width(6.dp))
 
                     // 任务状态
-                    val (taskText, taskColor, taskBg) = when(item.taskState) {
+                    val (taskText, taskColor, taskBg) = when (item.taskState) {
                         3 -> Triple("成功", Color(0xFF4CAF50), Color(0xFFE8F5E9)) // 绿
                         4 -> Triple("失败", Color(0xFFF44336), Color(0xFFFFEBEE)) // 红
                         2 -> Triple("执行中", Color(0xFFFFA000), Color(0xFFFFF3E0)) // 橙

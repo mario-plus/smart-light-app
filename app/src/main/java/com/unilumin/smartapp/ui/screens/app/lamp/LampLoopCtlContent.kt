@@ -39,6 +39,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -75,6 +76,11 @@ fun LampLoopCtlContent(
     lampViewModel: LampViewModel
 ) {
 
+
+    LaunchedEffect(Unit) {
+        lampViewModel.updateSearch("")
+        lampViewModel.updateState(-1)
+    }
 
     // 分页数据
     val loopCtlFlow = lampViewModel.lampLoopCtlFlow.collectAsLazyPagingItems()

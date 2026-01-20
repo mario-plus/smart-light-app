@@ -62,7 +62,7 @@ object DeviceConstant {
     const val SMART_LAMP_GROUP = "lightGroup"
     const val SMART_LAMP_STRATEGY = "lightStrategy"
     const val SMART_LAMP_JOB = "lightJob"
-    const val SMART_LAMP_STATISTIC= "lightJob"
+    const val SMART_LAMP_STATISTIC = "lightStatistic"
 
     val SMART_LAMP_FUNC_LIST = listOf<SystemConfig>(
         SystemConfig(SMART_LAMP_LIGHT, "单灯管理", getIconForName(SMART_LAMP_LIGHT), true),
@@ -159,9 +159,11 @@ object DeviceConstant {
         EVENT to "事件数据"
     )
 
-    val statusOptions = listOf(-1 to "全部状态", 1 to "设备在线", 0 to "设备离线")
-    val groupTypeOptions = listOf(-1 to "全部",1 to "单灯分组", 25 to "集控分组", 56 to "回路分组")
+    val statusOptions = listOf(-1 to "全部", 1 to "在线", 0 to "离线")
+    val groupTypeOptions = listOf(-1 to "全部", 1 to "单灯分组", 25 to "集控分组", 56 to "回路分组")
 
+    val jobStatusOptions =
+        listOf(-1 to "全部", 1 to "待执行", 2 to "执行中", 3 to "成功", 4 to "失败")
 
     //双色温单灯产品id
     val colorTempSupportedList = listOf("107", "125")

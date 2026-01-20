@@ -2,6 +2,7 @@ package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
 import android.content.Context
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,10 +13,14 @@ import androidx.paging.cachedIn
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.data.GroupRequestParam
+import com.unilumin.smartapp.client.data.JobRequestParam
+import com.unilumin.smartapp.client.data.JobSceneElement
 import com.unilumin.smartapp.client.data.LampGateWayInfo
 import com.unilumin.smartapp.client.data.LampGroupInfo
+import com.unilumin.smartapp.client.data.LampJobInfo
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampLoopCtlInfo
+import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
@@ -28,6 +33,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.launch
 import retrofit2.Call
 
 class LampViewModel(
@@ -43,10 +49,10 @@ class LampViewModel(
         private const val FILTER_NONE = -1
     }
 
-    private val _totalCount = MutableStateFlow<Int>(0)
+    private val _totalCount = MutableStateFlow(0)
     val totalCount = _totalCount.asStateFlow()
 
-    private val _isSwitch = MutableStateFlow<Boolean>(false)
+    private val _isSwitch = MutableStateFlow(false)
     val isSwitch = _isSwitch.asStateFlow()
 
     // --- 状态管理 ---
@@ -56,23 +62,22 @@ class LampViewModel(
     private val roadService = retrofitClient.getService(RoadService::class.java)
 
     //0离线，1在线
+    //策略状态
+    //任务状态
+    //分组类型
     val state = MutableStateFlow(-1)
     fun updateState(s: Int) {
         state.value = s
     }
 
 
-    //0离线，1在线
-    val groupType = MutableStateFlow(-1)
-    fun updateGroupType(s: Int) {
-        groupType.value = s
-    }
-
     //设备列表查询参数(关键词)
     val searchQuery = MutableStateFlow("")
     fun updateSearch(query: String) {
         searchQuery.value = query
     }
+
+
 
     // 1. 单灯列表
     val lampLightFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
@@ -111,17 +116,17 @@ class LampViewModel(
     }
 
     // 5. 分组列表
-    val lampGroupFlow = createPagingFlow(groupType, searchQuery) { page, size, filter, query ->
+    val lampGroupFlow = createPagingFlow(state, searchQuery) { page, size, groupType, query ->
         fetchPageData(page, size) {
             roadService.getGroupList(
                 GroupRequestParam(
-                    keyword = query, curPage = page, pageSize = size, groupType = filter
+                    keyword = query, curPage = page, pageSize = size, groupType = groupType
                 )
             )
         }
     }
 
-    val lampStrategyFlow = createPagingFlow(groupType, searchQuery) { page, size, filter, query ->
+    val lampStrategyFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
         fetchPageData(page, size) {
             roadService.getStrategyList(
                 StrategyRequestParam(
@@ -131,6 +136,45 @@ class LampViewModel(
         }
     }
 
+
+    val lampJobFlow = createPagingFlow(state, searchQuery) { page, size, state, searchQuery ->
+        fetchPageData(page, size) {
+            roadService.getJobList(
+                JobRequestParam(
+                    keyword = searchQuery, curPage = page, pageSize = size, status = state
+                )
+            )
+        }
+    }
+
+
+    fun launchWithLoading(consumer: suspend () -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                consumer()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun getJobScene() {
+        launchWithLoading {
+            try {
+                val call: Call<NewResponseData<List<JobSceneElement>?>?>? =
+                    roadService.getJobSceneList()
+                var parseDataNewSuspend =
+                    UniCallbackService<List<JobSceneElement>>().parseDataNewSuspend(call, context)
+                //job 场景数据，作为下拉框数据源
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun <T : Any> createPagingFlow(
@@ -143,18 +187,18 @@ class LampViewModel(
             queryFlow,
             ::Pair
         ).flatMapLatest { (currentFilter, currentQuery) ->
-                val validFilter = currentFilter.takeIf { it != FILTER_NONE }
-                Pager(
-                    config = PagingConfig(
-                        pageSize = PAGE_SIZE,
-                        initialLoadSize = PAGE_SIZE,
-                        prefetchDistance = PREFETCH_DIST
-                    ), pagingSourceFactory = {
-                        GenericPagingSource { page, pageSize ->
-                            fetcher(page, pageSize, validFilter, currentQuery)
-                        }
-                    }).flow
-            }.cachedIn(viewModelScope)
+            val validFilter = currentFilter.takeIf { it != FILTER_NONE }
+            Pager(
+                config = PagingConfig(
+                    pageSize = PAGE_SIZE,
+                    initialLoadSize = PAGE_SIZE,
+                    prefetchDistance = PREFETCH_DIST
+                ), pagingSourceFactory = {
+                    GenericPagingSource { page, pageSize ->
+                        fetcher(page, pageSize, validFilter, currentQuery)
+                    }
+                }).flow
+        }.cachedIn(viewModelScope)
     }
 
     /**

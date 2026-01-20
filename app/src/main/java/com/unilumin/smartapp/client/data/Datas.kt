@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.client.data
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import coil.compose.AsyncImagePainter
 
 data class ResponseData<T>(
     var code: Int?, var message: String?, var data: T?
@@ -688,5 +689,60 @@ data class GroupDO(
     var name: String? = null,
     // 分组类型（1单灯，25集控，56回路控制器）
     var groupType: Int? = null
+)
+
+
+data class LampJobInfo(
+
+    val id: Long,
+
+    val name: String,
+
+    val businessType: Int,
+
+    val status: Int,
+
+    val jobId: String? = null, // 建议给可空字段加上默认值
+
+    val createDate: String,
+
+    val tryNum: Int,
+
+    val exeDate: String,
+
+    val expiredDate: String,
+
+    val businessId: String? = null,
+
+    val businessName: String,
+
+    val canCancel: Int,
+
+    val failedStrategy: String,
+
+    val maxTryNum: Int? = null
+)
+
+
+data class JobRequestParam(
+    val keyword: String,
+    val curPage: Int,
+    val pageSize: Int,
+    val businessTypes:List<Int>?=emptyList(),
+    val createDate: String? = null,
+
+    val status: Int? = null,
+    val subSystemType: Int? = 1
+)
+
+data class JobScene(
+    val key: Int,
+    val value: String,
+    val typeName: String
+)
+
+data class JobSceneElement(
+    val groupName: String,
+    val list: List<JobScene>
 )
 

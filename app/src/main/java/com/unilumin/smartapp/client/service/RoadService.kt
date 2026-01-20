@@ -2,8 +2,11 @@ package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
 import com.unilumin.smartapp.client.data.GroupRequestParam
+import com.unilumin.smartapp.client.data.JobRequestParam
+import com.unilumin.smartapp.client.data.JobSceneElement
 import com.unilumin.smartapp.client.data.LampGateWayInfo
 import com.unilumin.smartapp.client.data.LampGroupInfo
+import com.unilumin.smartapp.client.data.LampJobInfo
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampLoopCtlInfo
 import com.unilumin.smartapp.client.data.LampStrategyInfo
@@ -51,4 +54,12 @@ interface RoadService {
     @POST(RequestPathKey.KEY_GET_STRATEGY_LIST)
     fun getStrategyList(@Body strategyParam: StrategyRequestParam): Call<NewResponseData<PageResponse<LampStrategyInfo>?>?>?
 
+
+    @POST(RequestPathKey.KEY_JOB_LIST)
+    fun getJobList(@Body param: JobRequestParam): Call<NewResponseData<PageResponse<LampJobInfo>?>?>?
+
+
+    //获取任务场景类型
+    @GET(RequestPathKey.KEY_JOB_SCENE_LIST)
+    fun getJobSceneList(@Query("subSystemType") subSystemType: Int? = 1): Call<NewResponseData<List<JobSceneElement>?>?>?
 }
