@@ -1,23 +1,14 @@
 package com.unilumin.smartapp.ui.screens.app.lamp
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -25,15 +16,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.data.LampStrategyInfo
-import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.theme.*
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.runtime.Composable
-import com.unilumin.smartapp.client.constant.DeviceConstant
-import com.unilumin.smartapp.client.constant.DeviceConstant.groupTypeOptions
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,21 +30,8 @@ fun LampStrategyContent(
     lampViewModel: LampViewModel
 ) {
 
-    // ViewModel 状态绑定
-    val deviceState by lampViewModel.state.collectAsState() // 这里复用 state 字段作为任务状态筛选
-
-    val searchQuery by lampViewModel.searchQuery.collectAsState()
-
-    val totalCount = lampViewModel.totalCount.collectAsState()
-
-    val isSwitching = lampViewModel.isSwitch.collectAsState()
-
-    // 下拉框控制
-    var statusExpanded by remember { mutableStateOf(false) }
-
     // 分页数据
     val lampStrategyFlow = lampViewModel.lampStrategyFlow.collectAsLazyPagingItems()
-
 
     LaunchedEffect(Unit) {
         lampViewModel.updateSearch("")
@@ -75,138 +50,6 @@ fun LampStrategyContent(
         LampStrategyCard(item = item, onClick = {})
     }
 
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .background(PageBgColor)
-//    ) {
-//        // --- 顶部搜索区域 (保持风格一致性) ---
-//        Box(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(16.dp)
-//        ) {
-//            Surface(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(52.dp),
-//                shape = RoundedCornerShape(26.dp),
-//                color = SearchBarBg,
-//                shadowElevation = 2.dp
-//            ) {
-//                Row(
-//                    modifier = Modifier.fillMaxSize(),
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    // 1. 左侧：状态筛选下拉
-//                    Box(
-//                        modifier = Modifier
-//                            .wrapContentWidth()
-//                            .fillMaxHeight()
-//                            .clickable { statusExpanded = true }
-//                            .padding(start = 16.dp, end = 8.dp),
-//                        contentAlignment = Alignment.CenterStart
-//                    ) {
-//                        Row(verticalAlignment = Alignment.CenterVertically) {
-//                            Text(
-//                                text = DeviceConstant.statusOptions.find { it.first == deviceState }?.second.toString(),
-//                                fontSize = 14.sp,
-//                                fontWeight = FontWeight.SemiBold,
-//                                color = Color(0xFF333333)
-//                            )
-//                            Icon(
-//                                imageVector = Icons.Default.ArrowDropDown,
-//                                contentDescription = null,
-//                                tint = Color(0xFF666666),
-//                                modifier = Modifier.size(20.dp)
-//                            )
-//                        }
-//                        DropdownMenu(
-//                            expanded = statusExpanded,
-//                            onDismissRequest = { statusExpanded = false },
-//                            modifier = Modifier.background(Color.White)
-//                        ) {
-//                            DeviceConstant.statusOptions.forEach { (value, label) ->
-//                                DropdownMenuItem(
-//                                    text = {
-//                                        Text(
-//                                            text = label,
-//                                            color = if (value == deviceState) BluePrimary else Color(
-//                                                0xFF333333
-//                                            ),
-//                                            fontWeight = if (value == deviceState) FontWeight.Bold else FontWeight.Normal
-//                                        )
-//                                    },
-//                                    onClick = {
-//                                        lampViewModel.updateState(value)
-//                                        statusExpanded = false
-//                                    }
-//                                )
-//                            }
-//                        }
-//                    }
-//
-//                    // 2. 分割线
-//                    VerticalDivider(
-//                        modifier = Modifier
-//                            .height(24.dp)
-//                            .width(1.dp),
-//                        color = DividerColor
-//                    )
-//
-//                    // 3. 搜索框
-//                    Row(
-//                        modifier = Modifier
-//                            .weight(1f)
-//                            .padding(horizontal = 12.dp),
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//                        Icon(
-//                            imageVector = Icons.Default.Search,
-//                            contentDescription = "Search",
-//                            tint = Color(0xFF999999),
-//                            modifier = Modifier.size(20.dp)
-//                        )
-//                        Spacer(modifier = Modifier.width(8.dp))
-//
-//                        Box(contentAlignment = Alignment.CenterStart) {
-//                            if (searchQuery.isEmpty()) {
-//                                Text(
-//                                    text = "搜索策略名称...",
-//                                    color = PlaceholderColor,
-//                                    fontSize = 14.sp
-//                                )
-//                            }
-//                            BasicTextField(
-//                                value = searchQuery,
-//                                onValueChange = { lampViewModel.updateSearch(it) },
-//                                textStyle = TextStyle(
-//                                    fontSize = 14.sp,
-//                                    color = Color.Black
-//                                ),
-//                                singleLine = true,
-//                                cursorBrush = SolidColor(BluePrimary),
-//                                modifier = Modifier.fillMaxWidth()
-//                            )
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//
-//        // --- 列表区域 ---
-//        PagingList(
-//            totalCount = totalCount.value,
-//            lazyPagingItems = lampStrategyFlow,
-//            forceLoading = isSwitching.value,
-//            modifier = Modifier.weight(1f),
-//            itemKey = { info -> info.id },
-//            emptyMessage = "暂无策略数据",
-//            contentPadding = PaddingValues(top = 0.dp, bottom = 24.dp, start = 16.dp, end = 16.dp)
-//        ) { strategyInfo ->
-//            LampStrategyCard(item = strategyInfo)
-//        }
-//    }
 }
 
 

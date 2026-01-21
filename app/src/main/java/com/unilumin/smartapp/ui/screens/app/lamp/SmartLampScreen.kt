@@ -1,77 +1,45 @@
 import android.app.Application
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.rounded.FilterList
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GATEWAY
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GROUP
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_JOB
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_LIGHT
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_LOOP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_STRATEGY
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LIGHT_GATEWAY
 import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
-import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.EmptyDataView
-import com.unilumin.smartapp.ui.components.PagingList
-import com.unilumin.smartapp.ui.components.SearchHeader
 import com.unilumin.smartapp.ui.screens.app.lamp.LampGatewayContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampGroupContent
+import com.unilumin.smartapp.ui.screens.app.lamp.LampJobContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampLightContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampLightGwContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampLoopCtlContent
 import com.unilumin.smartapp.ui.screens.app.lamp.LampStrategyContent
 import com.unilumin.smartapp.ui.theme.CardWhite
-import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.PageBackground
-import com.unilumin.smartapp.ui.theme.PageBgColor
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 
@@ -156,6 +124,11 @@ fun SmartLampScreen(
                 SMART_LAMP_STRATEGY -> {
                     LampStrategyContent(lampViewModel)
                 }
+
+                SMART_LAMP_JOB -> {
+                    LampJobContent(lampViewModel)
+                }
+
 
                 else -> {
                     EmptyDataView("未开发的功能")

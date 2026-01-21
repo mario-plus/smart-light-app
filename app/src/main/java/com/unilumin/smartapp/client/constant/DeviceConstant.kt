@@ -162,8 +162,9 @@ object DeviceConstant {
     val statusOptions = listOf(-1 to "全部", 1 to "在线", 0 to "离线")
     val groupTypeOptions = listOf(-1 to "全部", 1 to "单灯分组", 25 to "集控分组", 56 to "回路分组")
 
-    val jobStatusOptions =
-        listOf(-1 to "全部", 1 to "待执行", 2 to "执行中", 3 to "成功", 4 to "失败")
+    val jobStatusOptions = listOf(-1 to "全部", 1 to "待执行", 2 to "执行中", 3 to "成功", 4 to "失败")
+
+
 
     //双色温单灯产品id
     val colorTempSupportedList = listOf("107", "125")

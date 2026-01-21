@@ -2498,7 +2498,7 @@ fun <T : Any> BaseLampListScreen(
             forceLoading = isSwitching,
             modifier = Modifier.weight(1f),
             itemKey = keySelector,
-            emptyMessage = "未找到相关设备",
+            emptyMessage = "暂未找到资源",
             contentPadding = PaddingValues(bottom = 24.dp),
             itemContent = itemContent
         )
