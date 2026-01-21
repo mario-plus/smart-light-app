@@ -149,6 +149,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.paging.LoadState
@@ -1826,6 +1827,8 @@ fun <T : Any> PagingList(
         forceLoading || (refreshState is LoadState.Loading && lazyPagingItems.itemCount == 0)
 
     var showHeader by remember { mutableStateOf(false) }
+
+    // 头部提示逻辑保持不变
     LaunchedEffect(totalCount, refreshState) {
         if (totalCount != null && totalCount > 0 && refreshState is LoadState.NotLoading) {
             showHeader = true
@@ -1833,10 +1836,12 @@ fun <T : Any> PagingList(
             showHeader = false
         }
     }
+
     PullToRefreshBox(
         isRefreshing = refreshState is LoadState.Loading && !shouldShowFullLoading,
         onRefresh = { lazyPagingItems.refresh() },
-        modifier = modifier
+        modifier = modifier // 这里的 modifier 继承了 weight(1f)，确保填满剩余空间
+            .background(Color.Transparent) // 确保下拉刷新容器背景透明，透出底色
     ) {
         LoadingContent(shouldShowFullLoading) {
             LazyColumn(
@@ -1844,6 +1849,7 @@ fun <T : Any> PagingList(
                 verticalArrangement = verticalArrangement,
                 modifier = Modifier.fillMaxSize()
             ) {
+                // ... Header Total Count 逻辑不变 ...
                 item(key = "header_total_count") {
                     AnimatedVisibility(
                         visible = showHeader,
@@ -1851,7 +1857,7 @@ fun <T : Any> PagingList(
                         exit = shrinkVertically() + fadeOut()
                     ) {
                         if (totalCount != null) {
-                            Box(modifier = Modifier.padding(bottom = 4.dp)) {
+                            Box(modifier = Modifier.padding(bottom = 4.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
                                 TotalCountHeader(totalCount = totalCount)
                             }
                         }
@@ -1867,63 +1873,52 @@ fun <T : Any> PagingList(
                     lazyPagingItems[index]?.let { itemContent(it) }
                 }
 
+                // ... 加载状态 Footer 逻辑不变 ...
                 lazyPagingItems.apply {
                     when {
                         loadState.append is LoadState.Loading -> {
                             item {
                                 Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
+                                    Modifier.fillMaxWidth().padding(16.dp),
                                     Alignment.Center
                                 ) {
-                                    CircularProgressIndicator(
-                                        Modifier.size(24.dp),
-                                        strokeWidth = 2.dp
-                                    )
+                                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                                 }
                             }
                         }
-
                         loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
                             item {
                                 Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
                                     verticalArrangement = Arrangement.Center,
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Text("加载失败", color = Color.Gray)
-                                    Button(
-                                        onClick = { retry() },
-                                        modifier = Modifier.padding(top = 8.dp)
-                                    ) { Text("重试") }
+                                    Text("加载失败", color = Color.Gray, fontSize = 14.sp)
+                                    Button(onClick = { retry() }, modifier = Modifier.padding(top = 8.dp)) {
+                                        Text("重试")
+                                    }
                                 }
                             }
                         }
-
                         loadState.refresh is LoadState.NotLoading && itemCount == 0 -> {
                             item {
-                                Box(Modifier.fillParentMaxSize(), Alignment.Center) {
-                                    Text(emptyMessage, color = Color.Gray)
+                                Box(
+                                    modifier = Modifier
+                                        .fillParentMaxSize() // 修正：空状态占满整个可视区域
+                                        .padding(bottom = 100.dp), // 视觉上居中稍微偏上
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    // 这里可以换成更美观的 EmptyView 组件
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(emptyMessage, color = Color.Gray)
+                                    }
                                 }
                             }
                         }
-
                         loadState.append.endOfPaginationReached && itemCount > 0 -> {
                             item {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    Alignment.Center
-                                ) {
-                                    Text(
-                                        "— 已加载全部 $itemCount 条数据 —",
-                                        color = Color(0xFFCCCCCC),
-                                        fontSize = 12.sp
-                                    )
+                                Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) {
+                                    Text("— 已加载全部 $itemCount 条数据 —", color = Color(0xFFCCCCCC), fontSize = 12.sp)
                                 }
                             }
                         }
@@ -2476,30 +2471,53 @@ fun <T : Any> BaseLampListScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(PageBgColor)
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // 1. 通用搜索头
-        SearchHeader(
-            statusOptions = statusOptions,
-            currentStatus = deviceState,
-            searchQuery = searchQuery,
-            searchTitle = searchTitle,
-            onStatusChanged = { viewModel.updateState(it) },
-            onSearchChanged = { viewModel.updateSearch(it) }
-        )
+        // --- 1. 顶部区域容器 ---
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .zIndex(1f)
+        ) {
+            // 1.1 搜索头 (第一行)
+            SearchHeader(
+                statusOptions = statusOptions,
+                currentStatus = deviceState,
+                searchQuery = searchQuery,
+                searchTitle = searchTitle,
+                onStatusChanged = { viewModel.updateState(it) },
+                onSearchChanged = { viewModel.updateSearch(it) }
+            )
 
-        //中间组件
-        middleContent?.invoke()
+            // 1.2 中间筛选组件 (第二行)
+            // 这里我们只负责提供一个横向填满的容器，具体对齐方式交给组件自己
+            if (middleContent != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        // 统一边距：左右16dp，上下给一点呼吸空间
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    middleContent()
+                }
+            }
 
-        // 2. 通用分页列表
+            // 1.3 分割线
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+            )
+        }
+
+        // --- 2. 列表区域 ---
         PagingList(
             totalCount = totalCount,
             lazyPagingItems = pagingItems,
             forceLoading = isSwitching,
             modifier = Modifier.weight(1f),
             itemKey = keySelector,
-            emptyMessage = "暂未找到资源",
-            contentPadding = PaddingValues(bottom = 24.dp),
+            contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp, start = 16.dp, end = 16.dp),
             itemContent = itemContent
         )
     }

@@ -30,9 +30,14 @@ import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.Call
 
@@ -48,6 +53,10 @@ class LampViewModel(
         private const val PREFETCH_DIST = 2
         private const val FILTER_NONE = -1
     }
+
+
+
+
 
     private val _totalCount = MutableStateFlow(0)
     val totalCount = _totalCount.asStateFlow()
@@ -76,6 +85,44 @@ class LampViewModel(
     fun updateSearch(query: String) {
         searchQuery.value = query
     }
+
+
+
+    private val _sceneData = MutableStateFlow<List<JobSceneElement>>(emptyList())
+    val sceneData: StateFlow<List<JobSceneElement>> = _sceneData.asStateFlow()
+
+    val flatCheckboxOptions: StateFlow<List<Pair<String, String>>> = _sceneData.map { groups ->
+        groups.flatMap { group ->
+            group.list.map { scene ->
+                val uniqueKey = "${scene.typeName}-${scene.key}"
+                val displayName = scene.value
+                displayName to uniqueKey
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // 2. 选中的 ID 集合 (存储的是 "typeName-key")
+    private val _selectedIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedIds: StateFlow<Set<String>> = _selectedIds.asStateFlow()
+
+    // 切换单个选中状态
+    fun toggleSelection(uniqueId: String) {
+        _selectedIds.value = _selectedIds.value.toMutableSet().apply {
+            if (contains(uniqueId)) remove(uniqueId) else add(uniqueId)
+        }
+    }
+
+    // 全选/反选逻辑
+    fun toggleAllSelection() {
+        val allIds = flatCheckboxOptions.value.map { it.second }
+        val currentIds = _selectedIds.value
+        if (currentIds.containsAll(allIds) && allIds.isNotEmpty()) {
+            _selectedIds.value = emptySet() // 全取消
+        } else {
+            _selectedIds.value = allIds.toSet() // 全选
+        }
+    }
+
 
 
 
@@ -168,8 +215,9 @@ class LampViewModel(
                     roadService.getJobSceneList()
                 var parseDataNewSuspend =
                     UniCallbackService<List<JobSceneElement>>().parseDataNewSuspend(call, context)
-                //job 场景数据，作为下拉框数据源
-
+                if (parseDataNewSuspend != null) {
+                    _sceneData.value = parseDataNewSuspend
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }

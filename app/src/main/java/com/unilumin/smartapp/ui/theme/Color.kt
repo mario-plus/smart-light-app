@@ -79,3 +79,13 @@ val ThemeBlue = Color(0xFF2F78FF)        // 主题蓝
 val TextMain = Color(0xFF333333)         // 主要文字
 val DividerGrey = Color(0xFFE0E0E0)
 val ErrorRed = Color(0xFFFF4D4F)
+
+object SceneTheme {
+    val BgDark = Color(0xFF020617)       // 最深的背景 (接近黑色)
+    val BgCard = Color(0xFF0F172A)       // 控件背景 (深蓝灰)
+    val BgHover = Color(0xFF1E293B)      // 列表项背景/Hover
+    val Border = Color(0xFF334155)       // 边框颜色
+    val TextPrimary = Color(0xFFF1F5F9)  // 主要文字 (白)
+    val TextSecondary = Color(0xFF94A3B8)// 次要文字 (灰)
+    val Accent = Color(0xFF3B82F6)       // 选中状态的高亮蓝
+}
