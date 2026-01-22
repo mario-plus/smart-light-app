@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -31,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -53,6 +55,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.HighlightOff
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
@@ -79,6 +82,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
@@ -119,6 +124,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -147,6 +153,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -176,6 +183,11 @@ import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.BluePrimary
 import com.unilumin.smartapp.ui.theme.CardBorder
 import com.unilumin.smartapp.ui.theme.CardWhite
+import com.unilumin.smartapp.ui.theme.ColorDivider
+import com.unilumin.smartapp.ui.theme.ColorIcon
+import com.unilumin.smartapp.ui.theme.ColorIconLight
+import com.unilumin.smartapp.ui.theme.ColorPlaceholder
+import com.unilumin.smartapp.ui.theme.ColorTextPrimary
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.DividerColor
 import com.unilumin.smartapp.ui.theme.Emerald50
@@ -2497,7 +2509,7 @@ fun <T : Any> BaseLampListScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         // 统一边距：左右16dp，上下给一点呼吸空间
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
                     middleContent()
                 }
@@ -2520,5 +2532,164 @@ fun <T : Any> BaseLampListScreen(
             contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp, start = 16.dp, end = 16.dp),
             itemContent = itemContent
         )
+    }
+}
+
+@Composable
+fun <T> SearchStyleMultiSelectBar(
+    label: String,
+    options: List<T>,
+    selectedOptions: Set<T>,
+    onSelectionChanged: (Set<T>) -> Unit,
+    modifier: Modifier = Modifier,
+    itemLabel: (T) -> String = { it.toString() },
+    placeholder: String = "请选择"
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    // 箭头旋转动画
+    val rotationState by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        label = "ArrowRotation"
+    )
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp), // 高度对齐 SearchHeader
+            shape = RoundedCornerShape(26.dp), // 圆角对齐 SearchHeader
+            color = SearchBarBg,
+            shadowElevation = 3.dp // 阴影对齐 SearchHeader
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // --- 左侧：Label (对应 Status 筛选) ---
+                Row(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .fillMaxHeight()
+                        .padding(start = 16.dp, end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = label,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold, // 保持 SemiBold
+                        color = ColorTextPrimary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp)) // 稍微增加一点间距
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Expand",
+                        modifier = Modifier
+                            .size(20.dp)
+                            .rotate(rotationState),
+                        tint = ColorIcon
+                    )
+                }
+
+                // --- 中间：分割线 ---
+                VerticalDivider(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .width(1.dp),
+                    color = ColorDivider
+                )
+
+                // --- 右侧：内容显示 (对应 Search 输入框) ---
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 为了与 SearchHeader 视觉平衡，这里添加一个 Filter 图标对应 Search 图标
+                    Icon(
+                        imageVector = Icons.Default.FilterList, // 或者使用其他合适的图标
+                        contentDescription = "Filter",
+                        tint = ColorIconLight,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = if (selectedOptions.isEmpty()) {
+                            placeholder
+                        } else {
+                            selectedOptions.joinToString("，") { itemLabel(it) }
+                        },
+                        fontSize = 14.sp,
+                        color = if (selectedOptions.isEmpty()) ColorPlaceholder else ColorTextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+
+        // --- 下拉菜单 ---
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .fillMaxWidth(0.92f) // 宽度稍微适配一下屏幕
+                .background(Color.White) // 纯白背景
+                .align(Alignment.TopCenter), // 确保从顶部弹出（如果需要覆盖）
+            offset = DpOffset(0.dp, 8.dp)
+        ) {
+            // 限制最大高度
+            Box(modifier = Modifier.heightIn(max = 300.dp)) {
+                Column {
+                    options.forEach { option ->
+                        val labelText = itemLabel(option)
+                        val isSelected = selectedOptions.contains(option)
+
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    // 复选框
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = null, // 点击 Item 整体触发
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = BluePrimary,
+                                            uncheckedColor = ColorIconLight
+                                        ),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    // 文本样式与 SearchHeader 下拉一致：选中变蓝变粗
+                                    Text(
+                                        text = labelText,
+                                        fontSize = 14.sp,
+                                        color = if (isSelected) BluePrimary else ColorTextPrimary,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
+                            },
+                            onClick = {
+                                val newSelection = if (isSelected) {
+                                    selectedOptions - option
+                                } else {
+                                    selectedOptions + option
+                                }
+                                onSelectionChanged(newSelection)
+                            },
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
