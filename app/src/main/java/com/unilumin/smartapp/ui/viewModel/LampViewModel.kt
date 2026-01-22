@@ -1,10 +1,7 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import android.content.Context
-import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -15,12 +12,7 @@ import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
-import com.unilumin.smartapp.client.data.LampGateWayInfo
-import com.unilumin.smartapp.client.data.LampGroupInfo
 import com.unilumin.smartapp.client.data.LampJobInfo
-import com.unilumin.smartapp.client.data.LampLightInfo
-import com.unilumin.smartapp.client.data.LampLoopCtlInfo
-import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
@@ -30,14 +22,9 @@ import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.Call
 
@@ -55,8 +42,16 @@ class LampViewModel(
     }
 
 
+    //数据源
+    private val _sceneOptions = MutableStateFlow<List<Pair<Int, String>>>(emptyList())
+    val sceneOptions = _sceneOptions.asStateFlow()
 
-
+    //被选中的数据
+    private val _selectSceneIds = MutableStateFlow<Set<Int>>(emptySet())
+    val selectSceneIds = _selectSceneIds.asStateFlow()
+    fun updateSceneIds(ids: Set<Int>) {
+        _selectSceneIds.value = ids
+    }
 
     private val _totalCount = MutableStateFlow(0)
     val totalCount = _totalCount.asStateFlow()
@@ -85,46 +80,6 @@ class LampViewModel(
     fun updateSearch(query: String) {
         searchQuery.value = query
     }
-
-
-
-    private val _sceneData = MutableStateFlow<List<JobSceneElement>>(emptyList())
-    val sceneData: StateFlow<List<JobSceneElement>> = _sceneData.asStateFlow()
-
-    val flatCheckboxOptions: StateFlow<List<Pair<String, String>>> = _sceneData.map { groups ->
-        groups.flatMap { group ->
-            group.list.map { scene ->
-                val uniqueKey = "${scene.typeName}-${scene.key}"
-                val displayName = scene.value
-                displayName to uniqueKey
-            }
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    // 2. 选中的 ID 集合 (存储的是 "typeName-key")
-    private val _selectedIds = MutableStateFlow<Set<String>>(emptySet())
-    val selectedIds: StateFlow<Set<String>> = _selectedIds.asStateFlow()
-
-    // 切换单个选中状态
-    fun toggleSelection(uniqueId: String) {
-        _selectedIds.value = _selectedIds.value.toMutableSet().apply {
-            if (contains(uniqueId)) remove(uniqueId) else add(uniqueId)
-        }
-    }
-
-    // 全选/反选逻辑
-    fun toggleAllSelection() {
-        val allIds = flatCheckboxOptions.value.map { it.second }
-        val currentIds = _selectedIds.value
-        if (currentIds.containsAll(allIds) && allIds.isNotEmpty()) {
-            _selectedIds.value = emptySet() // 全取消
-        } else {
-            _selectedIds.value = allIds.toSet() // 全选
-        }
-    }
-
-
-
 
     // 1. 单灯列表
     val lampLightFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
@@ -184,14 +139,46 @@ class LampViewModel(
     }
 
 
-    val lampJobFlow = createPagingFlow(state, searchQuery) { page, size, state, searchQuery ->
-        fetchPageData(page, size) {
-            roadService.getJobList(
-                JobRequestParam(
-                    keyword = searchQuery, curPage = page, pageSize = size, status = state
-                )
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val lampJobFlow =
+        combine(state, searchQuery, _selectSceneIds) { state, searchQuery, selectSceneIds ->
+            Triple(state, searchQuery, selectSceneIds)
+        }.flatMapLatest { (state, searchQuery, sceneOptions) ->
+            Pager(
+                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+                pagingSourceFactory = {
+                    GenericPagingSource { page, pageSize ->
+                        getLampJobList(
+                            page,
+                            pageSize,
+                            state,
+                            searchQuery,
+                            _selectSceneIds.value.toList()
+                        )
+                    }
+                }).flow
+        }.cachedIn(viewModelScope)
+
+
+    suspend fun getLampJobList(
+        curPage: Int, pageSize: Int, state: Int, searchQuery: String, sceneIds: List<Int>
+    ): List<LampJobInfo> {
+
+        val s = state.takeIf { it != FILTER_NONE }
+        val parseDataNewSuspend =
+            UniCallbackService<PageResponse<LampJobInfo>>().parseDataNewSuspend(
+                roadService.getJobList(
+                    JobRequestParam(
+                        businessTypes = sceneIds,
+                        keyword = searchQuery,
+                        curPage = curPage,
+                        pageSize = pageSize,
+                        status = s
+                    )
+                ), context
             )
-        }
+        _totalCount.value = parseDataNewSuspend?.total!!
+        return parseDataNewSuspend.list
     }
 
 
@@ -213,10 +200,14 @@ class LampViewModel(
             try {
                 val call: Call<NewResponseData<List<JobSceneElement>?>?>? =
                     roadService.getJobSceneList()
-                var parseDataNewSuspend =
+                val parseDataNewSuspend =
                     UniCallbackService<List<JobSceneElement>>().parseDataNewSuspend(call, context)
-                if (parseDataNewSuspend != null) {
-                    _sceneData.value = parseDataNewSuspend
+                _sceneOptions.value = buildList {
+                    parseDataNewSuspend?.forEach { e ->
+                        e.list.forEach { k ->
+                            add(k.key to "${k.typeName}-${k.value}")
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -231,9 +222,7 @@ class LampViewModel(
         fetcher: suspend (page: Int, pageSize: Int, filter: Int?, query: String) -> List<T>
     ): Flow<PagingData<T>> {
         return combine(
-            filterFlow,
-            queryFlow,
-            ::Pair
+            filterFlow, queryFlow, ::Pair
         ).flatMapLatest { (currentFilter, currentQuery) ->
             val validFilter = currentFilter.takeIf { it != FILTER_NONE }
             Pager(
@@ -260,18 +249,13 @@ class LampViewModel(
         // 【关键修复】这里完全照抄报错提示中的类型结构，允许所有层级为空
         apiCall: suspend () -> Call<NewResponseData<PageResponse<T>?>?>?
     ): List<T> {
-
-
         // 1. 获取 Call 对象
         val rawCall = apiCall()
-
         // 2. 调用 Service 解析
         // UniCallbackService 也需要同样的 Nullable 泛型结构来匹配
         val callbackService = UniCallbackService<PageResponse<T>>()
-
         // 此时 rawCall 的类型与 parseDataNewSuspend 要求的类型完全一致
         val parsedResult = callbackService.parseDataNewSuspend(rawCall, context)
-
         // 3. 更新总数并返回
         if (parsedResult != null) {
             _totalCount.value = parsedResult.total

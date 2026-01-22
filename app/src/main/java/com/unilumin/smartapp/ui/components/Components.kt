@@ -41,9 +41,11 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Apartment
@@ -2536,13 +2538,12 @@ fun <T : Any> BaseLampListScreen(
 }
 
 @Composable
-fun <T> SearchStyleMultiSelectBar(
+fun <K> SearchStyleMultiSelectBar(
     label: String,
-    options: List<T>,
-    selectedOptions: Set<T>,
-    onSelectionChanged: (Set<T>) -> Unit,
+    options: List<Pair<K, String>>,
+    selectedKeys: Set<K>,
+    onSelectionChanged: (Set<K>) -> Unit,
     modifier: Modifier = Modifier,
-    itemLabel: (T) -> String = { it.toString() },
     placeholder: String = "请选择"
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -2552,17 +2553,38 @@ fun <T> SearchStyleMultiSelectBar(
         targetValue = if (expanded) 180f else 0f,
         label = "ArrowRotation"
     )
+
+    // 计算显示文本
+    val displayText = remember(selectedKeys, options) {
+        val selectedCount = selectedKeys.size
+        if (selectedCount == 0) {
+            ""
+        } else if (selectedCount == options.size) {
+            "全部 (${selectedCount})"
+        } else if (selectedCount > 2) {
+            val firstTwoNames = options
+                .filter { selectedKeys.contains(it.first) }
+                .take(2)
+                .joinToString("，") { it.second }
+            "$firstTwoNames...等${selectedCount}项"
+        } else {
+            options
+                .filter { selectedKeys.contains(it.first) }
+                .joinToString("，") { it.second }
+        }
+    }
+
     Box(
-        modifier = modifier
-            .fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
+        // --- 1. 触发显示的 Bar ---
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp), // 高度对齐 SearchHeader
-            shape = RoundedCornerShape(26.dp), // 圆角对齐 SearchHeader
+                .height(52.dp),
+            shape = RoundedCornerShape(26.dp),
             color = SearchBarBg,
-            shadowElevation = 3.dp // 阴影对齐 SearchHeader
+            shadowElevation = 3.dp
         ) {
             Row(
                 modifier = Modifier
@@ -2570,7 +2592,7 @@ fun <T> SearchStyleMultiSelectBar(
                     .clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // --- 左侧：Label (对应 Status 筛选) ---
+                // 左侧 Label
                 Row(
                     modifier = Modifier
                         .wrapContentWidth()
@@ -2581,10 +2603,10 @@ fun <T> SearchStyleMultiSelectBar(
                     Text(
                         text = label,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold, // 保持 SemiBold
+                        fontWeight = FontWeight.SemiBold,
                         color = ColorTextPrimary
                     )
-                    Spacer(modifier = Modifier.width(4.dp)) // 稍微增加一点间距
+                    Spacer(modifier = Modifier.width(4.dp))
                     Icon(
                         imageVector = Icons.Default.ArrowDropDown,
                         contentDescription = "Expand",
@@ -2595,7 +2617,7 @@ fun <T> SearchStyleMultiSelectBar(
                     )
                 }
 
-                // --- 中间：分割线 ---
+                // 分割线
                 VerticalDivider(
                     modifier = Modifier
                         .height(24.dp)
@@ -2603,16 +2625,15 @@ fun <T> SearchStyleMultiSelectBar(
                     color = ColorDivider
                 )
 
-                // --- 右侧：内容显示 (对应 Search 输入框) ---
+                // 右侧显示区域
                 Row(
                     modifier = Modifier
                         .weight(1f)
                         .padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 为了与 SearchHeader 视觉平衡，这里添加一个 Filter 图标对应 Search 图标
                     Icon(
-                        imageVector = Icons.Default.FilterList, // 或者使用其他合适的图标
+                        imageVector = Icons.Default.FilterList,
                         contentDescription = "Filter",
                         tint = ColorIconLight,
                         modifier = Modifier.size(20.dp)
@@ -2620,13 +2641,9 @@ fun <T> SearchStyleMultiSelectBar(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Text(
-                        text = if (selectedOptions.isEmpty()) {
-                            placeholder
-                        } else {
-                            selectedOptions.joinToString("，") { itemLabel(it) }
-                        },
+                        text = displayText.ifEmpty { placeholder },
                         fontSize = 14.sp,
-                        color = if (selectedOptions.isEmpty()) ColorPlaceholder else ColorTextPrimary,
+                        color = if (displayText.isEmpty()) ColorPlaceholder else ColorTextPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -2634,22 +2651,28 @@ fun <T> SearchStyleMultiSelectBar(
             }
         }
 
-        // --- 下拉菜单 ---
+        // --- 2. 下拉菜单区域 ---
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
-                .fillMaxWidth(0.92f) // 宽度稍微适配一下屏幕
-                .background(Color.White) // 纯白背景
-                .align(Alignment.TopCenter), // 确保从顶部弹出（如果需要覆盖）
+                .fillMaxWidth(0.92f)
+                .background(Color.White)
+                .align(Alignment.TopCenter),
             offset = DpOffset(0.dp, 8.dp)
         ) {
-            // 限制最大高度
-            Box(modifier = Modifier.heightIn(max = 300.dp)) {
-                Column {
-                    options.forEach { option ->
-                        val labelText = itemLabel(option)
-                        val isSelected = selectedOptions.contains(option)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp)
+            ) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState())
+                ) {
+                    // --- 【新增功能】全选选项 ---
+                    if (options.isNotEmpty()) {
+                        // 判断是否所有选项都在 selectedKeys 中
+                        val isAllSelected = selectedKeys.size == options.size
 
                         DropdownMenuItem(
                             text = {
@@ -2657,10 +2680,10 @@ fun <T> SearchStyleMultiSelectBar(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    // 复选框
+                                    // 使用 TriStateCheckbox 会更标准，但简单的 Checkbox 也够用
                                     Checkbox(
-                                        checked = isSelected,
-                                        onCheckedChange = null, // 点击 Item 整体触发
+                                        checked = isAllSelected,
+                                        onCheckedChange = null,
                                         colors = CheckboxDefaults.colors(
                                             checkedColor = BluePrimary,
                                             uncheckedColor = ColorIconLight
@@ -2668,9 +2691,57 @@ fun <T> SearchStyleMultiSelectBar(
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
-                                    // 文本样式与 SearchHeader 下拉一致：选中变蓝变粗
                                     Text(
-                                        text = labelText,
+                                        text = "全部",
+                                        fontSize = 14.sp,
+                                        color = if (isAllSelected) BluePrimary else ColorTextPrimary,
+                                        fontWeight = FontWeight.Bold // 全选常驻加粗，突出功能
+                                    )
+                                }
+                            },
+                            onClick = {
+                                val newKeys = if (isAllSelected) {
+                                    // 如果当前是全选，则清空
+                                    emptySet()
+                                } else {
+                                    // 否则选中所有 Key
+                                    options.map { it.first }.toSet()
+                                }
+                                onSelectionChanged(newKeys)
+                            },
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                        )
+
+                        // --- 分割线，将全选与具体列表隔开 ---
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            thickness = 0.5.dp,
+                            color = ColorDivider
+                        )
+                    }
+                    // --- 【新增结束】 ---
+
+                    options.forEach { (key, value) ->
+                        val isSelected = selectedKeys.contains(key)
+
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = null,
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = BluePrimary,
+                                            uncheckedColor = ColorIconLight
+                                        ),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = value,
                                         fontSize = 14.sp,
                                         color = if (isSelected) BluePrimary else ColorTextPrimary,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
@@ -2678,12 +2749,12 @@ fun <T> SearchStyleMultiSelectBar(
                                 }
                             },
                             onClick = {
-                                val newSelection = if (isSelected) {
-                                    selectedOptions - option
+                                val newKeys = if (isSelected) {
+                                    selectedKeys - key
                                 } else {
-                                    selectedOptions + option
+                                    selectedKeys + key
                                 }
-                                onSelectionChanged(newSelection)
+                                onSelectionChanged(newKeys)
                             },
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                         )
