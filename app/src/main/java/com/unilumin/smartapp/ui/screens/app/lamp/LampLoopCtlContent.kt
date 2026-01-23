@@ -4,8 +4,6 @@ package com.unilumin.smartapp.ui.screens.app.lamp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,14 +32,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.data.LampLoopCtlInfo
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.LoopCircleItem
-
-import com.unilumin.smartapp.ui.theme.*
-
+import com.unilumin.smartapp.ui.theme.CardBgColor
+import com.unilumin.smartapp.ui.theme.IconBgColor
+import com.unilumin.smartapp.ui.theme.TextMain
+import com.unilumin.smartapp.ui.theme.TextSub
+import com.unilumin.smartapp.ui.theme.ThemeBlue
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -2540,6 +2540,13 @@ fun <T : Any> BaseLampListScreen(
 }
 
 
+/**
+ * 多选组件
+ * @param title 多选框全选名称
+ * @param options  选项
+ * @param selectedKeys 当前选项
+ * @param onSelectionChanged 选中事件
+ * */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun <K> TextGridMultiSelectBar(
@@ -2550,7 +2557,6 @@ fun <K> TextGridMultiSelectBar(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-
     // 箭头旋转动画
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,

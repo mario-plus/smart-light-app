@@ -1,5 +1,7 @@
 package com.unilumin.smartapp.ui.theme
+
 import androidx.compose.ui.graphics.Color
+
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)
@@ -30,16 +32,16 @@ val Orange50 = Color(0xFFFFF3E0)
 val Orange500 = Color(0xFFFF9800)
 val Gray700 = Color(0xFF374151)
 val Amber600 = Color(0xFFD97706)
- val ControlBlue = Color(0xFF2196F3)
- val ControlRed = Color(0xFFFF5252)
- val BgLightGray = Color(0xFFF5F5F5)
+val ControlBlue = Color(0xFF2196F3)
+val ControlRed = Color(0xFFFF5252)
+val BgLightGray = Color(0xFFF5F5F5)
 
 
- val PageBackground = Color(0xFFF6F8FA)
- val CardWhite = Color.White
- val TextDark = Color(0xFF1D1D1F)
- val TextGray = Color(0xFF86868B)
- val LineColor = Color(0xFFF2F2F7)
+val PageBackground = Color(0xFFF6F8FA)
+val CardWhite = Color.White
+val TextDark = Color(0xFF1D1D1F)
+val TextGray = Color(0xFF86868B)
+val LineColor = Color(0xFFF2F2F7)
 
 val BackgroundGray = Color(0xFFF7F8FA)
 val AccentBlue = Color(0xFF007AFF)
@@ -62,7 +64,6 @@ val CardBorder = Color(0xFFE0E0E0)
 val TextTitle = Color(0xFF212121)
 
 
-
 val TextSub = Color(0xFF999999)
 val BluePrimary = Color(0xFF2F78FF)
 val GreenStatus = Color(0xFF00B578)
@@ -71,6 +72,7 @@ val RedStatus = Color(0xFFFF4D4F)
 val PageBgColor = Color(0xFFF2F4F7) // 页面底色
 val SearchBarBg = Color.White        // 搜索栏背景
 val PlaceholderColor = Color(0xFF9CA3AF)
+
 // 定义颜色常量，确保与单灯卡片一致
 val CardBgColor = Color.White
 val DataPanelBgColor = Color(0xFFF7F8FA) // 浅灰背景
@@ -78,9 +80,10 @@ val IconBgColor = Color(0xFFEBF2FF)      // 图标浅蓝底色
 val ThemeBlue = Color(0xFF2F78FF)        // 主题蓝
 val TextMain = Color(0xFF333333)         // 主要文字
 val DividerGrey = Color(0xFFE0E0E0)
-// 定义与 SearchHeader 一致的颜色常量，确保无色差
- val ColorTextPrimary = Color(0xFF333333)
- val ColorIcon = Color(0xFF666666)
- val ColorIconLight = Color(0xFF999999)
- val ColorDivider = Color(0xFFEEEEEE) // 假设的分割线颜色，需根据 SearchHeader 实际调整
- val ColorPlaceholder = Color(0xFF999999)
+
+
+// --- 颜色定义 (保持暗黑风格) ---
+
+val SuccessColor = Color(0xFF4CAF50)     // 成功绿
+val FailColor = Color(0xFFE53935)        // 失败红
+val ProcessingColor = Color(0xFF2196F3)  // 进行中蓝

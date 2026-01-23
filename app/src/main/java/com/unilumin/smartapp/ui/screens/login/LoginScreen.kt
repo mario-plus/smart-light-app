@@ -82,7 +82,7 @@ fun LoginScreen(retrofitClient: RetrofitClient, onLogin: () -> Unit) {
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("admin@unilumin.cn") }
-    var password by remember { mutableStateOf("Jiejuefangan@123") }
+    var password by remember { mutableStateOf("Unilumin123*") }
     val initialAgreedState = remember { ProtocolCache.hasAgreed(context) }
     var isAgreed by remember { mutableStateOf(initialAgreedState) }
     var hasReadUserAgreement by remember { mutableStateOf(initialAgreedState) }
