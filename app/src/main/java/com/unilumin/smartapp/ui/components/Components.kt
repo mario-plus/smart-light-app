@@ -19,6 +19,7 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,35 +33,32 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Devices
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.HighlightOff
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.QrCode
@@ -69,7 +67,6 @@ import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
@@ -84,8 +81,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
@@ -155,7 +150,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -185,11 +179,6 @@ import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.BluePrimary
 import com.unilumin.smartapp.ui.theme.CardBorder
 import com.unilumin.smartapp.ui.theme.CardWhite
-import com.unilumin.smartapp.ui.theme.ColorDivider
-import com.unilumin.smartapp.ui.theme.ColorIcon
-import com.unilumin.smartapp.ui.theme.ColorIconLight
-import com.unilumin.smartapp.ui.theme.ColorPlaceholder
-import com.unilumin.smartapp.ui.theme.ColorTextPrimary
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.DividerColor
 import com.unilumin.smartapp.ui.theme.Emerald50
@@ -207,7 +196,6 @@ import com.unilumin.smartapp.ui.theme.LineColor
 import com.unilumin.smartapp.ui.theme.OfflineGray
 import com.unilumin.smartapp.ui.theme.Orange50
 import com.unilumin.smartapp.ui.theme.Orange500
-import com.unilumin.smartapp.ui.theme.PageBgColor
 import com.unilumin.smartapp.ui.theme.PlaceholderColor
 import com.unilumin.smartapp.ui.theme.PrimaryBlue
 import com.unilumin.smartapp.ui.theme.Red50
@@ -400,7 +388,6 @@ fun BottomNavBar(navController: NavController) {
 }
 
 @Composable
-
 fun InfoLabelValue(label: String, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(text = "$label: ", fontSize = 12.sp, color = Gray400)
@@ -1871,7 +1858,12 @@ fun <T : Any> PagingList(
                         exit = shrinkVertically() + fadeOut()
                     ) {
                         if (totalCount != null) {
-                            Box(modifier = Modifier.padding(bottom = 4.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(bottom = 4.dp)
+                                    .fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 TotalCountHeader(totalCount = totalCount)
                             }
                         }
@@ -1893,27 +1885,39 @@ fun <T : Any> PagingList(
                         loadState.append is LoadState.Loading -> {
                             item {
                                 Box(
-                                    Modifier.fillMaxWidth().padding(16.dp),
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
                                     Alignment.Center
                                 ) {
-                                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                                    CircularProgressIndicator(
+                                        Modifier.size(24.dp),
+                                        strokeWidth = 2.dp
+                                    )
                                 }
                             }
                         }
+
                         loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
                             item {
                                 Column(
-                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
                                     verticalArrangement = Arrangement.Center,
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text("加载失败", color = Color.Gray, fontSize = 14.sp)
-                                    Button(onClick = { retry() }, modifier = Modifier.padding(top = 8.dp)) {
+                                    Button(
+                                        onClick = { retry() },
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    ) {
                                         Text("重试")
                                     }
                                 }
                             }
                         }
+
                         loadState.refresh is LoadState.NotLoading && itemCount == 0 -> {
                             item {
                                 Box(
@@ -1929,10 +1933,19 @@ fun <T : Any> PagingList(
                                 }
                             }
                         }
+
                         loadState.append.endOfPaginationReached && itemCount > 0 -> {
                             item {
-                                Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) {
-                                    Text("— 已加载全部 $itemCount 条数据 —", color = Color(0xFFCCCCCC), fontSize = 12.sp)
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp), Alignment.Center
+                                ) {
+                                    Text(
+                                        "— 已加载全部 $itemCount 条数据 —",
+                                        color = Color(0xFFCCCCCC),
+                                        fontSize = 12.sp
+                                    )
                                 }
                             }
                         }
@@ -2352,7 +2365,7 @@ fun SearchHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(12.dp)
     ) {
         Surface(
             modifier = Modifier
@@ -2464,7 +2477,12 @@ fun SearchHeader(
 
 
 /**
- * 智慧路灯设备基础组件
+ * 智慧路灯分页数据页面组件
+ * @param statusOptions 状态key-value
+ * @param searchTitle 搜索框提示词
+ * @param pagingItems 分页数据源
+ * @param middleContent 搜索框和分页数据，中间插入组件
+ * @param itemContent 分页数据项卡片组件
  * */
 @Composable
 fun <T : Any> BaseLampListScreen(
@@ -2476,25 +2494,22 @@ fun <T : Any> BaseLampListScreen(
     middleContent: (@Composable () -> Unit)? = null,
     itemContent: @Composable (T) -> Unit
 ) {
-    // 统一订阅 ViewModel 状态
+
     val deviceState by viewModel.state.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val totalCount by viewModel.totalCount.collectAsState()
     val isSwitching by viewModel.isSwitch.collectAsState()
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // --- 1. 顶部区域容器 ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
                 .zIndex(1f)
         ) {
-            // 1.1 搜索头 (第一行)
             SearchHeader(
                 statusOptions = statusOptions,
                 currentStatus = deviceState,
@@ -2503,28 +2518,15 @@ fun <T : Any> BaseLampListScreen(
                 onStatusChanged = { viewModel.updateState(it) },
                 onSearchChanged = { viewModel.updateSearch(it) }
             )
-
-            // 1.2 中间筛选组件 (第二行)
-            // 这里我们只负责提供一个横向填满的容器，具体对齐方式交给组件自己
             if (middleContent != null) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        // 统一边距：左右16dp，上下给一点呼吸空间
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
                     middleContent()
                 }
             }
-
-            // 1.3 分割线
-            HorizontalDivider(
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-            )
         }
-
-        // --- 2. 列表区域 ---
         PagingList(
             totalCount = totalCount,
             lazyPagingItems = pagingItems,
@@ -2537,230 +2539,246 @@ fun <T : Any> BaseLampListScreen(
     }
 }
 
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun <K> SearchStyleMultiSelectBar(
-    label: String,
+fun <K> TextGridMultiSelectBar(
+    title: String = "全部",
     options: List<Pair<K, String>>,
     selectedKeys: Set<K>,
     onSelectionChanged: (Set<K>) -> Unit,
-    modifier: Modifier = Modifier,
-    placeholder: String = "请选择"
+    modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     // 箭头旋转动画
-    val rotationState by animateFloatAsState(
+    val rotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
-        label = "ArrowRotation"
+        label = "arrow"
     )
 
-    // 计算显示文本
-    val displayText = remember(selectedKeys, options) {
-        val selectedCount = selectedKeys.size
-        if (selectedCount == 0) {
-            ""
-        } else if (selectedCount == options.size) {
-            "全部 (${selectedCount})"
-        } else if (selectedCount > 2) {
-            val firstTwoNames = options
-                .filter { selectedKeys.contains(it.first) }
-                .take(2)
-                .joinToString("，") { it.second }
-            "$firstTwoNames...等${selectedCount}项"
-        } else {
-            options
-                .filter { selectedKeys.contains(it.first) }
-                .joinToString("，") { it.second }
-        }
-    }
+    val isAllSelected = selectedKeys.isEmpty() || selectedKeys.size == options.size
 
-    Box(
-        modifier = modifier.fillMaxWidth()
+    // 外层容器：使用 Column + animateContentSize 实现由内容撑开高度
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .animateContentSize() // 关键：高度变化动画
     ) {
-        // --- 1. 触发显示的 Bar ---
-        Surface(
+
+        // --- 1. 顶部操作栏 ---
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp),
-            shape = RoundedCornerShape(26.dp),
-            color = SearchBarBg,
-            shadowElevation = 3.dp
+                .height(48.dp) // 给一个固定高度，防止切换内容时高度跳动
+                .padding(bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { expanded = !expanded },
-                verticalAlignment = Alignment.CenterVertically
+
+            // 左侧区域：关键逻辑修改！
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
             ) {
-                // 左侧 Label
-                Row(
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .fillMaxHeight()
-                        .padding(start = 16.dp, end = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                if (expanded) {
                     Text(
-                        text = label,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = ColorTextPrimary
+                        text = "",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 16.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Expand",
-                        modifier = Modifier
-                            .size(20.dp)
-                            .rotate(rotationState),
-                        tint = ColorIcon
-                    )
+                } else {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        item {
+                            SimpleChipItem(
+                                text = title,
+                                isSelected = isAllSelected,
+                                onClick = { if (!isAllSelected) onSelectionChanged(emptySet()) }
+                            )
+                        }
+                        items(options) { (key, label) ->
+                            val isSelected = selectedKeys.contains(key)
+                            SimpleChipItem(
+                                text = label,
+                                isSelected = if (isAllSelected) false else isSelected,
+                                onClick = {
+                                    toggleSelection(
+                                        key,
+                                        isSelected,
+                                        isAllSelected,
+                                        selectedKeys,
+                                        onSelectionChanged
+                                    )
+                                }
+                            )
+                        }
+                    }
                 }
+            }
 
-                // 分割线
-                VerticalDivider(
-                    modifier = Modifier
-                        .height(24.dp)
-                        .width(1.dp),
-                    color = ColorDivider
+            // 右侧：分割线 + 展开/收起按钮
+            Spacer(modifier = Modifier.width(4.dp))
+            VerticalDivider(
+                modifier = Modifier.height(20.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
+            IconButton(
+                onClick = { expanded = !expanded },
+                modifier = Modifier.padding(start = 4.dp, end = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = "Expand",
+                    modifier = Modifier.rotate(rotation),
+                    tint = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
-                // 右侧显示区域
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FilterList,
-                        contentDescription = "Filter",
-                        tint = ColorIconLight,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = displayText.ifEmpty { placeholder },
-                        fontSize = 14.sp,
-                        color = if (displayText.isEmpty()) ColorPlaceholder else ColorTextPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
             }
         }
 
-        // --- 2. 下拉菜单区域 ---
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .background(Color.White)
-                .align(Alignment.TopCenter),
-            offset = DpOffset(0.dp, 8.dp)
-        ) {
-            Box(
+        // --- 2. 展开的网格区域 (FlowRow) ---
+        // 只有展开时才显示，并且 animateContentSize 会把它平滑地“推”出来
+        if (expanded) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 300.dp)
+                    .padding(bottom = 16.dp)
             ) {
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState())
+                // 网格内容
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // --- 【新增功能】全选选项 ---
-                    if (options.isNotEmpty()) {
-                        // 判断是否所有选项都在 selectedKeys 中
-                        val isAllSelected = selectedKeys.size == options.size
+                    // A. 全部按钮 (网格里的)
+                    TextFilterItem(
+                        text = "全部", // 网格里的全部
+                        isSelected = isAllSelected,
+                        onClick = { onSelectionChanged(emptySet()) }
+                    )
 
-                        DropdownMenuItem(
-                            text = {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    // 使用 TriStateCheckbox 会更标准，但简单的 Checkbox 也够用
-                                    Checkbox(
-                                        checked = isAllSelected,
-                                        onCheckedChange = null,
-                                        colors = CheckboxDefaults.colors(
-                                            checkedColor = BluePrimary,
-                                            uncheckedColor = ColorIconLight
-                                        ),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        text = "全部",
-                                        fontSize = 14.sp,
-                                        color = if (isAllSelected) BluePrimary else ColorTextPrimary,
-                                        fontWeight = FontWeight.Bold // 全选常驻加粗，突出功能
-                                    )
-                                }
-                            },
-                            onClick = {
-                                val newKeys = if (isAllSelected) {
-                                    // 如果当前是全选，则清空
-                                    emptySet()
-                                } else {
-                                    // 否则选中所有 Key
-                                    options.map { it.first }.toSet()
-                                }
-                                onSelectionChanged(newKeys)
-                            },
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
-                        )
-
-                        // --- 分割线，将全选与具体列表隔开 ---
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                            thickness = 0.5.dp,
-                            color = ColorDivider
-                        )
-                    }
-                    // --- 【新增结束】 ---
-
-                    options.forEach { (key, value) ->
+                    // B. 其他选项
+                    options.forEach { (key, label) ->
                         val isSelected = selectedKeys.contains(key)
-
-                        DropdownMenuItem(
-                            text = {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Checkbox(
-                                        checked = isSelected,
-                                        onCheckedChange = null,
-                                        colors = CheckboxDefaults.colors(
-                                            checkedColor = BluePrimary,
-                                            uncheckedColor = ColorIconLight
-                                        ),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        text = value,
-                                        fontSize = 14.sp,
-                                        color = if (isSelected) BluePrimary else ColorTextPrimary,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                }
-                            },
+                        TextFilterItem(
+                            text = label,
+                            isSelected = if (isAllSelected) false else isSelected,
                             onClick = {
-                                val newKeys = if (isSelected) {
-                                    selectedKeys - key
-                                } else {
-                                    selectedKeys + key
-                                }
-                                onSelectionChanged(newKeys)
-                            },
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                                toggleSelection(
+                                    key,
+                                    isSelected,
+                                    isAllSelected,
+                                    selectedKeys,
+                                    onSelectionChanged
+                                )
+                            }
                         )
                     }
                 }
             }
+
+            // 展开时的底部分割线
+            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
         }
+    }
+}
+
+@Composable
+private fun TextFilterItem(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor =
+        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(
+            alpha = 0.5f
+        )
+    val textColor =
+        if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+
+    Surface(
+        modifier = Modifier
+            .height(36.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() },
+        shape = RoundedCornerShape(8.dp),
+        color = backgroundColor
+    ) {
+        Box(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                fontSize = 13.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = textColor,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun SimpleChipItem(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val contentColor =
+        if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val border = if (isSelected) null else BorderStroke(
+        1.dp,
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+    )
+
+    Surface(
+        modifier = Modifier
+            .height(30.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() },
+        shape = RoundedCornerShape(15.dp),
+        color = backgroundColor,
+        border = border
+    ) {
+        Box(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                fontSize = 13.sp,
+                color = contentColor,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            )
+        }
+    }
+}
+
+private fun <K> toggleSelection(
+    key: K, isSelected: Boolean, isAllSelected: Boolean,
+    currentKeys: Set<K>, onChanged: (Set<K>) -> Unit
+) {
+    val newKeys = currentKeys.toMutableSet()
+    if (isAllSelected) {
+        onChanged(setOf(key))
+    } else {
+        if (isSelected) newKeys.remove(key) else newKeys.add(key)
+        onChanged(newKeys)
     }
 }

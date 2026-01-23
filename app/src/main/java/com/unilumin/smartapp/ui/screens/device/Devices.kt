@@ -327,8 +327,9 @@ fun DeviceFilterSection(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
+                        //占位作用
                         Text(
-                            "所有类型",
+                            "",
                             fontSize = 13.sp,
                             color = Gray500,
                             fontWeight = FontWeight.Medium
