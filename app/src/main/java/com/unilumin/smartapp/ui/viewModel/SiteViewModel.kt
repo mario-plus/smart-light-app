@@ -1,10 +1,8 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -79,7 +77,7 @@ class SiteViewModel(
         getRoadList()
     }
 
-    // ================== 核心方法：地图视口变化加载数据 ==================
+// ================== 核心方法：地图视口变化加载数据 ==================
     /**
      * @param zoom 当前地图缩放级别
      */
@@ -88,11 +86,11 @@ class SiteViewModel(
         minLat: Double, maxLat: Double,
         zoom: Float
     ) {
-        // 1. 防抖
+        // 1. 防抖 (依然保留，避免频繁请求，但移除 Loading 提示)
         mapFetchJob?.cancel()
         mapFetchJob = viewModelScope.launch {
             delay(300)
-            _isMapLoading.value = true
+            // 移除 Loading 状态设置： _isMapLoading.value = true
 
             // 2. 动态精度计算 (解决缩小不合并问题，增加 Zoom < 10 的处理)
             val precision = when {
@@ -102,9 +100,6 @@ class SiteViewModel(
                 zoom < 16 -> 1000     // 街道级
                 else -> 100000        // 设备级
             }
-
-            Log.i("SiteViewModel", "请求地图数据: Zoom=$zoom, Precision=$precision")
-
             try {
                 val req = PoleMapPointReq(
                     precision = precision,
@@ -122,6 +117,8 @@ class SiteViewModel(
                 )
 
                 val resultList = response ?: emptyList()
+
+                // 直接更新数据流，Compose 会自动计算差异并重绘
                 _mapPoints.value = resultList
 
                 // =========================================================
@@ -133,10 +130,10 @@ class SiteViewModel(
                 }
 
             } catch (e: Exception) {
+                // 静默失败，不打断用户操作
                 e.printStackTrace()
-            } finally {
-                _isMapLoading.value = false
             }
+            // finally 块已移除，不再操作 Loading 状态
         }
     }
 
@@ -200,7 +197,6 @@ class SiteViewModel(
     }.cachedIn(viewModelScope)
 
     private suspend fun getSitePages(roadId: String?, keyword: String, page: Int, pageSize: Int): List<SiteInfo> {
-
         val rawResponse = siteService.getSiteList(
             curPage = page,
             pageSize = pageSize,
