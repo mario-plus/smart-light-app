@@ -1,15 +1,17 @@
 package com.unilumin.smartapp.ui.components
-
-import android.annotation.SuppressLint
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -39,9 +41,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -71,6 +75,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material.icons.rounded.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.rounded.List
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Person
@@ -89,6 +94,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -101,6 +107,7 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -113,9 +120,11 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -213,6 +222,7 @@ import com.unilumin.smartapp.ui.theme.TextTitle
 import com.unilumin.smartapp.ui.theme.White
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -1814,138 +1824,155 @@ private fun TotalCountHeader(totalCount: Int) {
 @Composable
 fun <T : Any> PagingList(
     lazyPagingItems: LazyPagingItems<T>,
+    modifier: Modifier = Modifier,
     totalCount: Int? = null,
     forceLoading: Boolean = false,
-    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
-    itemKey: ((T) -> Any)? = null,
+    listState: LazyListState = rememberLazyListState(), // 允许外部传入 state，也可以内部默认
     contentPadding: PaddingValues = PaddingValues(16.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(12.dp),
-    emptyMessage: String = "未找到相关数据",
+    emptyMessage: String = "暂无相关数据",
+    itemKey: ((T) -> Any)? = null,
     itemContent: @Composable (T) -> Unit
 ) {
     val refreshState = lazyPagingItems.loadState.refresh
-    val shouldShowFullLoading =
-        forceLoading || (refreshState is LoadState.Loading && lazyPagingItems.itemCount == 0)
+    val shouldShowFullLoading = forceLoading || (refreshState is LoadState.Loading && lazyPagingItems.itemCount == 0)
 
-    var showHeader by remember { mutableStateOf(false) }
+    // 协程作用域，用于控制滚动
+    val scope = rememberCoroutineScope()
 
-    // 头部提示逻辑保持不变
-    LaunchedEffect(totalCount, refreshState) {
-        if (totalCount != null && totalCount > 0 && refreshState is LoadState.NotLoading) {
-            showHeader = true
-            delay(1500)
-            showHeader = false
+    // 计算是否显示“回到顶部”按钮 (当第一个可见项索引 > 5 时显示)
+    val showScrollToTop by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 5
         }
     }
 
-    PullToRefreshBox(
-        isRefreshing = refreshState is LoadState.Loading && !shouldShowFullLoading,
-        onRefresh = { lazyPagingItems.refresh() },
-        modifier = modifier // 这里的 modifier 继承了 weight(1f)，确保填满剩余空间
-            .background(Color.Transparent) // 确保下拉刷新容器背景透明，透出底色
-    ) {
-        LoadingContent(shouldShowFullLoading) {
-            LazyColumn(
-                contentPadding = contentPadding,
-                verticalArrangement = verticalArrangement,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // ... Header Total Count 逻辑不变 ...
-                item(key = "header_total_count") {
-                    AnimatedVisibility(
-                        visible = showHeader,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        if (totalCount != null) {
-                            Box(
-                                modifier = Modifier
-                                    .padding(bottom = 4.dp)
-                                    .fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                TotalCountHeader(totalCount = totalCount)
-                            }
-                        }
-                    }
-                }
-
-                items(
-                    count = lazyPagingItems.itemCount,
-                    key = lazyPagingItems.itemKey { item ->
-                        itemKey?.invoke(item) ?: item.hashCode()
-                    }
-                ) { index ->
-                    lazyPagingItems[index]?.let { itemContent(it) }
-                }
-
-                // ... 加载状态 Footer 逻辑不变 ...
-                lazyPagingItems.apply {
-                    when {
-                        loadState.append is LoadState.Loading -> {
-                            item {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        Modifier.size(24.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                }
-                            }
-                        }
-
-                        loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
-                            item {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text("加载失败", color = Color.Gray, fontSize = 14.sp)
-                                    Button(
-                                        onClick = { retry() },
-                                        modifier = Modifier.padding(top = 8.dp)
-                                    ) {
-                                        Text("重试")
-                                    }
-                                }
-                            }
-                        }
-
-                        loadState.refresh is LoadState.NotLoading && itemCount == 0 -> {
-                            item {
+    // 头部提示显隐逻辑
+    var showHeader by remember { mutableStateOf(false) }
+    LaunchedEffect(totalCount, refreshState) {
+        if (totalCount != null && totalCount > 0 && refreshState is LoadState.NotLoading) {
+            showHeader = true
+            delay(2000) // 稍微延长一点展示时间
+            showHeader = false
+        }
+    }
+    Box(modifier = modifier.fillMaxSize()) {
+        PullToRefreshBox(
+            isRefreshing = refreshState is LoadState.Loading && !shouldShowFullLoading,
+            onRefresh = { lazyPagingItems.refresh() },
+            modifier = Modifier.fillMaxSize()
+        ) {
+            LoadingContent(shouldShowFullLoading) {
+                LazyColumn(
+                    state = listState,
+                    contentPadding = contentPadding,
+                    verticalArrangement = verticalArrangement,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    item(key = "header_total_count") {
+                        AnimatedVisibility(
+                            visible = showHeader,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            if (totalCount != null) {
                                 Box(
                                     modifier = Modifier
-                                        .fillParentMaxSize() // 修正：空状态占满整个可视区域
-                                        .padding(bottom = 100.dp), // 视觉上居中稍微偏上
+                                        .fillMaxWidth()
+                                        .padding(bottom = 8.dp, start = 16.dp, end = 16.dp), // 左右留白，不要贴边
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    // 这里可以换成更美观的 EmptyView 组件
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(emptyMessage, color = Color.Gray)
+                                    Surface(
+                                        // --- 核心修改：改为浅色清爽风格 ---
+                                        // 背景：使用主色调的 10% 透明度，形成极淡的背景
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                        // 边框：加一个 20% 透明度的细边框，增加层次感
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                        shape = RoundedCornerShape(50), // 改为全圆角(胶囊状)或 RoundedCornerShape(8.dp)
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = "成功加载 $totalCount 条数据",
+                                            modifier = Modifier.padding(vertical = 8.dp),
+                                            textAlign = TextAlign.Center,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            // 文字：使用高亮主色，与淡背景形成对比
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
                                     }
                                 }
                             }
                         }
+                    }
 
-                        loadState.append.endOfPaginationReached && itemCount > 0 -> {
-                            item {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp), Alignment.Center
-                                ) {
-                                    Text(
-                                        "— 已加载全部 $itemCount 条数据 —",
-                                        color = Color(0xFFCCCCCC),
-                                        fontSize = 12.sp
-                                    )
+                    // --- Content: 列表内容 ---
+                    items(
+                        count = lazyPagingItems.itemCount,
+                        key = lazyPagingItems.itemKey { item ->
+                            itemKey?.invoke(item) ?: item.hashCode()
+                        }
+                    ) { index ->
+                        lazyPagingItems[index]?.let { itemContent(it) }
+                    }
+                    lazyPagingItems.apply {
+                        when {
+                            loadState.append is LoadState.Loading -> {
+                                item {
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            Modifier.size(20.dp), // 稍微缩小一点更精致
+                                            strokeWidth = 2.dp,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                            loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
+                                item {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        verticalArrangement = Arrangement.Center,
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text("加载失败", color = Color.Gray, fontSize = 14.sp)
+                                        Button(
+                                            onClick = { retry() },
+                                            modifier = Modifier.padding(top = 8.dp)
+                                        ) {
+                                            Text("重试")
+                                        }
+                                    }
+                                }
+                            }
+                            loadState.refresh is LoadState.NotLoading && itemCount == 0 -> {
+                                item {
+                                    EmptyDataView(message = emptyMessage)
+                                }
+                            }
+
+                            // 4. 底线 (已加载全部)
+                            loadState.append.endOfPaginationReached && itemCount > 0 -> {
+                                item {
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 24.dp), // 增加底部边距
+                                        Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "— 到底啦，没有更多数据了 —",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1953,8 +1980,41 @@ fun <T : Any> PagingList(
                 }
             }
         }
+
+        AnimatedVisibility(
+            visible = showScrollToTop,
+            enter = scaleIn(spring(stiffness = Spring.StiffnessLow)) + fadeIn(),
+            exit = scaleOut() + fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = 40.dp)
+        ) {
+            SmallFloatingActionButton(
+                onClick = {
+                    scope.launch {
+                        listState.animateScrollToItem(0)
+                    }
+                },
+                containerColor = Color(0xFFF2F4F7),
+                contentColor = Color(0xFF42A5F5),
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 6.dp,
+                    pressedElevation = 2.dp
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.KeyboardDoubleArrowUp,
+                    contentDescription = "回到顶部",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
     }
 }
+
+
+
 
 @Composable
 fun TimeFilterSegment(selectedType: Int, onTypeSelected: (Int) -> Unit) {
