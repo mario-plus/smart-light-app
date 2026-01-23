@@ -2609,7 +2609,7 @@ fun <T : Any> BaseLampListScreen(
  * */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun <K> TextGridMultiSelectBar(
+fun <K> GridMultiSelectBar(
     title: String = "全部",
     options: List<Pair<K, String>>,
     selectedKeys: Set<K>,

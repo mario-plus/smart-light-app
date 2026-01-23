@@ -41,7 +41,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.constant.DeviceConstant
 import com.unilumin.smartapp.client.data.LampJobInfo
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
-import com.unilumin.smartapp.ui.components.TextGridMultiSelectBar
+import com.unilumin.smartapp.ui.components.GridMultiSelectBar
 import com.unilumin.smartapp.ui.theme.CardBgColor
 import com.unilumin.smartapp.ui.theme.DividerColor
 import com.unilumin.smartapp.ui.theme.FailColor
@@ -69,13 +69,13 @@ fun LampJobContent(
     }
 
     BaseLampListScreen(
-        statusOptions = DeviceConstant.jobStatusOptions,
+        statusOptions = DeviceConstant.jobOrStrategyStatusOptions,
         viewModel = lampViewModel,
         pagingItems = lampJobFlow,
         keySelector = { it.id },
         searchTitle = "搜索业务对象名称",
         middleContent = {
-            TextGridMultiSelectBar(
+            GridMultiSelectBar(
                 title = "全部场景",
                 options = sceneOptions.value,          // 传入 Pair 列表
                 selectedKeys = sceneSelectIds.value, // 传入 Key 集合

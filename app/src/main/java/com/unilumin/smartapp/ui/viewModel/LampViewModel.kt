@@ -13,6 +13,7 @@ import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
 import com.unilumin.smartapp.client.data.LampJobInfo
+import com.unilumin.smartapp.client.data.LampStrategyInfo
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
@@ -74,6 +75,11 @@ class LampViewModel(
         state.value = s
     }
 
+    val syncState = MutableStateFlow(-1)
+    fun updateSyncState(s: Int) {
+        syncState.value = s
+    }
+
 
     //设备列表查询参数(关键词)
     val searchQuery = MutableStateFlow("")
@@ -128,15 +134,45 @@ class LampViewModel(
         }
     }
 
-    val lampStrategyFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
-        fetchPageData(page, size) {
-            roadService.getStrategyList(
-                StrategyRequestParam(
-                    keyword = query, curPage = page, pageSize = size
-                )
+    suspend fun getStrategyList(
+        curPage: Int,
+        pageSize: Int,
+        searchQuery: String,
+        taskState: Int,
+        syncState: Int,
+    ): List<LampStrategyInfo> {
+        val parseDataNewSuspend =
+            UniCallbackService<PageResponse<LampStrategyInfo>>().parseDataNewSuspend(
+                roadService.getStrategyList(
+                    StrategyRequestParam(
+                        keyword = searchQuery,
+                        curPage = curPage,
+                        pageSize = pageSize,
+                        taskState = taskState.takeIf { it != FILTER_NONE },
+                        syncState = syncState.takeIf { it != FILTER_NONE })
+                ), context
             )
-        }
+        _totalCount.value = parseDataNewSuspend?.total!!
+        return parseDataNewSuspend.list
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val lampStrategyFlow =
+        combine(state, searchQuery, syncState) { taskState, searchQuery, syncState ->
+            Triple(taskState, searchQuery, syncState)
+        }.flatMapLatest { (taskState, searchQuery, syncState) ->
+            Pager(
+                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+                pagingSourceFactory = {
+                    GenericPagingSource { page, pageSize ->
+                        getStrategyList(
+                            page, pageSize, searchQuery, taskState, syncState
+                        )
+                    }
+                }).flow
+        }.cachedIn(viewModelScope)
+
+
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -149,11 +185,7 @@ class LampViewModel(
                 pagingSourceFactory = {
                     GenericPagingSource { page, pageSize ->
                         getLampJobList(
-                            page,
-                            pageSize,
-                            state,
-                            searchQuery,
-                            _selectSceneIds.value.toList()
+                            page, pageSize, state, searchQuery, _selectSceneIds.value.toList()
                         )
                     }
                 }).flow

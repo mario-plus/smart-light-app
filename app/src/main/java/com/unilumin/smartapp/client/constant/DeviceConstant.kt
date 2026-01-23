@@ -24,7 +24,6 @@ import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.mock.ServerConfig
@@ -162,7 +161,7 @@ object DeviceConstant {
     val statusOptions = listOf(-1 to "全部", 1 to "在线", 0 to "离线")
     val groupTypeOptions = listOf(-1 to "全部", 1 to "单灯分组", 25 to "集控分组", 56 to "回路分组")
 
-    val jobStatusOptions = listOf(-1 to "全部", 1 to "待执行", 2 to "执行中", 3 to "成功", 4 to "失败")
+    val jobOrStrategyStatusOptions = listOf(-1 to "全部", 1 to "待执行", 2 to "执行中", 3 to "成功", 4 to "失败")
 
 
 

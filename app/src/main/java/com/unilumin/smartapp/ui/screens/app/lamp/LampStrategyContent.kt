@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.runtime.Composable
+import com.unilumin.smartapp.client.constant.DeviceConstant.jobOrStrategyStatusOptions
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,6 +40,7 @@ fun LampStrategyContent(
     }
 
     BaseLampListScreen(
+        statusOptions = jobOrStrategyStatusOptions,
         viewModel = lampViewModel,
         pagingItems = lampStrategyFlow,
         keySelector = { it.id },
