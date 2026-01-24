@@ -55,6 +55,9 @@ interface RoadService {
     fun getStrategyList(@Body strategyParam: StrategyRequestParam): Call<NewResponseData<PageResponse<LampStrategyInfo>?>?>?
 
 
+    /**
+     * 接口数据有问题，下拉加载过程中，会出现相同数据
+     * */
     @POST(RequestPathKey.KEY_JOB_LIST)
     fun getJobList(@Body param: JobRequestParam): Call<NewResponseData<PageResponse<LampJobInfo>?>?>?
 

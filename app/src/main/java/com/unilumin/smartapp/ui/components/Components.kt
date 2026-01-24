@@ -1,4 +1,5 @@
 package com.unilumin.smartapp.ui.components
+
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -319,11 +320,11 @@ fun BottomNavBar(navController: NavController) {
             val isSelected = currentRoute == route
             NavigationBarItem(
                 icon = {
-                    Icon(
-                        imageVector = if (isSelected) info.second else info.third,
-                        contentDescription = info.first
-                    )
-                },
+                Icon(
+                    imageVector = if (isSelected) info.second else info.third,
+                    contentDescription = info.first
+                )
+            },
                 label = { Text(info.first, fontSize = 10.sp) },
                 selected = isSelected,
                 onClick = {
@@ -594,16 +595,16 @@ fun BrightnessControlCard(
             // 使用 weight(1f) 让它填满标题和数值中间的所有空间
             Slider(
                 value = initValue.toFloat(), onValueChange = { newValue ->
-                    onValueChange(newValue.toInt())
-                }, onValueChangeFinished = {
-                    onValueChangeFinished(initValue)
-                }, valueRange = 0f..100f, colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = ControlBlue,
-                    inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
-                ), modifier = Modifier
+                onValueChange(newValue.toInt())
+            }, onValueChangeFinished = {
+                onValueChangeFinished(initValue)
+            }, valueRange = 0f..100f, colors = SliderDefaults.colors(
+                thumbColor = Color.White,
+                activeTrackColor = ControlBlue,
+                inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
+            ), modifier = Modifier
                     .weight(1f) // 关键：占据剩余空间
-                    .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
+                .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
                 thumb = {
                     // 自定义小滑块，比之前那个版本要做得更小一点，适配单行
                     Surface(
@@ -1176,15 +1177,12 @@ fun LineChartComponent(data: List<SequenceTsl>, modifier: Modifier = Modifier) {
                         if (offset.x >= leftPaddingPx) {
                             val relativeX = offset.x - leftPaddingPx
                             val index =
-                                (relativeX / (chartWidthPx / (sortedData.size - 1).coerceAtLeast(1)))
-                                    .roundToInt()
+                                (relativeX / (chartWidthPx / (sortedData.size - 1).coerceAtLeast(1))).roundToInt()
                                     .coerceIn(0, sortedData.size - 1)
                             selectedIndex = index
                         }
-                    }
-                )
-            }
-    ) {
+                    })
+            }) {
         val leftPadding = 45.dp.toPx()
         val bottomPadding = 30.dp.toPx()
         val chartWidth = size.width - leftPadding
@@ -1234,7 +1232,8 @@ fun LineChartComponent(data: List<SequenceTsl>, modifier: Modifier = Modifier) {
         drawPath(
             fillPath, Brush.verticalGradient(
                 listOf(Color(0xFF3D7EFE).copy(alpha = 0.2f), Color.Transparent),
-                startY = 0f, endY = chartHeight
+                startY = 0f,
+                endY = chartHeight
             )
         )
 
@@ -1645,8 +1644,7 @@ fun DeviceDataGrid(
                 DeviceRealDataCardModern(
                     data = data,
                     onHistoryClick = { onHistoryClick(data) },
-                    onAnalysisClick = { onAnalysisClick(data) }
-                )
+                    onAnalysisClick = { onAnalysisClick(data) })
             }
         }
         val itemFillCount = (3 - (dataList.size % 3)) % 3
@@ -1743,9 +1741,7 @@ private fun TotalCountHeader(totalCount: Int) {
         ) {
             Icon(
                 imageVector = Icons.Default.DataUsage, // 或者 Icons.Default.List
-                contentDescription = null,
-                modifier = Modifier.size(14.dp),
-                tint = Color(0xFF757575)
+                contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF757575)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
@@ -1753,16 +1749,13 @@ private fun TotalCountHeader(totalCount: Int) {
                     append("共检索到 ")
                     withStyle(
                         style = SpanStyle(
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
+                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold
                         )
                     ) {
                         append("$totalCount")
                     }
                     append(" 条数据")
-                },
-                fontSize = 12.sp,
-                color = Color(0xFF757575)
+                }, fontSize = 12.sp, color = Color(0xFF757575)
             )
         }
     }
@@ -1795,7 +1788,8 @@ fun <T : Any> PagingList(
     itemContent: @Composable (T) -> Unit
 ) {
     val refreshState = lazyPagingItems.loadState.refresh
-    val shouldShowFullLoading = forceLoading || (refreshState is LoadState.Loading && lazyPagingItems.itemCount == 0)
+    val shouldShowFullLoading =
+        forceLoading || (refreshState is LoadState.Loading && lazyPagingItems.itemCount == 0)
 
     // 协程作用域，用于控制滚动
     val scope = rememberCoroutineScope()
@@ -1839,7 +1833,9 @@ fun <T : Any> PagingList(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(bottom = 8.dp, start = 16.dp, end = 16.dp), // 左右留白，不要贴边
+                                        .padding(
+                                            bottom = 8.dp, start = 16.dp, end = 16.dp
+                                        ), // 左右留白，不要贴边
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Surface(
@@ -1847,7 +1843,10 @@ fun <T : Any> PagingList(
                                         // 背景：使用主色调的 10% 透明度，形成极淡的背景
                                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                                         // 边框：加一个 20% 透明度的细边框，增加层次感
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                        border = BorderStroke(
+                                            1.dp,
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                        ),
                                         shape = RoundedCornerShape(50), // 改为全圆角(胶囊状)或 RoundedCornerShape(8.dp)
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
@@ -1869,10 +1868,7 @@ fun <T : Any> PagingList(
                     // --- Content: 列表内容 ---
                     items(
                         count = lazyPagingItems.itemCount,
-                        key = lazyPagingItems.itemKey { item ->
-                            itemKey?.invoke(item) ?: item.hashCode()
-                        }
-                    ) { index ->
+                        key = if (itemKey != null) lazyPagingItems.itemKey { itemKey(it) } else null) { index ->
                         lazyPagingItems[index]?.let { itemContent(it) }
                     }
                     lazyPagingItems.apply {
@@ -1882,8 +1878,7 @@ fun <T : Any> PagingList(
                                     Box(
                                         Modifier
                                             .fillMaxWidth()
-                                            .padding(16.dp),
-                                        Alignment.Center
+                                            .padding(16.dp), Alignment.Center
                                     ) {
                                         CircularProgressIndicator(
                                             Modifier.size(20.dp), // 稍微缩小一点更精致
@@ -1893,6 +1888,7 @@ fun <T : Any> PagingList(
                                     }
                                 }
                             }
+
                             loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
                                 item {
                                     Column(
@@ -1912,6 +1908,7 @@ fun <T : Any> PagingList(
                                     }
                                 }
                             }
+
                             loadState.refresh is LoadState.NotLoading && itemCount == 0 -> {
                                 item {
                                     EmptyDataView(message = emptyMessage)
@@ -1930,7 +1927,9 @@ fun <T : Any> PagingList(
                                         Text(
                                             text = "— 到底啦，没有更多数据了 —",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                alpha = 0.6f
+                                            )
                                         )
                                     }
                                 }
@@ -1959,8 +1958,7 @@ fun <T : Any> PagingList(
                 contentColor = Color(0xFF42A5F5),
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 6.dp,
-                    pressedElevation = 2.dp
+                    defaultElevation = 6.dp, pressedElevation = 2.dp
                 )
             ) {
                 Icon(
@@ -1974,8 +1972,6 @@ fun <T : Any> PagingList(
 }
 
 
-
-
 @Composable
 fun TimeFilterSegment(selectedType: Int, onTypeSelected: (Int) -> Unit) {
     val options = listOf(0 to "最近活跃时间", 1 to "最近7天", 2 to "最近30天", 3 to "最近90天")
@@ -1983,8 +1979,7 @@ fun TimeFilterSegment(selectedType: Int, onTypeSelected: (Int) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .background(Color(0xFFE8EAF6), RoundedCornerShape(12.dp))
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+            .padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         options.forEach { (type, label) ->
             val isSelected = selectedType == type
@@ -1994,8 +1989,7 @@ fun TimeFilterSegment(selectedType: Int, onTypeSelected: (Int) -> Unit) {
                     .height(36.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(if (isSelected) Color.White else Color.Transparent)
-                    .clickable { onTypeSelected(type) },
-                contentAlignment = Alignment.Center
+                    .clickable { onTypeSelected(type) }, contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = label,
@@ -2010,8 +2004,7 @@ fun TimeFilterSegment(selectedType: Int, onTypeSelected: (Int) -> Unit) {
 
 @Composable
 fun OfflineDeviceItem(
-    device: OfflineDevice,
-    onClick: () -> Unit = {}
+    device: OfflineDevice, onClick: () -> Unit = {}
 ) {
     Surface(
         modifier = Modifier
@@ -2036,8 +2029,7 @@ fun OfflineDeviceItem(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF5F7FA)),
-                        contentAlignment = Alignment.Center
+                            .background(Color(0xFFF5F7FA)), contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Devices,
@@ -2097,9 +2089,7 @@ fun OfflineDeviceItem(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // 序列号
                 InfoRowItem(
-                    icon = Icons.Default.QrCode,
-                    label = "SN:",
-                    value = device.serialNum
+                    icon = Icons.Default.QrCode, label = "SN:", value = device.serialNum
                 )
                 // 厂商信息
                 InfoRowItem(
@@ -2149,9 +2139,7 @@ fun InfoRowItem(icon: ImageVector, label: String, value: String) {
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
-            text = label,
-            fontSize = 13.sp,
-            color = Color(0xFF90A4AE)
+            text = label, fontSize = 13.sp, color = Color(0xFF90A4AE)
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
@@ -2183,19 +2171,14 @@ fun StatusChip(text: String, color: Color, bgColor: Color, icon: ImageVector? = 
             Spacer(modifier = Modifier.width(4.dp))
         }
         Text(
-            text = text,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            color = color
+            text = text, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color
         )
     }
 }
 
 @Composable
 fun DeviceStatusRow(
-    isDisable: Boolean,
-    hasAlarm: Boolean,
-    modifier: Modifier = Modifier
+    isDisable: Boolean, hasAlarm: Boolean, modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -2204,9 +2187,7 @@ fun DeviceStatusRow(
     ) {
         // 可用状态 - 靠最左
         StatusItem(
-            label = "可用状态:",
-            text = if (isDisable) "禁用" else "启用",
-            isError = isDisable
+            label = "可用状态:", text = if (isDisable) "禁用" else "启用", isError = isDisable
         )
 
         // 工作状态 - 靠最右
@@ -2246,9 +2227,7 @@ fun CommonTopAppBar(
     var menuExpanded by remember { mutableStateOf(false) }
     val textMain = Color(0xFF1A1C1E) // 主标题深黑
     val gradientBrush = Brush.verticalGradient(
-        colors = listOf(Color(0xFFF0F7FF), Gray50),
-        startY = 0f,
-        endY = 500f
+        colors = listOf(Color(0xFFF0F7FF), Gray50), startY = 0f, endY = 500f
     )
 
     Surface(
@@ -2264,8 +2243,7 @@ fun CommonTopAppBar(
         ) {
             // === Left: Back Button ===
             IconButton(
-                onClick = onBack,
-                modifier = Modifier.align(Alignment.CenterStart)
+                onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
@@ -2310,8 +2288,7 @@ fun CommonTopAppBar(
                         onItemClick = { systemConfig ->
                             menuExpanded = false
                             onMenuItemClick(systemConfig)
-                        }
-                    )
+                        })
                 }
             }
         }
@@ -2343,16 +2320,11 @@ fun ReferenceStyleDropdownMenu(
                 if (smartApp.isSelected) {
                     DropdownMenuItem(leadingIcon = {
                         Icon(
-                            smartApp.icon,
-                            null,
-                            Modifier.size(20.dp),
-                            Color.Gray
+                            smartApp.icon, null, Modifier.size(20.dp), Color.Gray
                         )
                     }, text = {
                         Text(
-                            smartApp.name,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
+                            smartApp.name, fontSize = 14.sp, fontWeight = FontWeight.Medium
                         )
                     }, onClick = { onItemClick(smartApp) })
                 }
@@ -2396,8 +2368,7 @@ fun SearchHeader(
             shadowElevation = 3.dp
         ) {
             Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically
             ) {
                 // 左侧：状态筛选下拉
                 Box(
@@ -2406,8 +2377,7 @@ fun SearchHeader(
                         .fillMaxHeight()
                         .clickable { statusExpanded = true }
                         .padding(start = 16.dp, end = 8.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
+                    contentAlignment = Alignment.CenterStart) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         // ✅ 修改点1：使用传入的 statusOptions 查找当前显示的文本
                         Text(
@@ -2430,21 +2400,18 @@ fun SearchHeader(
                         modifier = Modifier.background(Color.White)
                     ) {
                         statusOptions.forEach { (value, label) ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = label,
-                                        color = if (value == currentStatus) BluePrimary else Color(
-                                            0xFF333333
-                                        ),
-                                        fontWeight = if (value == currentStatus) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                },
-                                onClick = {
-                                    onStatusChanged(value)
-                                    statusExpanded = false
-                                }
-                            )
+                            DropdownMenuItem(text = {
+                                Text(
+                                    text = label,
+                                    color = if (value == currentStatus) BluePrimary else Color(
+                                        0xFF333333
+                                    ),
+                                    fontWeight = if (value == currentStatus) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }, onClick = {
+                                onStatusChanged(value)
+                                statusExpanded = false
+                            })
                         }
                     }
                 }
@@ -2453,8 +2420,7 @@ fun SearchHeader(
                 VerticalDivider(
                     modifier = Modifier
                         .height(24.dp)
-                        .width(1.dp),
-                    color = DividerColor
+                        .width(1.dp), color = DividerColor
                 )
 
                 // 右侧：搜索框
@@ -2475,9 +2441,7 @@ fun SearchHeader(
                     Box(contentAlignment = Alignment.CenterStart) {
                         if (searchQuery.isEmpty()) {
                             Text(
-                                text = searchTitle,
-                                color = PlaceholderColor,
-                                fontSize = 14.sp
+                                text = searchTitle, color = PlaceholderColor, fontSize = 14.sp
                             )
                         }
                         BasicTextField(
@@ -2536,12 +2500,10 @@ fun <T : Any> BaseLampListScreen(
                 searchQuery = searchQuery,
                 searchTitle = searchTitle,
                 onStatusChanged = { viewModel.updateState(it) },
-                onSearchChanged = { viewModel.updateSearch(it) }
-            )
+                onSearchChanged = { viewModel.updateSearch(it) })
             if (middleContent != null) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     middleContent()
                 }
@@ -2579,8 +2541,7 @@ fun <K> GridMultiSelectBar(
     var expanded by remember { mutableStateOf(false) }
     // 箭头旋转动画
     val rotation by animateFloatAsState(
-        targetValue = if (expanded) 180f else 0f,
-        label = "arrow"
+        targetValue = if (expanded) 180f else 0f, label = "arrow"
     )
 
     val isAllSelected = selectedKeys.isEmpty() || selectedKeys.size == options.size
@@ -2598,14 +2559,12 @@ fun <K> GridMultiSelectBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp) // 给一个固定高度，防止切换内容时高度跳动
-                .padding(bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(bottom = 4.dp), verticalAlignment = Alignment.CenterVertically
         ) {
 
             // 左侧区域：关键逻辑修改！
             Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterStart
+                modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart
             ) {
                 if (expanded) {
                     Text(
@@ -2625,8 +2584,7 @@ fun <K> GridMultiSelectBar(
                             SimpleChipItem(
                                 text = title,
                                 isSelected = isAllSelected,
-                                onClick = { if (!isAllSelected) onSelectionChanged(emptySet()) }
-                            )
+                                onClick = { if (!isAllSelected) onSelectionChanged(emptySet()) })
                         }
                         items(options) { (key, label) ->
                             val isSelected = selectedKeys.contains(key)
@@ -2641,8 +2599,7 @@ fun <K> GridMultiSelectBar(
                                         selectedKeys,
                                         onSelectionChanged
                                     )
-                                }
-                            )
+                                })
                         }
                     }
                 }
@@ -2687,9 +2644,7 @@ fun <K> GridMultiSelectBar(
                     // A. 全部按钮 (网格里的)
                     TextFilterItem(
                         text = "全部", // 网格里的全部
-                        isSelected = isAllSelected,
-                        onClick = { onSelectionChanged(emptySet()) }
-                    )
+                        isSelected = isAllSelected, onClick = { onSelectionChanged(emptySet()) })
 
                     // B. 其他选项
                     options.forEach { (key, label) ->
@@ -2699,14 +2654,9 @@ fun <K> GridMultiSelectBar(
                             isSelected = if (isAllSelected) false else isSelected,
                             onClick = {
                                 toggleSelection(
-                                    key,
-                                    isSelected,
-                                    isAllSelected,
-                                    selectedKeys,
-                                    onSelectionChanged
+                                    key, isSelected, isAllSelected, selectedKeys, onSelectionChanged
                                 )
-                            }
-                        )
+                            })
                     }
                 }
             }
@@ -2719,9 +2669,7 @@ fun <K> GridMultiSelectBar(
 
 @Composable
 private fun TextFilterItem(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
+    text: String, isSelected: Boolean, onClick: () -> Unit
 ) {
     val backgroundColor =
         if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(
@@ -2734,15 +2682,11 @@ private fun TextFilterItem(
         modifier = Modifier
             .height(36.dp)
             .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { onClick() },
-        shape = RoundedCornerShape(8.dp),
-        color = backgroundColor
+                interactionSource = remember { MutableInteractionSource() }, indication = null
+            ) { onClick() }, shape = RoundedCornerShape(8.dp), color = backgroundColor
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center
         ) {
             Text(
                 text = text,
@@ -2759,32 +2703,27 @@ private fun TextFilterItem(
 
 @Composable
 private fun SimpleChipItem(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
+    text: String, isSelected: Boolean, onClick: () -> Unit
 ) {
     val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
     val contentColor =
         if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
     val border = if (isSelected) null else BorderStroke(
-        1.dp,
-        MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+        1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
     )
 
     Surface(
         modifier = Modifier
             .height(30.dp)
             .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
+                interactionSource = remember { MutableInteractionSource() }, indication = null
             ) { onClick() },
         shape = RoundedCornerShape(15.dp),
         color = backgroundColor,
         border = border
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center
         ) {
             Text(
                 text = text,
@@ -2797,8 +2736,11 @@ private fun SimpleChipItem(
 }
 
 private fun <K> toggleSelection(
-    key: K, isSelected: Boolean, isAllSelected: Boolean,
-    currentKeys: Set<K>, onChanged: (Set<K>) -> Unit
+    key: K,
+    isSelected: Boolean,
+    isAllSelected: Boolean,
+    currentKeys: Set<K>,
+    onChanged: (Set<K>) -> Unit
 ) {
     val newKeys = currentKeys.toMutableSet()
     if (isAllSelected) {
@@ -2825,8 +2767,7 @@ fun <Int> ModernStateSelector(
             .height(40.dp)
             .clip(CircleShape)
             .background(containerColor)
-            .padding(4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(4.dp), verticalAlignment = Alignment.CenterVertically
     ) {
         // 在遍历时直接解构 Pair，让代码语义更清晰
         options.forEach { (value, label) ->
@@ -2850,18 +2791,16 @@ fun <Int> ModernStateSelector(
                     .clip(CircleShape)
                     .background(backgroundColor)
                     .then(
-                        if (isSelected) Modifier.border(0.5.dp, Color.Black.copy(alpha = 0.05f), CircleShape)
+                        if (isSelected) Modifier.border(
+                            0.5.dp, Color.Black.copy(alpha = 0.05f), CircleShape
+                        )
                         else Modifier
                     )
-                    .clickable { onValueChange(value) },
-                contentAlignment = Alignment.Center
+                    .clickable { onValueChange(value) }, contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = label, // 使用 Pair 的 first
-                    color = textColor,
-                    fontSize = 13.sp,
-                    fontWeight = fontWeight,
-                    maxLines = 1
+                    color = textColor, fontSize = 13.sp, fontWeight = fontWeight, maxLines = 1
                 )
             }
         }

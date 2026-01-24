@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -72,7 +71,8 @@ fun LampJobContent(
         statusOptions = DeviceConstant.jobOrStrategyStatusOptions,
         viewModel = lampViewModel,
         pagingItems = lampJobFlow,
-        keySelector = { it.id },
+        //TODO 接口有问题，下拉分页查询，出现重复数据，会直接导致app崩溃 keySelector = { it.id }
+        keySelector = null,
         searchTitle = "搜索业务对象名称",
         middleContent = {
             GridMultiSelectBar(
@@ -93,21 +93,39 @@ fun LampJobContent(
 @Composable
 fun LampJobItem(
     sceneOptions: List<Pair<Int, String>>,
-    item: LampJobInfo,
+    item: LampJobInfo?, // 1. 修改这里：允许 item 为 null (应对 Paging 占位符)
     modifier: Modifier = Modifier,
     onItemClick: (LampJobInfo) -> Unit = {}
 ) {
+    // 2. 如果 item 为空（正在加载下一页），显示一个骨架屏或者空白占位
+    if (item == null) {
+        // 这里可以放一个 Card 占位，或者直接 Spacer
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 6.dp, vertical = 3.dp)
+                .height(100.dp), // 给个默认高度
+            colors = CardDefaults.cardColors(containerColor = CardBgColor),
+            shape = RoundedCornerShape(12.dp)
+        ) {}
+        return
+    }
+
+    // --- 以下是原本的逻辑，但加上了字段判空 ---
 
     val (statusColor, statusText) = remember(item.status) {
         getStatusVisuals(item.status)
     }
-    val businessTypeText = remember(item.businessType) {
-        sceneOptions.find { it.first == item.businessType }?.second.toString()
+
+    // 3. 安全获取业务类型名称
+    val businessTypeText = remember(item.businessType, sceneOptions) {
+        sceneOptions.find { it.first == item.businessType }?.second ?: "未知类型"
     }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 6.dp, vertical = 3.dp) // 调整间距
+            .padding(horizontal = 6.dp, vertical = 3.dp)
             .clickable { onItemClick(item) },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = CardBgColor),
@@ -123,10 +141,10 @@ fun LampJobItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                //业务对象名称
+                // 4. 业务对象名称判空 (Crash 高发点)
                 Text(
-                    text = item.businessName,
-                    style = MaterialTheme.typography.titleMedium,
+                    text = item.businessName ?: "未知对象", // 加上 ?:
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
                     maxLines = 1,
@@ -139,32 +157,24 @@ fun LampJobItem(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // --- 2. 标签行：业务类型 | 失败策略 | 执行次数 ---
+            // 标签行
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 业务场景标签 (例如: 单灯)
                 InfoTag(text = businessTypeText, color = Color(0xFF42A5F5))
-                Spacer(modifier = Modifier.width(8.dp))
-                // 执行次数
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = null,
-                    tint = TextSecondary,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.weight(1f))
+                // 5. 执行次数判空
                 Text(
-                    text = "执行次数:${item.tryNum}",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "执行次数:${item.tryNum ?: 0}", // 加上 ?:
+                    style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary
                 )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            //  3. 任务名称
+            // 任务名称
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Outlined.Devices,
@@ -173,8 +183,9 @@ fun LampJobItem(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
+                // 6. 任务名称判空
                 Text(
-                    text = item.name,
+                    text = item.name ?: "未命名任务", // 加上 ?:
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                     color = TextPrimary,
@@ -191,11 +202,12 @@ fun LampJobItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // 7. 时间字段判空 (Crash 高发点)
                 DateInfoItem(
                     label = "创建时间",
                     time = item.createDate
                 )
-                if (item.exeDate.isNotEmpty()) {
+                if (item.exeDate.isNotEmpty()) { // 使用 isNullOrEmpty 更安全
                     DateInfoItem(
                         label = "执行时间",
                         time = item.exeDate
@@ -247,12 +259,19 @@ fun InfoTag(text: String, color: Color) {
 @Composable
 fun DateInfoItem(
     label: String,
-    time: String,
+    time: String?, // 1. 修改这里：参数改为可空 String?
     icon: ImageVector? = null
 ) {
-    // 简单的截断处理，如果时间字符串太长 (例如 "2026-01-23 14:20:00")
-    // 视需求可以只显示 "01-23 14:20"
-    val displayTime = if (time.length > 16) time.substring(5, 16).replace("T", " ") else time
+    // 2. 如果时间为空，给默认空字符串
+    val safeTime = time ?: ""
+
+    // 3. 安全截取字符串，防止 StringIndexOutOfBoundsException
+    val displayTime = if (safeTime.length > 16) {
+        safeTime.substring(5, 16).replace("T", " ")
+    } else {
+        safeTime
+    }
+
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (icon != null) {
             Icon(
