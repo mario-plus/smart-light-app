@@ -74,9 +74,9 @@ fun LampGatewayCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp) // 与搜索框对齐，微调垂直间距
+            .padding(horizontal = 6.dp, vertical = 3.dp) // 与搜索框对齐，微调垂直间距
             .clickable { onDetailClick(item) },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = CardBgColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

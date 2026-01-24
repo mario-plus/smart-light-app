@@ -107,7 +107,7 @@ fun LampJobItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp) // 调整间距
+            .padding(horizontal = 6.dp, vertical = 3.dp) // 调整间距
             .clickable { onItemClick(item) },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = CardBgColor),

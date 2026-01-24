@@ -118,9 +118,9 @@ fun LampLightCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp) // 减小外部缩进，增加屏幕利用率
+            .padding(horizontal = 6.dp, vertical = 3.dp) // 减小外部缩进，增加屏幕利用率
             .clickable { onDetailClick(item) }, // 增加点击反馈
-        shape = RoundedCornerShape(16.dp), // 更圆润的角，符合现代审美
+        shape = RoundedCornerShape(12.dp), // 更圆润的角，符合现代审美
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) // 略微增加阴影增强层次
     ) {

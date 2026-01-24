@@ -74,7 +74,7 @@ fun LampGroupCard(
             .fillMaxWidth()
             .padding(bottom = 12.dp)
             .then(if (onClick != null) Modifier.clickable { onClick(item) } else Modifier),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = CardBgColor), // 确保 CardBgColor 已定义，通常是 White
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

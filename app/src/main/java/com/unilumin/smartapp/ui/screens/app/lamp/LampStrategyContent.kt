@@ -87,7 +87,7 @@ fun LampStrategyCard(
             .fillMaxWidth()
             .padding(bottom = 12.dp) // 卡片间距
             .then(if (onClick != null) Modifier.clickable { onClick(item) } else Modifier),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White), // 纯白背景
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp) // 柔和阴影
     ) {

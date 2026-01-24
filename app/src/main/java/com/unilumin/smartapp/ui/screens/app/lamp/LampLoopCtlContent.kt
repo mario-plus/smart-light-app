@@ -81,9 +81,9 @@ fun LampLoopCtlCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = 6.dp, vertical = 3.dp)
             .then(if (onDetailClick != null) Modifier.clickable { onDetailClick(loopCtlInfo) } else Modifier),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = CardBgColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
