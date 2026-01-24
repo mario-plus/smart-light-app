@@ -53,11 +53,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant
+import com.unilumin.smartapp.client.constant.DeviceConstant.lampModelOptions
 import com.unilumin.smartapp.client.constant.DeviceConstant.statusOptions
+import com.unilumin.smartapp.client.constant.DeviceConstant.syncStrategyOptions
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.DeviceStatusRow
+import com.unilumin.smartapp.ui.components.ModernStateSelector
 import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchHeader
 
@@ -68,6 +71,7 @@ import com.unilumin.smartapp.ui.theme.PlaceholderColor
 import com.unilumin.smartapp.ui.theme.SearchBarBg
 
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
+import kotlinx.coroutines.flow.asStateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,12 +86,25 @@ fun LampLightContent(
     }
     // 分页数据
     val lampLightFlow = lampViewModel.lampLightFlow.collectAsLazyPagingItems()
+
+
+    val model = lampViewModel.lampModel.collectAsState()
     BaseLampListScreen(
         viewModel = lampViewModel,
         pagingItems = lampLightFlow,
         keySelector = { it.id },
-        searchTitle = "搜索设备名称或序列码"
-    ) { item ->
+        searchTitle = "搜索设备名称或序列码",
+        middleContent = {
+            ModernStateSelector(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                options = lampModelOptions,
+                selectedValue = model.value,
+                onValueChange = { newValue ->
+                    lampViewModel.updateLampModel(newValue)
+                })
+        }) { item ->
         LampLightCard(item = item, onDetailClick = {})
     }
 
@@ -96,9 +113,7 @@ fun LampLightContent(
 
 @Composable
 fun LampLightCard(
-    item: LampLightInfo,
-    onDetailClick: (LampLightInfo) -> Unit,
-    modifier: Modifier = Modifier
+    item: LampLightInfo, onDetailClick: (LampLightInfo) -> Unit, modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
@@ -139,14 +154,11 @@ fun LampLightCard(
 
                     Column {
                         Text(
-                            text = item.name ?: "未知设备",
-                            style = TextStyle(
+                            text = item.name ?: "未知设备", style = TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 17.sp,
                                 color = Color(0xFF333333)
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            ), maxLines = 1, overflow = TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -186,15 +198,13 @@ fun LampLightCard(
 fun LampRealTimeDataPanel(item: LampLightInfo) {
     Surface(
         color = Color(0xFFF7F8FA), // 浅灰色背景分区
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth()
+        shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically
         ) {
             val dataItems = mutableListOf(
                 "开关" to if (item.onOff == 1) "开" else "关",

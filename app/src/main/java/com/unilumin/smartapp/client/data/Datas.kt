@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.client.data
 
 import androidx.compose.ui.graphics.vector.ImageVector
-import coil.compose.AsyncImagePainter
 
 data class ResponseData<T>(
     var code: Int?, var message: String?, var data: T?
@@ -82,6 +81,7 @@ data class RequestParam(
     val curPage: Int,
     val pageSize: Int,
     val state: Int? = null,
+    val workMode: Int? = null,
     val subSystemType: Int? = 1,
 )
 
@@ -728,7 +728,7 @@ data class JobRequestParam(
     val keyword: String,
     val curPage: Int,
     val pageSize: Int,
-    val businessTypes:List<Int>?=emptyList(),
+    val businessTypes: List<Int>? = emptyList(),
     val createDate: String? = null,
 
     val status: Int? = null,

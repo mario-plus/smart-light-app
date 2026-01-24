@@ -159,6 +159,8 @@ object DeviceConstant {
     )
 
     val statusOptions = listOf(-1 to "全部", 1 to "在线", 0 to "离线")
+    val lampModelOptions = listOf(-1 to "全部", 1 to "自动模式", 0 to "手动模式")
+    val syncStrategyOptions = listOf(-1 to "全部", 1 to "已同步", 0 to "未同步")
     val groupTypeOptions = listOf(-1 to "全部", 1 to "单灯分组", 25 to "集控分组", 56 to "回路分组")
 
     val jobOrStrategyStatusOptions = listOf(-1 to "全部", 1 to "待执行", 2 to "执行中", 3 to "成功", 4 to "失败")

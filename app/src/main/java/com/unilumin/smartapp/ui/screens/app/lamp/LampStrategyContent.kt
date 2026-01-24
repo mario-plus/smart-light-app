@@ -23,7 +23,9 @@ import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.runtime.Composable
 import com.unilumin.smartapp.client.constant.DeviceConstant.jobOrStrategyStatusOptions
+import com.unilumin.smartapp.client.constant.DeviceConstant.syncStrategyOptions
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
+import com.unilumin.smartapp.ui.components.ModernStateSelector
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,9 +36,14 @@ fun LampStrategyContent(
     // 分页数据
     val lampStrategyFlow = lampViewModel.lampStrategyFlow.collectAsLazyPagingItems()
 
+
+    val syncState = lampViewModel.syncState.collectAsState()
+
     LaunchedEffect(Unit) {
+        //重置筛选条件
         lampViewModel.updateSearch("")
         lampViewModel.updateState(-1)
+        lampViewModel.updateSyncState(-1)
     }
 
     BaseLampListScreen(
@@ -46,7 +53,17 @@ fun LampStrategyContent(
         keySelector = { it.id },
         searchTitle = "搜索策略名称或产品名称",
         middleContent = {
-
+            //单选框组件
+            ModernStateSelector(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                options = syncStrategyOptions,
+                selectedValue = syncState.value,
+                onValueChange = { newValue ->
+                    lampViewModel.updateSyncState(newValue)
+                }
+            )
         }
     ) { item ->
         LampStrategyCard(item = item, onClick = {})

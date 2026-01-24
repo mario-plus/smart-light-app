@@ -13,6 +13,7 @@ import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
 import com.unilumin.smartapp.client.data.LampJobInfo
+import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampStrategyInfo
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
@@ -75,9 +76,15 @@ class LampViewModel(
         state.value = s
     }
 
+    //策略同步状态
     val syncState = MutableStateFlow(-1)
     fun updateSyncState(s: Int) {
         syncState.value = s
+    }
+
+    val lampModel = MutableStateFlow(-1)
+    fun updateLampModel(s: Int) {
+        lampModel.value = s
     }
 
 
@@ -87,14 +94,6 @@ class LampViewModel(
         searchQuery.value = query
     }
 
-    // 1. 单灯列表
-    val lampLightFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
-        fetchPageData(page, size) {
-            roadService.getLightCtlList(
-                RequestParam(keyword = query, curPage = page, pageSize = size, state = filter)
-            )
-        }
-    }
 
     // 2. 回路列表
     val lampLoopCtlFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
@@ -132,6 +131,44 @@ class LampViewModel(
                 )
             )
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val lampLightFlow =
+        combine(state, searchQuery, lampModel) { taskState, searchQuery, lampModel ->
+            Triple(taskState, searchQuery, lampModel)
+        }.flatMapLatest { (taskState, searchQuery, lampModel) ->
+            Pager(
+                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+                pagingSourceFactory = {
+                    GenericPagingSource { page, pageSize ->
+                        getLampList(
+                            page, pageSize, searchQuery, taskState, lampModel
+                        )
+                    }
+                }).flow
+        }.cachedIn(viewModelScope)
+
+    suspend fun getLampList(
+        curPage: Int,
+        pageSize: Int,
+        searchQuery: String,
+        state: Int,
+        workModel: Int,
+    ): List<LampLightInfo> {
+        val parseDataNewSuspend =
+            UniCallbackService<PageResponse<LampLightInfo>>().parseDataNewSuspend(
+                roadService.getLightCtlList(
+                    RequestParam(
+                        keyword = searchQuery,
+                        curPage = curPage,
+                        pageSize = pageSize,
+                        state = state.takeIf { it != FILTER_NONE },
+                        workMode = workModel.takeIf { it != FILTER_NONE })
+                ), context
+            )
+        _totalCount.value = parseDataNewSuspend?.total!!
+        return parseDataNewSuspend.list
     }
 
     suspend fun getStrategyList(

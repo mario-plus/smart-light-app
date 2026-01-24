@@ -176,50 +176,7 @@ import com.unilumin.smartapp.client.data.LoopInfo
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.data.SystemConfig
-import com.unilumin.smartapp.ui.theme.AccentBlue
-import com.unilumin.smartapp.ui.theme.AlarmBg
-import com.unilumin.smartapp.ui.theme.AlarmRed
-import com.unilumin.smartapp.ui.theme.Amber50
-import com.unilumin.smartapp.ui.theme.Amber500
-import com.unilumin.smartapp.ui.theme.BackgroundGray
-import com.unilumin.smartapp.ui.theme.BgLightGray
-import com.unilumin.smartapp.ui.theme.Blue50
-import com.unilumin.smartapp.ui.theme.Blue600
-import com.unilumin.smartapp.ui.theme.BluePrimary
-import com.unilumin.smartapp.ui.theme.CardBorder
-import com.unilumin.smartapp.ui.theme.CardWhite
-import com.unilumin.smartapp.ui.theme.ControlBlue
-import com.unilumin.smartapp.ui.theme.DividerColor
-import com.unilumin.smartapp.ui.theme.Emerald50
-import com.unilumin.smartapp.ui.theme.Emerald600
-import com.unilumin.smartapp.ui.theme.Gray100
-import com.unilumin.smartapp.ui.theme.Gray200
-import com.unilumin.smartapp.ui.theme.Gray400
-import com.unilumin.smartapp.ui.theme.Gray50
-import com.unilumin.smartapp.ui.theme.Gray500
-import com.unilumin.smartapp.ui.theme.Gray900
-import com.unilumin.smartapp.ui.theme.Green50
-import com.unilumin.smartapp.ui.theme.Green500
-import com.unilumin.smartapp.ui.theme.GreenStatus
-import com.unilumin.smartapp.ui.theme.LineColor
-import com.unilumin.smartapp.ui.theme.OfflineGray
-import com.unilumin.smartapp.ui.theme.Orange50
-import com.unilumin.smartapp.ui.theme.Orange500
-import com.unilumin.smartapp.ui.theme.PlaceholderColor
-import com.unilumin.smartapp.ui.theme.PrimaryBlue
-import com.unilumin.smartapp.ui.theme.Red50
-import com.unilumin.smartapp.ui.theme.Red500
-import com.unilumin.smartapp.ui.theme.RedStatus
-import com.unilumin.smartapp.ui.theme.SafeBg
-import com.unilumin.smartapp.ui.theme.SafeGreen
-import com.unilumin.smartapp.ui.theme.SearchBarBg
-import com.unilumin.smartapp.ui.theme.TextDark
-import com.unilumin.smartapp.ui.theme.TextGray
-import com.unilumin.smartapp.ui.theme.TextPrimary
-import com.unilumin.smartapp.ui.theme.TextSecondary
-import com.unilumin.smartapp.ui.theme.TextSub
-import com.unilumin.smartapp.ui.theme.TextTitle
-import com.unilumin.smartapp.ui.theme.White
+import com.unilumin.smartapp.ui.theme.*
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -232,6 +189,9 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.regex.Pattern
 import kotlin.math.roundToInt
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+
 
 @Composable
 fun AppCard(
@@ -2846,5 +2806,64 @@ private fun <K> toggleSelection(
     } else {
         if (isSelected) newKeys.remove(key) else newKeys.add(key)
         onChanged(newKeys)
+    }
+}
+
+
+@Composable
+fun <Int> ModernStateSelector(
+    // 使用 Pair：first 是显示文本，second 是实际值
+    options: List<Pair<Int, String>>,
+    selectedValue: Int,
+    onValueChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    activeColor: Color = MaterialTheme.colorScheme.primary,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+) {
+    Row(
+        modifier = modifier
+            .height(40.dp)
+            .clip(CircleShape)
+            .background(containerColor)
+            .padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 在遍历时直接解构 Pair，让代码语义更清晰
+        options.forEach { (value, label) ->
+            val isSelected = value == selectedValue
+
+            val backgroundColor by animateColorAsState(
+                targetValue = if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent,
+                animationSpec = tween(durationMillis = 200),
+                label = "bgColor"
+            )
+            val textColor by animateColorAsState(
+                targetValue = if (isSelected) activeColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                label = "textColor"
+            )
+            val fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clip(CircleShape)
+                    .background(backgroundColor)
+                    .then(
+                        if (isSelected) Modifier.border(0.5.dp, Color.Black.copy(alpha = 0.05f), CircleShape)
+                        else Modifier
+                    )
+                    .clickable { onValueChange(value) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label, // 使用 Pair 的 first
+                    color = textColor,
+                    fontSize = 13.sp,
+                    fontWeight = fontWeight,
+                    maxLines = 1
+                )
+            }
+        }
     }
 }

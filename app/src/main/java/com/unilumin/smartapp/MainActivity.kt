@@ -1,5 +1,5 @@
 package com.unilumin.smartapp
-
+import androidx.compose.runtime.saveable.rememberSaveable
 import SmartLampScreen
 import SystemConfigScreen
 import SystemInfoScreen
@@ -89,8 +89,8 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
     val application = context.applicationContext as Application
 
     // 使用 sessionKey 来强制重置整个 App 的状态
-    var sessionKey by remember { mutableIntStateOf(0) }
-    var isLoggedIn by remember { mutableStateOf(false) }
+    var sessionKey by rememberSaveable { mutableIntStateOf(0) }
+    var isLoggedIn by rememberSaveable { mutableStateOf(false) }
 
     val profileViewModel: ProfileViewModel = viewModel(
         factory = ViewModelFactory {
