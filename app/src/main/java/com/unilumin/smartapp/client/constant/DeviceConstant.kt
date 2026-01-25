@@ -61,6 +61,7 @@ object DeviceConstant {
     const val SMART_LAMP_GROUP = "lightGroup"
     const val SMART_LAMP_STRATEGY = "lightStrategy"
     const val SMART_LAMP_JOB = "lightJob"
+
     const val SMART_LAMP_STATISTIC = "lightStatistic"
 
     val SMART_LAMP_FUNC_LIST = listOf<SystemConfig>(
@@ -71,7 +72,7 @@ object DeviceConstant {
         SystemConfig(SMART_LAMP_GROUP, "分组管理", getIconForName(SMART_LAMP_GROUP), true),
         SystemConfig(SMART_LAMP_STRATEGY, "策略管理", getIconForName(SMART_LAMP_STRATEGY), true),
         SystemConfig(SMART_LAMP_JOB, "任务管理", getIconForName(SMART_LAMP_JOB), true),
-        SystemConfig(SMART_LAMP_STATISTIC, "业务统计", getIconForName(SMART_LAMP_STATISTIC), true)
+        //SystemConfig(SMART_LAMP_STATISTIC, "业务统计", getIconForName(SMART_LAMP_STATISTIC), true)
     )
 
 
@@ -165,6 +166,9 @@ object DeviceConstant {
 
     val jobOrStrategyStatusOptions = listOf(-1 to "全部", 1 to "待执行", 2 to "执行中", 3 to "成功", 4 to "失败")
 
+    val alarmLevel = listOf(-1 to "全部", 1 to "正常", 2 to "提示", 3 to "次要", 4 to "重要")
+
+    val alarmConfirm = listOf( 1 to "已确认", 0 to "未确认")
 
 
     //双色温单灯产品id
@@ -219,3 +223,6 @@ object DeviceConstant {
 
 
 
+ const val PAGE_SIZE = 20
+ const val PREFETCH_DIST = 2
+ const val FILTER_NONE = -1

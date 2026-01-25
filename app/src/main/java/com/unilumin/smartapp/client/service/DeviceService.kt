@@ -1,16 +1,22 @@
 package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
+import com.unilumin.smartapp.client.data.AlarmRequestParam
+import com.unilumin.smartapp.client.data.DeviceAlarmInfo
 import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
+import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.EnvData
 import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.LampCtlReq
+import com.unilumin.smartapp.client.data.LightDayEnergy
+import com.unilumin.smartapp.client.data.LightEnergy
+import com.unilumin.smartapp.client.data.LightYearEnergy
 import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OfflineDevice
@@ -36,9 +42,6 @@ interface DeviceService {
         @Query("productTypeId") productTypeId: Int,
         @Query("subSystemType") subSystemType: Int
     ): Call<NewResponseData<PageResponse<IotDevice>?>?>?
-
-
-
 
 
     @POST(RequestPathKey.KEY_LAMP_CTL)
@@ -121,5 +124,28 @@ interface DeviceService {
         @Query("timeType") timeType: Int?,
         @Query("primaryClass") primaryClass: Int?
     ): Call<NewResponseData<PageResponse<OfflineDevice>?>?>?
+
+
+    @GET(RequestPathKey.KEY_GET_DEVICE_ALARM_LIST)
+    fun deviceAlarmList(
+        params: AlarmRequestParam
+    ): Call<NewResponseData<PageResponse<DeviceAlarmInfo>?>?>?
+
+
+    @GET(RequestPathKey.KEY_REAL_TIME_COUNT)
+    fun deviceStatusSummary(
+    ): Call<NewResponseData<DeviceStatusSummary?>?>?
+
+    //当月能耗对比
+    @GET(RequestPathKey.KEY_GET_LIGHT_ENERGY)
+    fun contrastLightEnergy(): Call<NewResponseData<List<LightEnergy>?>?>?
+
+    //年度用电趋势
+    @GET(RequestPathKey.KEY_GET_ANNUAL_TREND)
+    fun annualPowerConsumptionTrend(): Call<NewResponseData<LightYearEnergy?>?>?
+
+    //近七天用电量
+    @GET(RequestPathKey.KEY_GET_HOME_LIGHT_ENERGY)
+    fun homeLightEnergy(): Call<NewResponseData<List<LightDayEnergy>?>?>?
 
 }

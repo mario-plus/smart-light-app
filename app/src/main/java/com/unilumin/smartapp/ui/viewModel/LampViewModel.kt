@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -10,6 +9,9 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
+import com.unilumin.smartapp.client.constant.FILTER_NONE
+import com.unilumin.smartapp.client.constant.PAGE_SIZE
+import com.unilumin.smartapp.client.constant.PREFETCH_DIST
 import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
@@ -38,11 +40,6 @@ class LampViewModel(
     val context = getApplication<Application>()
 
     //分页数据总数
-    companion object {
-        private const val PAGE_SIZE = 20
-        private const val PREFETCH_DIST = 2
-        private const val FILTER_NONE = -1
-    }
 
 
     //数据源
@@ -98,7 +95,7 @@ class LampViewModel(
 
     // 2. 回路列表
     val lampLoopCtlFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
-        fetchPageData(page, size) {
+        fetchPageData {
             roadService.getLoopCtlList(
                 keyword = query, curPage = page, pageSize = size, networkState = filter
             )
@@ -107,7 +104,7 @@ class LampViewModel(
 
     // 3. 网关列表
     val lampGateWayFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
-        fetchPageData(page, size) {
+        fetchPageData {
             roadService.getGwCtlList(
                 RequestParam(keyword = query, curPage = page, pageSize = size, state = filter)
             )
@@ -116,7 +113,7 @@ class LampViewModel(
 
     // 4. 光控网关列表
     val lampLightGwFlow = createPagingFlow(state, searchQuery) { page, size, filter, query ->
-        fetchPageData(page, size) {
+        fetchPageData {
             roadService.getLightGwList(
                 RequestParam(keyword = query, curPage = page, pageSize = size, state = filter)
             )
@@ -125,7 +122,7 @@ class LampViewModel(
 
     // 5. 分组列表
     val lampGroupFlow = createPagingFlow(state, searchQuery) { page, size, groupType, query ->
-        fetchPageData(page, size) {
+        fetchPageData {
             roadService.getGroupList(
                 GroupRequestParam(
                     keyword = query, curPage = page, pageSize = size, groupType = groupType
@@ -211,8 +208,6 @@ class LampViewModel(
         }.cachedIn(viewModelScope)
 
 
-
-
     @OptIn(ExperimentalCoroutinesApi::class)
     val lampJobFlow =
         combine(state, searchQuery, _selectSceneIds) { state, searchQuery, selectSceneIds ->
@@ -285,8 +280,12 @@ class LampViewModel(
         }
     }
 
+
+    /**
+     * 两参数封装
+     * */
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun <T : Any> createPagingFlow(
+    fun <T : Any> createPagingFlow(
         filterFlow: Flow<Int>,
         queryFlow: Flow<String>,
         fetcher: suspend (page: Int, pageSize: Int, filter: Int?, query: String) -> List<T>
@@ -308,28 +307,17 @@ class LampViewModel(
         }.cachedIn(viewModelScope)
     }
 
-    /**
-     * 专业修复版：精准匹配 Retrofit 的 Nullable 返回类型
-     *
-     * 之前的错误是因为缺少了 '?'，现在完全匹配您的截图：
-     * Call<NewResponseData<PageResponse<T>?>?>?
-     */
-    private suspend fun <T : Any> fetchPageData(
-        page: Int, pageSize: Int,
-        // 【关键修复】这里完全照抄报错提示中的类型结构，允许所有层级为空
+    suspend fun <T : Any> fetchPageData(
         apiCall: suspend () -> Call<NewResponseData<PageResponse<T>?>?>?
     ): List<T> {
-        // 1. 获取 Call 对象
         val rawCall = apiCall()
-        // 2. 调用 Service 解析
-        // UniCallbackService 也需要同样的 Nullable 泛型结构来匹配
         val callbackService = UniCallbackService<PageResponse<T>>()
-        // 此时 rawCall 的类型与 parseDataNewSuspend 要求的类型完全一致
         val parsedResult = callbackService.parseDataNewSuspend(rawCall, context)
-        // 3. 更新总数并返回
         if (parsedResult != null) {
             _totalCount.value = parsedResult.total
         }
         return parsedResult?.list ?: emptyList()
     }
+
+
 }

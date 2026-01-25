@@ -6,7 +6,6 @@ import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -20,10 +19,14 @@ import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
+import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.LampCtlReq
+import com.unilumin.smartapp.client.data.LightDayEnergy
+import com.unilumin.smartapp.client.data.LightEnergy
+import com.unilumin.smartapp.client.data.LightYearEnergy
 import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OfflineDevice
@@ -43,10 +46,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class DeviceViewModel(
-    retrofitClient: RetrofitClient,application: Application
+    retrofitClient: RetrofitClient, application: Application
 ) : AndroidViewModel(application) {
     val context = getApplication<Application>()
-
 
 
     //分页数据总数
@@ -140,6 +142,22 @@ class DeviceViewModel(
     private val _deviceStatusAnalysis = MutableStateFlow<DeviceStatusAnalysisResp?>(null)
     val deviceStatusAnalysisData = _deviceStatusAnalysis.asStateFlow()
 
+    //首页在线率和亮灯率
+    private val _deviceStatusSummary = MutableStateFlow<DeviceStatusSummary?>(null)
+    val deviceStatusSummary = _deviceStatusSummary.asStateFlow()
+
+    //月度能耗对比
+    private val _monthEnergyList = MutableStateFlow<List<LightEnergy>>(emptyList())
+    val monthEnergyList = _monthEnergyList.asStateFlow()
+
+
+    private val _dayEnergyList = MutableStateFlow<List<LightDayEnergy>>(emptyList())
+    val dayEnergyList = _dayEnergyList.asStateFlow()
+
+
+    private val _yearEnergyList = MutableStateFlow(LightYearEnergy())
+    val yearEnergyList = _yearEnergyList.asStateFlow()
+
     //设备列表分页数据列表
     @OptIn(ExperimentalCoroutinesApi::class)
     val devicePagingFlow =
@@ -185,12 +203,55 @@ class DeviceViewModel(
     ): List<OfflineDevice> {
         val tType = timeType.takeIf { it != 0 }
         val pClass = primaryClass.takeIf { it != 0 }
-        var parseDataNewSuspend =
+        val parseDataNewSuspend =
             UniCallbackService<PageResponse<OfflineDevice>>().parseDataNewSuspend(
                 deviceService.offlineDeviceList(curPage, pageSize, tType, pClass), context
             )
         _totalCount.value = parseDataNewSuspend?.total!!
         return parseDataNewSuspend.list
+    }
+
+    /**
+     * 首页在线率和亮灯率
+     * */
+    suspend fun getStatusSummary() {
+        val parseDataNewSuspend = UniCallbackService<DeviceStatusSummary>().parseDataNewSuspend(
+            deviceService.deviceStatusSummary(), context
+        )
+        _deviceStatusSummary.value = parseDataNewSuspend
+    }
+
+    /**
+     * 当月数据对比
+     * */
+    suspend fun monthEnergyData() {
+        val parseDataNewSuspend = UniCallbackService<List<LightEnergy>>().parseDataNewSuspend(
+            deviceService.contrastLightEnergy(), context
+        )
+        if (parseDataNewSuspend != null) {
+            _monthEnergyList.value = parseDataNewSuspend
+        }
+    }
+
+    /**
+     * 7天能耗
+     * */
+    suspend fun dayEnergyData() {
+        val parseDataNewSuspend = UniCallbackService<List<LightDayEnergy>>().parseDataNewSuspend(
+            deviceService.homeLightEnergy(), context
+        )
+        if (parseDataNewSuspend != null) {
+            _dayEnergyList.value = parseDataNewSuspend
+        }
+    }
+
+    suspend fun yearEnergyData() {
+        val parseDataNewSuspend = UniCallbackService<LightYearEnergy>().parseDataNewSuspend(
+            deviceService.annualPowerConsumptionTrend(), context
+        )
+        if (parseDataNewSuspend != null) {
+            _yearEnergyList.value = parseDataNewSuspend
+        }
     }
 
 
@@ -269,7 +330,7 @@ class DeviceViewModel(
         context: Context
     ): List<IotDevice> {
         val s = state.takeIf { it != -1 }
-        var parseDataNewSuspend = UniCallbackService<PageResponse<IotDevice>>().parseDataNewSuspend(
+        val parseDataNewSuspend = UniCallbackService<PageResponse<IotDevice>>().parseDataNewSuspend(
             deviceService.getDeviceList(
                 searchQuery, page, pageSize, productType, s
             ), context
@@ -505,9 +566,9 @@ class DeviceViewModel(
     fun getDeviceModelData(jsonObject: JsonObject, type: String): List<DeviceModelData> {
         val list = mutableListOf<DeviceModelData>()
         jsonObject.getAsJsonArray(type)?.forEach { element ->
-            var asJsonObject = element.asJsonObject
+            val asJsonObject = element.asJsonObject
 
-            var specsObject = asJsonObject.get("specs")?.asJsonObject
+            val specsObject = asJsonObject.get("specs")?.asJsonObject
             val unit = specsObject?.get("unit")?.takeIf { it.isJsonPrimitive }?.asString ?: ""
             list.add(
                 DeviceModelData(

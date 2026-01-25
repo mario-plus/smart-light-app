@@ -50,6 +50,15 @@ object RequestPathKey {
 
     const val KEY_JOB_LIST: String = "$SMART_ROAD_LAMPS/uni_light_selectTaskList"
 
+    //亮灯率+在线率
+    const val KEY_REAL_TIME_COUNT: String = "$SMART_ROAD_LAMPS/light_real_time_count"
+    //当月能耗对比
+    const val KEY_GET_LIGHT_ENERGY: String = "$SMART_ROAD_LAMPS/contrast_light_energy"
+    //年度用电对比趋势
+    const val KEY_GET_ANNUAL_TREND: String = "$SMART_ROAD_LAMPS/annual_power_consumption_trend"
+    //今7天用电量
+    const val KEY_GET_HOME_LIGHT_ENERGY: String = "$SMART_ROAD_LAMPS/home_light_energy"
+
     //设备列表
     const val KEY_GET_DEVICE: String = "$IOT_HUB_MANAGER/iot_device_page"
 
@@ -73,6 +82,9 @@ object RequestPathKey {
 
     //离线设备
     const val KEY_GET_OFFLINE_DEVICE_LIST: String = "$IOT_HUB_MANAGER/offline_device_list"
+
+    //告警列表
+    const val KEY_GET_DEVICE_ALARM_LIST: String = "$IOT_HUB_MANAGER/device_alarm_manage_list"
 
 
 }

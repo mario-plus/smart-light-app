@@ -288,8 +288,7 @@ data class DeviceModelData(
 )
 
 data class SequenceTsl(
-    val value: String,
-    val ts: Long
+    val value: String, val ts: Long
 )
 
 data class SystemCpu(
@@ -349,8 +348,7 @@ data class SystemInfo(
 )
 
 data class PagingState(
-    var pageIndex: Int = 1,
-    var hasMore: Boolean = true
+    var pageIndex: Int = 1, var hasMore: Boolean = true
 )
 
 data class DeviceStatusAnalysisResp(
@@ -411,10 +409,7 @@ data class PoleMapPointReq(
 
 
 data class SystemConfig(
-    val id: String,
-    val name: String,
-    val icon: ImageVector,
-    var isSelected: Boolean = false
+    val id: String, val name: String, val icon: ImageVector, var isSelected: Boolean = false
 )
 
 
@@ -736,13 +731,76 @@ data class JobRequestParam(
 )
 
 data class JobScene(
-    val key: Int,
-    val value: String,
-    val typeName: String
+    val key: Int, val value: String, val typeName: String
 )
 
 data class JobSceneElement(
-    val groupName: String,
-    val list: List<JobScene>
+    val groupName: String, val list: List<JobScene>
 )
 
+
+data class DeviceAlarmInfo(
+    val id: Long,
+    val code: String?,
+    val name: String?,
+    val level: Int?,
+    val levelName: String?,
+    val primaryClass: Int?,
+    val primaryClassName: String?,
+    val firstAlarmTime: String?,
+    val lastAlarmTime: String?,
+    val msgType: Int?,
+    val source: String?,
+    val serialNum: String?,
+    val dealUserName: String?,
+    val confirmUserName: String?,
+    val deviceId: String?,
+    val extendFiled: String?,
+    val address: String?,
+    val poleId: String?,
+    val poleName: String?,
+    val alarmPicUrl: String?,
+    val projectId: String?,
+    val number: Int?,
+    val newAlarm: Int?,
+    val notificationState: Int?,
+    val score: Double?,
+    val riskLevel: Int?
+)
+
+data class AlarmRequestParam(
+    val keyword: String,
+    val curPage: Int,
+    val pageSize: Int,
+    //0未确认
+    //1已确认
+    val isConfirm: Int? = null,
+    val level: Int? = null
+)
+
+
+data class DeviceStatusSummary(
+
+    val total: Int?,
+    val onlineCount: Int?,
+    val onlinePercent: Double?,
+    val lightUpCount: Int?,
+    val lightUpPercent: Double?
+)
+
+data class LightEnergy(
+    val month: String?,
+    val degree: String?
+)
+
+data class LightYearEnergy(
+    val thisYear: List<LightEnergy>? = null,
+    val lastYear: List<LightEnergy>? = null
+)
+
+data class LightDayEnergy(
+
+    val date: String?,
+
+    val value: String?
+)
