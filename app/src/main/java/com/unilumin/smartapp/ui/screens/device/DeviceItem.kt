@@ -2,6 +2,7 @@ package com.unilumin.smartapp.ui.screens.device
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -156,10 +157,11 @@ fun DeviceHeader(
                     maxLines = 1
                 )
                 Text(
-                    text = "产品名称: ${iotDevice.productName ?: "--"}",
-                    fontSize = 12.sp,
+                    text = iotDevice.productName ?: "--",
+                    fontSize = 11.sp,
                     color = Color(0xFF9CA3AF),
-                    maxLines = 1
+                    maxLines = 1,
+                    modifier = Modifier.basicMarquee()
                 )
             }
 

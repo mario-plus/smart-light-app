@@ -146,7 +146,7 @@ fun LampStrategyCard(
                         3 -> Triple("成功", Color(0xFF4CAF50), Color(0xFFE8F5E9)) // 绿
                         4 -> Triple("失败", Color(0xFFF44336), Color(0xFFFFEBEE)) // 红
                         2 -> Triple("执行中", Color(0xFFFFA000), Color(0xFFFFF3E0)) // 橙
-                        else -> Triple("未知", Color(0xFF999999), Color(0xFFF5F5F5))
+                        else -> Triple("待执行", Color(0xFF999999), Color(0xFFF5F5F5))
                     }
                     StatusTag(text = taskText, color = taskColor, bgColor = taskBg)
                 }
