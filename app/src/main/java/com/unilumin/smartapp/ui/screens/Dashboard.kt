@@ -19,9 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
@@ -257,7 +255,7 @@ fun EnergyStatsCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("年度用电趋势", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Gray900)
+                Text("年度用电趋势(kW·h)", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Gray900)
                 // 顶部图例
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     LegendItem(color = Color(0xFF9C27B0), label = "去年") // 紫色
@@ -373,9 +371,6 @@ fun WeeklyEnergyChart(data: List<LightDayEnergy>) {
     }
 }
 
-// -------------------------------------------------------------------------------------
-// --- 重点修改组件：AnnualEnergyChart (支持点击交互) ---
-// -------------------------------------------------------------------------------------
 
 /**
  * 辅助函数：将 "10000" 格式化为 "10k"，小于1000则直接显示
