@@ -1,11 +1,13 @@
-package com.unilumin.smartapp.ui.screens
-
+package com.unilumin.smartapp.ui.screens.dashboard
+import androidx.compose.ui.graphics.PathEffect
 import android.app.Application
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,11 +25,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,39 +43,38 @@ import com.unilumin.smartapp.client.data.LightEnergy
 import com.unilumin.smartapp.client.data.LightYearEnergy
 import com.unilumin.smartapp.ui.components.AppCard
 import com.unilumin.smartapp.ui.theme.*
-import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
+import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
-fun DashboardScreen(retrofitClient: RetrofitClient) {
+fun DashboardScreen(retrofitClient: RetrofitClient, onNotificationClick: () -> Unit = {}) {
 
     val context = LocalContext.current
     val application = context.applicationContext as Application
 
-    val deviceViewModel: DeviceViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+    val lampViewModel: LampViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            @Suppress("UNCHECKED_CAST")
-            return DeviceViewModel(retrofitClient, application) as T
+            @Suppress("UNCHECKED_CAST") return LampViewModel(retrofitClient, application) as T
         }
     })
 
     // 状态收集
-    val deviceStatusSummary by deviceViewModel.deviceStatusSummary.collectAsState()
-    val dayEnergyList by deviceViewModel.dayEnergyList.collectAsState()
-    val monthEnergyList by deviceViewModel.monthEnergyList.collectAsState()
-    val yearEnergyList by deviceViewModel.yearEnergyList.collectAsState()
+    val deviceStatusSummary by lampViewModel.deviceStatusSummary.collectAsState()
+    val dayEnergyList by lampViewModel.dayEnergyList.collectAsState()
+    val monthEnergyList by lampViewModel.monthEnergyList.collectAsState()
+    val yearEnergyList by lampViewModel.yearEnergyList.collectAsState()
 
     // 异步加载数据
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             try {
-                deviceViewModel.getStatusSummary()
-                deviceViewModel.dayEnergyData()
-                deviceViewModel.monthEnergyData()
-                deviceViewModel.yearEnergyData()
+                lampViewModel.getStatusSummary()
+                lampViewModel.dayEnergyData()
+                lampViewModel.monthEnergyData()
+                lampViewModel.yearEnergyData()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -84,11 +85,14 @@ fun DashboardScreen(retrofitClient: RetrofitClient) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F9FA)) // 浅灰底色
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // 1. 顶部 Header
-        item { HeaderSection() }
+        item {
+            HeaderSection(hasUnread = true, onNotificationClick = {
+                onNotificationClick()
+            })
+        }
 
         // 2. 状态概览
         item {
@@ -114,9 +118,7 @@ fun DashboardScreen(retrofitClient: RetrofitClient) {
         // 4. 核心统计图表卡片
         item {
             EnergyStatsCard(
-                monthData = monthEnergyList,
-                dayData = dayEnergyList,
-                yearData = yearEnergyList
+                monthData = monthEnergyList, dayData = dayEnergyList, yearData = yearEnergyList
             )
         }
 
@@ -127,7 +129,10 @@ fun DashboardScreen(retrofitClient: RetrofitClient) {
 
 // --- 顶部 Header ---
 @Composable
-fun HeaderSection() {
+fun HeaderSection(
+    hasUnread: Boolean = true,
+    onNotificationClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -140,17 +145,31 @@ fun HeaderSection() {
             shape = CircleShape,
             color = Color.White,
             shadowElevation = 2.dp,
-            modifier = Modifier.size(40.dp)
-        ) {
+            modifier = Modifier
+                .size(40.dp)
+                .clickable(onClick = { onNotificationClick() }),
+
+            ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.Outlined.Notifications, null, tint = Gray500)
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .background(Red500, CircleShape)
-                        .align(Alignment.TopEnd)
-                        .offset(x = (-10).dp, y = 10.dp)
+                // 1. 图标
+                Icon(
+                    imageVector = Icons.Outlined.Notifications,
+                    contentDescription = "Notifications",
+                    tint = Gray500,
+                    modifier = Modifier.size(24.dp)
                 )
+
+                // 2. 红点
+                if (hasUnread) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 8.dp, end = 8.dp)
+                            .size(10.dp)
+                            .background(Red500, CircleShape)
+                            .border(1.5.dp, Color.White, CircleShape)
+                    )
+                }
             }
         }
     }
@@ -159,35 +178,51 @@ fun HeaderSection() {
 // --- 状态卡片 ---
 @Composable
 fun StatusCardsSection(
-    onlinePercent: String,
-    onlineCount: Int,
-    lightUpPercent: String,
-    totalCount: Int
+    onlinePercent: String, onlineCount: Int, lightUpPercent: String, totalCount: Int
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         AppCard(modifier = Modifier.weight(1f)) {
             StatusItem(
-                title = "在线率", percent = onlinePercent, detailLabel = "在线数", detailValue = onlineCount.toString(),
-                icon = Icons.Rounded.Wifi, iconBg = Emerald50, iconColor = Emerald600
+                title = "在线率",
+                percent = onlinePercent,
+                detailLabel = "在线数",
+                detailValue = onlineCount.toString(),
+                icon = Icons.Rounded.Wifi,
+                iconBg = Emerald50,
+                iconColor = Emerald600
             )
         }
         AppCard(modifier = Modifier.weight(1f)) {
             StatusItem(
-                title = "亮灯率", percent = lightUpPercent, detailLabel = "设备总数", detailValue = totalCount.toString(),
-                icon = Icons.Rounded.WbSunny, iconBg = Amber50, iconColor = Amber500
+                title = "亮灯率",
+                percent = lightUpPercent,
+                detailLabel = "设备总数",
+                detailValue = totalCount.toString(),
+                icon = Icons.Rounded.WbSunny,
+                iconBg = Amber50,
+                iconColor = Amber500
             )
         }
     }
 }
 
 @Composable
-fun StatusItem(title: String, percent: String, detailLabel: String, detailValue: String, icon: androidx.compose.ui.graphics.vector.ImageVector, iconBg: Color, iconColor: Color) {
+fun StatusItem(
+    title: String,
+    percent: String,
+    detailLabel: String,
+    detailValue: String,
+    icon: ImageVector,
+    iconBg: Color,
+    iconColor: Color
+) {
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(color = iconBg, shape = RoundedCornerShape(8.dp), modifier = Modifier.size(32.dp)) {
+            Surface(
+                color = iconBg, shape = RoundedCornerShape(8.dp), modifier = Modifier.size(32.dp)
+            ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(icon, null, tint = iconColor, modifier = Modifier.size(18.dp))
                 }
@@ -197,8 +232,19 @@ fun StatusItem(title: String, percent: String, detailLabel: String, detailValue:
         }
         Spacer(modifier = Modifier.height(16.dp))
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(percent, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Gray900, lineHeight = 30.sp)
-            Text("%", fontSize = 14.sp, color = Gray400, modifier = Modifier.padding(bottom = 4.dp, start = 2.dp))
+            Text(
+                percent,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold,
+                color = Gray900,
+                lineHeight = 30.sp
+            )
+            Text(
+                "%",
+                fontSize = 14.sp,
+                color = Gray400,
+                modifier = Modifier.padding(bottom = 4.dp, start = 2.dp)
+            )
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text("$detailLabel: $detailValue", fontSize = 12.sp, color = Gray500)
@@ -208,15 +254,37 @@ fun StatusItem(title: String, percent: String, detailLabel: String, detailValue:
 // --- 核心统计卡片 ---
 @Composable
 fun EnergyStatsCard(
-    monthData: List<LightEnergy>,
-    dayData: List<LightDayEnergy>,
-    yearData: LightYearEnergy
+    monthData: List<LightEnergy>, dayData: List<LightDayEnergy>, yearData: LightYearEnergy
 ) {
     AppCard {
         Column(modifier = Modifier.fillMaxWidth()) {
 
+            // 2. 近7天趋势 (修改为折线图)
+            Text(
+                "近7天用电量 (kW·h)",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Gray900
+            )
+            Spacer(modifier = Modifier.height(24.dp)) // 增加一点间距
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp) // 增加高度以容纳Canvas绘制
+            ) {
+                WeeklyEnergyChart(dayData)
+            }
+
+            DividerLine()
+
             // 1. 月度对比
-            Text("月度能耗对比 (kW·h)", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Gray900)
+            Text(
+                "月度能耗对比 (kW·h)",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Gray900
+            )
             Spacer(modifier = Modifier.height(16.dp))
 
             if (monthData.isNotEmpty()) {
@@ -239,23 +307,18 @@ fun EnergyStatsCard(
 
             DividerLine()
 
-            // 2. 近7天趋势
-            Text("近7天用电量 (kW·h)", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Gray900)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Box(modifier = Modifier.fillMaxWidth().height(180.dp)) {
-                WeeklyEnergyChart(dayData)
-            }
-
-            DividerLine()
-
             // 3. 年度趋势
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("年度用电趋势(kW·h)", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Gray900)
+                Text(
+                    "年度用电趋势(kW·h)",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Gray900
+                )
                 // 顶部图例
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     LegendItem(color = Color(0xFF9C27B0), label = "去年") // 紫色
@@ -266,7 +329,11 @@ fun EnergyStatsCard(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 增加高度以容纳 Y 轴标签
-            Box(modifier = Modifier.fillMaxWidth().height(240.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(240.dp)
+            ) {
                 AnnualEnergyChart(yearData)
             }
         }
@@ -283,7 +350,9 @@ fun EnergyBarRow(label: String, value: Float, percentage: Float, color: Color) {
         Spacer(modifier = Modifier.width(8.dp))
         Box(modifier = Modifier.weight(1f)) {
             Box(
-                modifier = Modifier.fillMaxWidth().height(24.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
                     .background(Gray100, RoundedCornerShape(4.dp))
             )
             Box(
@@ -300,13 +369,15 @@ fun EnergyBarRow(label: String, value: Float, percentage: Float, color: Color) {
                 fontSize = 11.sp,
                 color = if (percentage > 0.2f) Color.Black else Gray500,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 8.dp)
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 8.dp)
             )
         }
     }
 }
 
-// --- 组件：近7天柱状图 ---
+// --- 组件：近7天折线图 (已修改为 Canvas 绘制 + 点击显示数值) ---
 @Composable
 fun WeeklyEnergyChart(data: List<LightDayEnergy>) {
     if (data.isEmpty()) {
@@ -314,58 +385,207 @@ fun WeeklyEnergyChart(data: List<LightDayEnergy>) {
         return
     }
 
-    val maxVal = data.maxOfOrNull { it.value?.toFloatOrNull() ?: 0f } ?: 100f
-    val safeMax = if (maxVal == 0f) 100f else maxVal
-    val maxBarHeight = 110.dp
+    // 1. 数据预处理
+    val values = remember(data) { data.map { it.value?.toFloatOrNull() ?: 0f } }
+    val dates = remember(data) {
+        data.map {
+            val d = it.date ?: ""
+            if (d.length > 5) d.takeLast(5) else d
+        }
+    }
 
-    Row(
+    // 交互状态：记录当前选中的索引，null 表示未选中
+    var selectedIndex by remember { mutableStateOf<Int?>(null) }
+
+    val maxVal = (values.maxOrNull() ?: 100f).coerceAtLeast(10f) * 1.15f // 留出顶部空间
+
+    // 颜色与画笔
+    val lineColor = Blue600
+    val gridColor = Color(0xFFE2E8F0)
+    val density = LocalDensity.current
+
+    val textPaint = remember(density) {
+        Paint().apply {
+            color = android.graphics.Color.parseColor("#94A3B8")
+            textAlign = Paint.Align.CENTER
+            textSize = density.run { 10.sp.toPx() }
+        }
+    }
+    val yAxisPaint = remember(density) {
+        Paint().apply {
+            color = android.graphics.Color.parseColor("#94A3B8")
+            textAlign = Paint.Align.RIGHT
+            textSize = density.run { 10.sp.toPx() }
+        }
+    }
+    // Tooltip 画笔
+    val tooltipTextPaint = remember(density) {
+        Paint().apply {
+            color = android.graphics.Color.WHITE
+            textAlign = Paint.Align.LEFT
+            textSize = density.run { 11.sp.toPx() }
+            typeface = Typeface.DEFAULT_BOLD
+        }
+    }
+
+    Canvas(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Bottom
-    ) {
-        data.forEach { item ->
-            val value = item.value?.toFloatOrNull() ?: 0f
-            val heightFraction = (value / safeMax).coerceIn(0.05f, 1f)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { offset ->
+                        val yAxisWidth = 80f
+                        val chartWidth = size.width - yAxisWidth
+                        val stepX = chartWidth / (values.size - 1).coerceAtLeast(1)
 
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = String.format(Locale.US, "%.0f", value),
-                    fontSize = 10.sp,
-                    color = Gray500,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Visible,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                        if (offset.x >= yAxisWidth) {
+                            val relativeX = offset.x - yAxisWidth
+                            val rawIndex = (relativeX / stepX).roundToInt()
+                            val clickedIndex = rawIndex.coerceIn(0, values.lastIndex)
+                            // 切换选中状态
+                            selectedIndex = if (selectedIndex == clickedIndex) null else clickedIndex
+                        } else {
+                            selectedIndex = null
+                        }
+                    }
                 )
-                Box(
-                    modifier = Modifier
-                        .width(16.dp)
-                        .height(maxBarHeight * heightFraction)
-                        .background(
-                            brush = Brush.verticalGradient(listOf(Blue600, Color(0xFF93C5FD))),
-                            shape = RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
-                        )
+            }
+    ) {
+        val width = size.width
+        val height = size.height
+        if (width <= 0f || height <= 0f) return@Canvas
+
+        val paddingBottom = 60f
+        val yAxisLabelWidth = 80f
+        val chartHeight = height - paddingBottom
+        val chartWidth = width - yAxisLabelWidth
+        val stepX = if (values.size > 1) chartWidth / (values.size - 1) else 0f
+
+        // --- 1. 绘制网格线和 Y 轴 ---
+        val gridLines = 4
+        for (i in 0..gridLines) {
+            val fraction = i.toFloat() / gridLines
+            val y = chartHeight - (fraction * chartHeight)
+            val value = fraction * maxVal
+
+            // 虚线网格
+            drawLine(
+                color = gridColor,
+                start = Offset(yAxisLabelWidth, y),
+                end = Offset(width, y),
+                strokeWidth = 2f,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+            )
+            // Y轴数值
+            drawContext.canvas.nativeCanvas.drawText(
+                formatYAxisValue(value), yAxisLabelWidth - 15f, y + 10f, yAxisPaint
+            )
+        }
+
+        // --- 2. 绘制平滑曲线与填充 ---
+        if (values.isNotEmpty()) {
+            val path = Path()
+            val fillPath = Path()
+
+            values.forEachIndexed { index, value ->
+                val x = yAxisLabelWidth + (index * stepX)
+                val safeValue = value.coerceAtLeast(0f)
+                val y = chartHeight - (safeValue / maxVal * chartHeight)
+
+                if (index == 0) {
+                    path.moveTo(x, y)
+                } else {
+                    val prevX = yAxisLabelWidth + ((index - 1) * stepX)
+                    val prevY = chartHeight - (values[index - 1].coerceAtLeast(0f) / maxVal * chartHeight)
+                    val conX1 = prevX + (stepX * 0.5f)
+                    val conX2 = x - (stepX * 0.5f)
+                    path.cubicTo(conX1, prevY, conX2, y, x, y)
+                }
+            }
+
+            // 2.1 绘制渐变填充
+            fillPath.addPath(path)
+            fillPath.lineTo(yAxisLabelWidth + ((values.size - 1) * stepX), chartHeight)
+            fillPath.lineTo(yAxisLabelWidth, chartHeight)
+            fillPath.close()
+
+            drawPath(
+                path = fillPath,
+                brush = Brush.verticalGradient(
+                    colors = listOf(lineColor.copy(alpha = 0.2f), Color.Transparent),
+                    startY = 0f,
+                    endY = chartHeight
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                val dateStr = item.date ?: ""
-                val dateLabel = if (dateStr.length > 5) dateStr.takeLast(5) else dateStr
-                Text(
-                    text = dateLabel,
-                    fontSize = 10.sp,
-                    color = Gray400,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Visible,
-                    textAlign = TextAlign.Center
+            )
+
+            // 2.2 绘制曲线
+            drawPath(
+                path = path,
+                color = lineColor,
+                style = Stroke(
+                    width = 6f,
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round
                 )
+            )
+        }
+
+        // --- 3. 绘制 X 轴文字 ---
+        dates.forEachIndexed { index, dateStr ->
+            val x = yAxisLabelWidth + (index * stepX)
+            val isSelected = selectedIndex == index
+            textPaint.color = if (isSelected) android.graphics.Color.BLACK else android.graphics.Color.parseColor("#94A3B8")
+            textPaint.typeface = if (isSelected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+
+            drawContext.canvas.nativeCanvas.drawText(
+                dateStr, x, height - 15f, textPaint
+            )
+        }
+
+        // --- 4. 选中状态交互 (指示线、圆点、Tooltip) ---
+        selectedIndex?.let { index ->
+            val x = yAxisLabelWidth + (index * stepX)
+            val value = values[index].coerceAtLeast(0f)
+            val y = chartHeight - (value / maxVal * chartHeight)
+
+            // 4.1 垂直指示线
+            drawLine(
+                color = Color.Gray,
+                start = Offset(x, 0f),
+                end = Offset(x, chartHeight),
+                strokeWidth = 2f,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+            )
+
+            // 4.2 高亮圆点
+            drawCircle(Color.White, radius = 14f, center = Offset(x, y))
+            drawCircle(lineColor, radius = 10f, center = Offset(x, y))
+
+            // 4.3 Tooltip
+            val displayValue = String.format(Locale.US, "%.0f", value)
+            val dateText = dates[index]
+            val tooltipText = "$dateText: $displayValue kWh"
+
+            // 简单计算文字宽度
+            val textWidth = tooltipTextPaint.measureText(tooltipText)
+            val boxPadding = 20f
+            val boxWidth = textWidth + (boxPadding * 2)
+            val boxHeight = 70f
+
+            // 避免超出右边界
+            val isRightSide = index > values.size / 2
+            val boxLeft = if (isRightSide) x - boxWidth - 20f else x + 20f
+            val boxTop = y - boxHeight - 20f // 显示在点的上方，如果空间不够可以调整
+
+            // 边界检查，防止上方超出
+            val safeBoxTop = if (boxTop < 0) y + 20f else boxTop
+
+            val rect = RectF(boxLeft, safeBoxTop, boxLeft + boxWidth, safeBoxTop + boxHeight)
+
+            drawContext.canvas.nativeCanvas.apply {
+                val bgPaint = Paint().apply { color = android.graphics.Color.parseColor("#CC333333") }
+                drawRoundRect(rect, 10f, 10f, bgPaint)
+                drawText(tooltipText, rect.left + boxPadding, rect.centerY() + 10f, tooltipTextPaint)
             }
         }
     }
@@ -476,14 +696,13 @@ fun AnnualEnergyChart(yearData: LightYearEnergy) {
                             val clickedIndex = rawIndex.coerceIn(0, months.size - 1)
 
                             // 如果点击同一个，则取消选中；否则选中新的
-                            selectedIndex = if (selectedIndex == clickedIndex) null else clickedIndex
+                            selectedIndex =
+                                if (selectedIndex == clickedIndex) null else clickedIndex
                         } else {
                             selectedIndex = null // 点击Y轴区域取消选中
                         }
-                    }
-                )
-            }
-    ) {
+                    })
+            }) {
         val width = size.width
         val height = size.height
         if (width <= 0f || height <= 0f) return@Canvas
@@ -512,10 +731,7 @@ fun AnnualEnergyChart(yearData: LightYearEnergy) {
             )
             // Y轴数值
             drawContext.canvas.nativeCanvas.drawText(
-                formatYAxisValue(value),
-                yAxisLabelWidth - 15f,
-                y + 10f,
-                yAxisPaint
+                formatYAxisValue(value), yAxisLabelWidth - 15f, y + 10f, yAxisPaint
             )
         }
 
@@ -532,7 +748,8 @@ fun AnnualEnergyChart(yearData: LightYearEnergy) {
                 if (index == 0) path.moveTo(x, y)
                 else {
                     val prevX = yAxisLabelWidth + ((index - 1) * stepX)
-                    val prevY = chartHeight - (values[index - 1].coerceAtLeast(0f) / maxDataValue * chartHeight)
+                    val prevY =
+                        chartHeight - (values[index - 1].coerceAtLeast(0f) / maxDataValue * chartHeight)
                     val conX1 = prevX + (stepX * 0.5f)
                     val conX2 = x - (stepX * 0.5f)
                     path.cubicTo(conX1, prevY, conX2, y, x, y)
@@ -540,13 +757,13 @@ fun AnnualEnergyChart(yearData: LightYearEnergy) {
             }
 
             drawPath(
-                path = path,
-                color = lineColor,
-                style = Stroke(
+                path = path, color = lineColor, style = Stroke(
                     width = 6f,
                     cap = StrokeCap.Round,
                     join = StrokeJoin.Round,
-                    pathEffect = if (isDashed) PathEffect.dashPathEffect(floatArrayOf(15f, 15f), 0f) else null
+                    pathEffect = if (isDashed) PathEffect.dashPathEffect(
+                        floatArrayOf(15f, 15f), 0f
+                    ) else null
                 )
             )
 
@@ -559,8 +776,7 @@ fun AnnualEnergyChart(yearData: LightYearEnergy) {
                 fillPath.close()
 
                 drawPath(
-                    path = fillPath,
-                    brush = Brush.verticalGradient(
+                    path = fillPath, brush = Brush.verticalGradient(
                         colors = listOf(lineColor.copy(alpha = 0.15f), Color.Transparent),
                         startY = 0f,
                         endY = chartHeight
@@ -577,7 +793,10 @@ fun AnnualEnergyChart(yearData: LightYearEnergy) {
             val x = yAxisLabelWidth + (index * stepX)
             // 如果被选中，字体加深/变大，否则正常
             val isSelected = selectedIndex == index
-            textPaint.color = if (isSelected) android.graphics.Color.BLACK else android.graphics.Color.parseColor("#94A3B8")
+            textPaint.color =
+                if (isSelected) android.graphics.Color.BLACK else android.graphics.Color.parseColor(
+                    "#94A3B8"
+                )
             textPaint.typeface = if (isSelected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
 
             drawContext.canvas.nativeCanvas.drawText(
@@ -635,11 +854,18 @@ fun AnnualEnergyChart(yearData: LightYearEnergy) {
             // 绘制背景 (圆角矩形 + 阴影模拟)
             drawContext.canvas.nativeCanvas.apply {
                 // 简单阴影
-                val shadowPaint = Paint().apply { color = android.graphics.Color.parseColor("#20000000") }
-                drawRoundRect(RectF(rect.left+4, rect.top+4, rect.right+4, rect.bottom+4), 20f, 20f, shadowPaint)
+                val shadowPaint =
+                    Paint().apply { color = android.graphics.Color.parseColor("#20000000") }
+                drawRoundRect(
+                    RectF(rect.left + 4, rect.top + 4, rect.right + 4, rect.bottom + 4),
+                    20f,
+                    20f,
+                    shadowPaint
+                )
 
                 // 主体背景 (深色背景，看起来更现代)
-                val bgPaint = Paint().apply { color = android.graphics.Color.parseColor("#CC333333") }
+                val bgPaint =
+                    Paint().apply { color = android.graphics.Color.parseColor("#CC333333") }
                 drawRoundRect(rect, 20f, 20f, bgPaint)
 
                 // 绘制文字
@@ -647,12 +873,20 @@ fun AnnualEnergyChart(yearData: LightYearEnergy) {
 
                 // 今年数值 (蓝色点 + 文字)
                 val p1Y = rect.top + 90f
-                drawCircle(rect.left + padding + 10f, p1Y - 10f, 8f, Paint().apply { color = thisYearColor.toArgb() })
+                drawCircle(
+                    rect.left + padding + 10f,
+                    p1Y - 10f,
+                    8f,
+                    Paint().apply { color = thisYearColor.toArgb() })
                 drawText(thisText, rect.left + padding + 30f, p1Y, tooltipTextPaint)
 
                 // 去年数值 (紫色点 + 文字)
                 val p2Y = rect.top + 130f
-                drawCircle(rect.left + padding + 10f, p2Y - 10f, 8f, Paint().apply { color = lastYearColor.toArgb() })
+                drawCircle(
+                    rect.left + padding + 10f,
+                    p2Y - 10f,
+                    8f,
+                    Paint().apply { color = lastYearColor.toArgb() })
                 drawText(lastText, rect.left + padding + 30f, p2Y, tooltipTextPaint)
             }
         }
@@ -669,7 +903,11 @@ fun DividerLine() {
 
 @Composable
 fun EmptyState(msg: String) {
-    Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp), contentAlignment = Alignment.Center
+    ) {
         Text(msg, color = Gray400, fontSize = 12.sp)
     }
 }
@@ -678,7 +916,11 @@ fun EmptyState(msg: String) {
 fun LegendItem(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         // 小圆点
-        Box(modifier = Modifier.size(8.dp).background(color, CircleShape))
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(color, CircleShape)
+        )
         Spacer(modifier = Modifier.width(4.dp))
         Text(label, fontSize = 12.sp, color = Gray500)
     }

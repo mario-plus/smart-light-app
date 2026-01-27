@@ -126,26 +126,7 @@ interface DeviceService {
     ): Call<NewResponseData<PageResponse<OfflineDevice>?>?>?
 
 
-    @GET(RequestPathKey.KEY_GET_DEVICE_ALARM_LIST)
-    fun deviceAlarmList(
-        params: AlarmRequestParam
-    ): Call<NewResponseData<PageResponse<DeviceAlarmInfo>?>?>?
 
 
-    @GET(RequestPathKey.KEY_REAL_TIME_COUNT)
-    fun deviceStatusSummary(
-    ): Call<NewResponseData<DeviceStatusSummary?>?>?
-
-    //当月能耗对比
-    @GET(RequestPathKey.KEY_GET_LIGHT_ENERGY)
-    fun contrastLightEnergy(): Call<NewResponseData<List<LightEnergy>?>?>?
-
-    //年度用电趋势
-    @GET(RequestPathKey.KEY_GET_ANNUAL_TREND)
-    fun annualPowerConsumptionTrend(): Call<NewResponseData<LightYearEnergy?>?>?
-
-    //近七天用电量
-    @GET(RequestPathKey.KEY_GET_HOME_LIGHT_ENERGY)
-    fun homeLightEnergy(): Call<NewResponseData<List<LightDayEnergy>?>?>?
 
 }

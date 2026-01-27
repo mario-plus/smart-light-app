@@ -166,9 +166,9 @@ object DeviceConstant {
 
     val jobOrStrategyStatusOptions = listOf(-1 to "全部", 1 to "待执行", 2 to "执行中", 3 to "成功", 4 to "失败")
 
-    val alarmLevel = listOf(-1 to "全部", 1 to "正常", 2 to "提示", 3 to "次要", 4 to "重要")
+    val alarmLevelOptions = listOf(-1 to "全部", 0 to "正常", 1 to "提示", 2 to "次要", 3 to "重要", 4 to "紧急")
 
-    val alarmConfirm = listOf( 1 to "已确认", 0 to "未确认")
+    val alarmConfirmOptions = listOf( 1 to "已确认", 0 to "未确认")
 
 
     //双色温单灯产品id

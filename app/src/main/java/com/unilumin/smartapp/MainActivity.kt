@@ -19,7 +19,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,11 +42,12 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_PLAY_BOX
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.mock.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
-import com.unilumin.smartapp.ui.screens.DashboardScreen
+import com.unilumin.smartapp.ui.screens.dashboard.DashboardScreen
 import com.unilumin.smartapp.ui.screens.app.broadcast.SmartBroadScreen
 import com.unilumin.smartapp.ui.screens.app.env.SmartEnvScreen
 import com.unilumin.smartapp.ui.screens.app.monitor.SmartMonitorScreen
 import com.unilumin.smartapp.ui.screens.app.playBox.SmartPlayBoxScreen
+import com.unilumin.smartapp.ui.screens.dashboard.DeviceAlarmScreen
 import com.unilumin.smartapp.ui.screens.device.DeviceDetailScreen
 import com.unilumin.smartapp.ui.screens.device.DeviceStatusChartScreen
 import com.unilumin.smartapp.ui.screens.device.DevicesScreen
@@ -124,7 +124,14 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         //概览
-                        composable("dashboard") { DashboardScreen(retrofitClient) }
+                        composable("dashboard") { DashboardScreen(retrofitClient, onNotificationClick = {
+                            navController.navigate("deviceAlarmScreen")
+                        }) }
+
+                        composable("deviceAlarmScreen") { e ->
+                            DeviceAlarmScreen(
+                                retrofitClient, onBack = { navController.popBackStack() })
+                        }
 
                         //设备
                         composable("devices") {

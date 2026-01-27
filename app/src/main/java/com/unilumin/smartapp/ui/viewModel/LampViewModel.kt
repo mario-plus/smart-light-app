@@ -12,12 +12,18 @@ import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.constant.FILTER_NONE
 import com.unilumin.smartapp.client.constant.PAGE_SIZE
 import com.unilumin.smartapp.client.constant.PREFETCH_DIST
+import com.unilumin.smartapp.client.data.AlarmRequestParam
+import com.unilumin.smartapp.client.data.DeviceAlarmInfo
+import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
 import com.unilumin.smartapp.client.data.LampJobInfo
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampStrategyInfo
+import com.unilumin.smartapp.client.data.LightDayEnergy
+import com.unilumin.smartapp.client.data.LightEnergy
+import com.unilumin.smartapp.client.data.LightYearEnergy
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
@@ -80,9 +86,16 @@ class LampViewModel(
         syncState.value = s
     }
 
+    //单灯模式
     val lampModel = MutableStateFlow(-1)
     fun updateLampModel(s: Int) {
         lampModel.value = s
+    }
+
+    //0未确认，1 已确认
+    val alarmConfirm = MutableStateFlow(0)
+    fun updateAlarmConfirm(s: Int) {
+        alarmConfirm.value = s
     }
 
 
@@ -90,6 +103,66 @@ class LampViewModel(
     val searchQuery = MutableStateFlow("")
     fun updateSearch(query: String) {
         searchQuery.value = query
+    }
+
+    //首页在线率和亮灯率
+    private val _deviceStatusSummary = MutableStateFlow<DeviceStatusSummary?>(null)
+    val deviceStatusSummary = _deviceStatusSummary.asStateFlow()
+
+    //月度能耗对比
+    private val _monthEnergyList = MutableStateFlow<List<LightEnergy>>(emptyList())
+    val monthEnergyList = _monthEnergyList.asStateFlow()
+
+
+    private val _dayEnergyList = MutableStateFlow<List<LightDayEnergy>>(emptyList())
+    val dayEnergyList = _dayEnergyList.asStateFlow()
+
+
+    private val _yearEnergyList = MutableStateFlow(LightYearEnergy())
+    val yearEnergyList = _yearEnergyList.asStateFlow()
+
+
+    /**
+     * 首页在线率和亮灯率
+     * */
+    suspend fun getStatusSummary() {
+        val parseDataNewSuspend = UniCallbackService<DeviceStatusSummary>().parseDataNewSuspend(
+            roadService.deviceStatusSummary(), context
+        )
+        _deviceStatusSummary.value = parseDataNewSuspend
+    }
+
+    /**
+     * 当月数据对比
+     * */
+    suspend fun monthEnergyData() {
+        val parseDataNewSuspend = UniCallbackService<List<LightEnergy>>().parseDataNewSuspend(
+            roadService.contrastLightEnergy(), context
+        )
+        if (parseDataNewSuspend != null) {
+            _monthEnergyList.value = parseDataNewSuspend
+        }
+    }
+
+    /**
+     * 7天能耗
+     * */
+    suspend fun dayEnergyData() {
+        val parseDataNewSuspend = UniCallbackService<List<LightDayEnergy>>().parseDataNewSuspend(
+            roadService.homeLightEnergy(), context
+        )
+        if (parseDataNewSuspend != null) {
+            _dayEnergyList.value = parseDataNewSuspend
+        }
+    }
+
+    suspend fun yearEnergyData() {
+        val parseDataNewSuspend = UniCallbackService<LightYearEnergy>().parseDataNewSuspend(
+            roadService.annualPowerConsumptionTrend(), context
+        )
+        if (parseDataNewSuspend != null) {
+            _yearEnergyList.value = parseDataNewSuspend
+        }
     }
 
 
@@ -146,6 +219,54 @@ class LampViewModel(
                     }
                 }).flow
         }.cachedIn(viewModelScope)
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val deviceAlarmFlow =
+        combine(state, searchQuery, alarmConfirm)
+        { level, searchQuery, alarmConfirm ->
+            Triple(level, searchQuery, alarmConfirm)
+        }.flatMapLatest { (level, searchQuery, alarmConfirm) ->
+            Pager(
+                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+                pagingSourceFactory = {
+                    GenericPagingSource { page, pageSize ->
+                        getDeviceAlarmList(
+                            page, pageSize, searchQuery, level, alarmConfirm
+                        )
+                    }
+                }).flow
+        }.cachedIn(viewModelScope)
+
+
+    suspend fun getDeviceAlarmList(
+        curPage: Int,
+        pageSize: Int,
+        searchQuery: String,
+        level: Int,
+        confirm: Int,
+    ): List<DeviceAlarmInfo> {
+
+        val parseDataNewSuspend =
+            UniCallbackService<PageResponse<DeviceAlarmInfo>>().parseDataNewSuspend(
+                roadService.deviceAlarmList(
+                    curPage = curPage,
+                    pageSize = pageSize,
+                    keyword = searchQuery,
+                    level = level.takeIf { it != FILTER_NONE },
+                    isConfirm = confirm.takeIf { it != FILTER_NONE }
+                ), context
+            )
+        // 安全判空逻辑
+        if (parseDataNewSuspend != null) {
+            _totalCount.value = parseDataNewSuspend.total
+            return parseDataNewSuspend.list
+        } else {
+            _totalCount.value = 0
+            return emptyList()
+        }
+
+    }
 
     suspend fun getLampList(
         curPage: Int,

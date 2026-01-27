@@ -142,21 +142,7 @@ class DeviceViewModel(
     private val _deviceStatusAnalysis = MutableStateFlow<DeviceStatusAnalysisResp?>(null)
     val deviceStatusAnalysisData = _deviceStatusAnalysis.asStateFlow()
 
-    //首页在线率和亮灯率
-    private val _deviceStatusSummary = MutableStateFlow<DeviceStatusSummary?>(null)
-    val deviceStatusSummary = _deviceStatusSummary.asStateFlow()
 
-    //月度能耗对比
-    private val _monthEnergyList = MutableStateFlow<List<LightEnergy>>(emptyList())
-    val monthEnergyList = _monthEnergyList.asStateFlow()
-
-
-    private val _dayEnergyList = MutableStateFlow<List<LightDayEnergy>>(emptyList())
-    val dayEnergyList = _dayEnergyList.asStateFlow()
-
-
-    private val _yearEnergyList = MutableStateFlow(LightYearEnergy())
-    val yearEnergyList = _yearEnergyList.asStateFlow()
 
     //设备列表分页数据列表
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -211,48 +197,7 @@ class DeviceViewModel(
         return parseDataNewSuspend.list
     }
 
-    /**
-     * 首页在线率和亮灯率
-     * */
-    suspend fun getStatusSummary() {
-        val parseDataNewSuspend = UniCallbackService<DeviceStatusSummary>().parseDataNewSuspend(
-            deviceService.deviceStatusSummary(), context
-        )
-        _deviceStatusSummary.value = parseDataNewSuspend
-    }
 
-    /**
-     * 当月数据对比
-     * */
-    suspend fun monthEnergyData() {
-        val parseDataNewSuspend = UniCallbackService<List<LightEnergy>>().parseDataNewSuspend(
-            deviceService.contrastLightEnergy(), context
-        )
-        if (parseDataNewSuspend != null) {
-            _monthEnergyList.value = parseDataNewSuspend
-        }
-    }
-
-    /**
-     * 7天能耗
-     * */
-    suspend fun dayEnergyData() {
-        val parseDataNewSuspend = UniCallbackService<List<LightDayEnergy>>().parseDataNewSuspend(
-            deviceService.homeLightEnergy(), context
-        )
-        if (parseDataNewSuspend != null) {
-            _dayEnergyList.value = parseDataNewSuspend
-        }
-    }
-
-    suspend fun yearEnergyData() {
-        val parseDataNewSuspend = UniCallbackService<LightYearEnergy>().parseDataNewSuspend(
-            deviceService.annualPowerConsumptionTrend(), context
-        )
-        if (parseDataNewSuspend != null) {
-            _yearEnergyList.value = parseDataNewSuspend
-        }
-    }
 
 
     //获取设备列表

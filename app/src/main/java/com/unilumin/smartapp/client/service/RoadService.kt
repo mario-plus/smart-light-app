@@ -1,6 +1,9 @@
 package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
+import com.unilumin.smartapp.client.data.AlarmRequestParam
+import com.unilumin.smartapp.client.data.DeviceAlarmInfo
+import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
@@ -10,6 +13,9 @@ import com.unilumin.smartapp.client.data.LampJobInfo
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampLoopCtlInfo
 import com.unilumin.smartapp.client.data.LampStrategyInfo
+import com.unilumin.smartapp.client.data.LightDayEnergy
+import com.unilumin.smartapp.client.data.LightEnergy
+import com.unilumin.smartapp.client.data.LightYearEnergy
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
@@ -65,4 +71,35 @@ interface RoadService {
     //获取任务场景类型
     @GET(RequestPathKey.KEY_JOB_SCENE_LIST)
     fun getJobSceneList(@Query("subSystemType") subSystemType: Int? = 1): Call<NewResponseData<List<JobSceneElement>?>?>?
+
+
+    /**
+     * 告警统计
+     * */
+    @GET(RequestPathKey.KEY_GET_DEVICE_ALARM_LIST)
+    fun deviceAlarmList(
+        @Query("keyword") keyword: String,
+        @Query("curPage") curPage: Int,
+        @Query("pageSize") pageSize: Int,
+        @Query("isConfirm") isConfirm: Int? = null,
+        @Query("level") level: Int? = null,
+        @Query("isDeal")  isDeal: Int? = 0
+    ): Call<NewResponseData<PageResponse<DeviceAlarmInfo>?>?>?
+
+
+    @GET(RequestPathKey.KEY_REAL_TIME_COUNT)
+    fun deviceStatusSummary(
+    ): Call<NewResponseData<DeviceStatusSummary?>?>?
+
+    //当月能耗对比
+    @GET(RequestPathKey.KEY_GET_LIGHT_ENERGY)
+    fun contrastLightEnergy(): Call<NewResponseData<List<LightEnergy>?>?>?
+
+    //年度用电趋势
+    @GET(RequestPathKey.KEY_GET_ANNUAL_TREND)
+    fun annualPowerConsumptionTrend(): Call<NewResponseData<LightYearEnergy?>?>?
+
+    //近七天用电量
+    @GET(RequestPathKey.KEY_GET_HOME_LIGHT_ENERGY)
+    fun homeLightEnergy(): Call<NewResponseData<List<LightDayEnergy>?>?>?
 }
