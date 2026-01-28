@@ -26,6 +26,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,10 +39,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampLoopCtlInfo
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.LoopCircleItem
+import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
+import com.unilumin.smartapp.ui.screens.dialog.LoopControlDialog
 import com.unilumin.smartapp.ui.theme.CardBgColor
 import com.unilumin.smartapp.ui.theme.IconBgColor
 import com.unilumin.smartapp.ui.theme.TextMain
@@ -58,6 +65,8 @@ fun LampLoopCtlContent(
         lampViewModel.updateState(-1)
     }
 
+    var selectedLoopCtl by remember { mutableStateOf<LampLoopCtlInfo?>(null) }
+
     // 分页数据
     val loopCtlFlow = lampViewModel.lampLoopCtlFlow.collectAsLazyPagingItems()
     BaseLampListScreen(
@@ -66,7 +75,20 @@ fun LampLoopCtlContent(
         keySelector = { it.id },
         searchTitle = "搜索设备名称或序列码"
     ) { item ->
-        LampLoopCtlCard(loopCtlInfo = item, onDetailClick = {})
+        LampLoopCtlCard(loopCtlInfo = item, onDetailClick = { e ->
+            selectedLoopCtl = e
+        })
+    }
+
+    selectedLoopCtl?.let { loopCtl ->
+        LoopControlDialog(
+            deviceName = loopCtl.loopControllerName.toString(),
+            loopInfos = loopCtl.loops,
+            onDismiss = { selectedLoopCtl = null },
+            onConfirm = { action, loops ->
+                lampViewModel.loopCtl(loopCtl.id, loops, action)
+                selectedLoopCtl = null
+            })
     }
 
 }
