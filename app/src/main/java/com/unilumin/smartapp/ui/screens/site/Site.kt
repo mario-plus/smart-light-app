@@ -20,9 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
@@ -89,7 +87,7 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
 
     // Data Sources
     val mapPoints by siteViewModel.mapPoints.collectAsState()
-    val isMapLoading by siteViewModel.isMapLoading.collectAsState()
+    // 【优化】移除了 isMapLoading 的监听
     val totalCount by siteViewModel.totalCount.collectAsState()
     val pagingItems = siteViewModel.sitePagingFlow.collectAsLazyPagingItems()
     val siteRoadInfo by siteViewModel.siteRoadInfo.collectAsState()
@@ -138,10 +136,11 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
 
             // ================== 1. 地图层 ==================
             if (isMapView) {
-                // 将 ViewModel 传入以便内部监听 cameraEffect
                 SiteMapViewContainer(
                     mapPoints = mapPoints,
                     viewModel = siteViewModel,
+                    searchKeyword = searchKeyword,
+                    selectedRoadId = selectedRoad?.id?.toString(),
                     onCameraChange = { minLng, maxLng, minLat, maxLat, zoom ->
                         siteViewModel.onMapCameraChange(minLng, maxLng, minLat, maxLat, zoom)
                     },
@@ -149,23 +148,10 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                         point.siteId?.let { siteViewModel.fetchSiteDetail(it.toLong()) }
                     }
                 )
-
-                if (isMapLoading) {
-                    Surface(
-                        modifier = Modifier.align(Alignment.Center),
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color.White.copy(alpha = 0.9f),
-                        shadowElevation = 4.dp
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.padding(16.dp).size(24.dp),
-                            strokeWidth = 2.dp, color = Blue600
-                        )
-                    }
-                }
+                // 【优化】彻底移除了 Loading 遮罩层 UI
             }
 
-            // ================== 2. 列表层 (代码保持不变) ==================
+            // ================== 2. 列表层 ==================
             if (!isMapView && selectedSiteInfo == null) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     Box(modifier = Modifier.padding(16.dp, 16.dp, 16.dp, 8.dp)) {
@@ -224,7 +210,7 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
                 }
             }
 
-            // ================== 3. 详情弹窗 (代码保持不变) ==================
+            // ================== 3. 详情弹窗 ==================
             AnimatedVisibility(
                 visible = selectedSiteInfo != null,
                 enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
@@ -274,7 +260,9 @@ fun SitesScreen(retrofitClient: RetrofitClient) {
 @Composable
 fun SiteMapViewContainer(
     mapPoints: List<PoleMapPointRes>,
-    viewModel: SiteViewModel, // 传入 VM 用于接收相机指令
+    viewModel: SiteViewModel,
+    searchKeyword: String,
+    selectedRoadId: String?,
     onCameraChange: (Double, Double, Double, Double, Float) -> Unit,
     onPoleClick: (PoleMapPointRes) -> Unit
 ) {
@@ -282,7 +270,8 @@ fun SiteMapViewContainer(
     val mapView = remember { MapView(context) }
     val renderer = remember { SiteMap(context, onPoleClick) }
 
-    // 生命周期管理
+    var isMapLoaded by remember { mutableStateOf(false) }
+
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, mapView) {
         val observer = LifecycleEventObserver { _, event ->
@@ -301,16 +290,33 @@ fun SiteMapViewContainer(
         }
     }
 
-    // 渲染数据
     LaunchedEffect(mapPoints) {
         renderer.render(mapPoints)
     }
 
-    // 【新增】监听 ViewModel 的相机移动指令 (自动跳转)
     LaunchedEffect(Unit) {
         viewModel.cameraEffect.collectLatest { update ->
-            // 使用 animateCamera 让跳转更丝滑
             mapView.map?.animateCamera(update)
+        }
+    }
+
+    LaunchedEffect(searchKeyword, selectedRoadId, isMapLoaded) {
+        if (!isMapLoaded) return@LaunchedEffect
+        val map = mapView.map ?: return@LaunchedEffect
+        if (map.projection != null && map.cameraPosition != null) {
+            val visibleRegion = map.projection.visibleRegion
+            if (visibleRegion != null) {
+                val bounds = visibleRegion.latLngBounds
+                val zoom = map.cameraPosition.zoom
+                Log.d("SiteMapView", "筛选变化，原地刷新数据: $searchKeyword")
+                onCameraChange(
+                    bounds.southwest.longitude,
+                    bounds.northeast.longitude,
+                    bounds.southwest.latitude,
+                    bounds.northeast.latitude,
+                    zoom
+                )
+            }
         }
     }
 
@@ -321,21 +327,17 @@ fun SiteMapViewContainer(
                 renderer.attachToMap(map)
 
                 map.setOnMapLoadedListener {
-                    Log.i("SiteMapView", "地图加载完成，初始请求")
+                    Log.i("SiteMapView", "地图加载完成")
+                    isMapLoaded = true
 
-                    // 1. 设置初始视角为【宏观视角】 (Zoom 10)
-                    // 这里坐标设为项目大概位置，或者城市中心。
-                    // 重要的是 Zoom 要小，让 precision 变大，从而拉取聚合数据。
-                    val centerLat = 22.5428
-                    val centerLng = 113.959
-                    val startZoom = 10f
+                    val centerLat = 35.0
+                    val centerLng = 105.0
+                    val startZoom = 4f
 
                     map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(centerLat, centerLng), startZoom))
 
-                    // 2. 手动触发请求
                     val projection = map.projection
                     val bounds = projection.visibleRegion.latLngBounds
-
                     onCameraChange(
                         bounds.southwest.longitude,
                         bounds.northeast.longitude,

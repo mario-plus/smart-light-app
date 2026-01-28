@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -43,20 +42,23 @@ class SiteViewModel(
     private val _mapPoints = MutableStateFlow<List<PoleMapPointRes>>(emptyList())
     val mapPoints = _mapPoints.asStateFlow()
 
-    // 地图 Loading 状态
-    private val _isMapLoading = MutableStateFlow(false)
-    val isMapLoading = _isMapLoading.asStateFlow()
+    // 【优化】移除了 isMapLoading 状态，实现静默加载
 
     // 地图请求防抖 Job
     private var mapFetchJob: Job? = null
 
-    // ================== 2. 详情与筛选状态 ==================
-    // 当前选中的杆体详情
-    private val _selectedSiteInfo = MutableStateFlow<SiteInfo?>(null)
-    val selectedSiteInfo = _selectedSiteInfo.asStateFlow()
+    // 搜索跳转防抖 Job
+    private var searchLocateJob: Job? = null
+
+    // 相机移动指令流（用于搜索跳转）
     private val _cameraEffect = MutableSharedFlow<CameraUpdate>()
     val cameraEffect = _cameraEffect.asSharedFlow()
-    // 详情加载 Loading
+
+    // ================== 2. 详情与筛选状态 ==================
+    private val _selectedSiteInfo = MutableStateFlow<SiteInfo?>(null)
+    val selectedSiteInfo = _selectedSiteInfo.asStateFlow()
+
+    // 详情加载 Loading (详情页可能还需要保留Loading，视需求而定，这里暂时保留详情的，只去除地图的)
     private val _isDetailLoading = MutableStateFlow(false)
     val isDetailLoading = _isDetailLoading.asStateFlow()
 
@@ -68,7 +70,10 @@ class SiteViewModel(
     private val _selectedRoadId = MutableStateFlow<String?>(null)
     private val _searchKeyword = MutableStateFlow("")
     val searchKeyword = _searchKeyword.asStateFlow()
+
+    // 标记是否是首次加载地图
     private var isFirstLoad = true
+
     // 道路元数据
     private val _siteRoadInfo = MutableStateFlow<List<SiteRoadInfo>?>(null)
     val siteRoadInfo = _siteRoadInfo.asStateFlow()
@@ -77,24 +82,21 @@ class SiteViewModel(
         getRoadList()
     }
 
-// ================== 核心方法：地图视口变化加载数据 ==================
-    /**
-     * @param zoom 当前地图缩放级别
-     */
+    // ================== 核心方法：地图视口变化加载数据 ==================
     fun onMapCameraChange(
         minLng: Double, maxLng: Double,
         minLat: Double, maxLat: Double,
         zoom: Float
     ) {
-        // 1. 防抖 (依然保留，避免频繁请求，但移除 Loading 提示)
+        // 1. 防抖
         mapFetchJob?.cancel()
         mapFetchJob = viewModelScope.launch {
             delay(300)
-            // 移除 Loading 状态设置： _isMapLoading.value = true
+            // 【优化】不再设置 Loading = true，静默请求
 
-            // 2. 动态精度计算 (解决缩小不合并问题，增加 Zoom < 10 的处理)
+            // 2. 动态精度计算
             val precision = when {
-                zoom < 10 -> 1        // 省/全国级：极大网格 (聚合所有)
+                zoom < 10 -> 1        // 宏观视图
                 zoom < 12 -> 10       // 市级
                 zoom < 14 -> 100      // 区级
                 zoom < 16 -> 1000     // 街道级
@@ -117,66 +119,37 @@ class SiteViewModel(
                 )
 
                 val resultList = response ?: emptyList()
-
-                // 直接更新数据流，Compose 会自动计算差异并重绘
+                // 数据回来后直接更新，界面会自动刷新，无感知
                 _mapPoints.value = resultList
 
-                // =========================================================
-                // 核心逻辑：首次加载时，寻找最密集的点并跳转
-                // =========================================================
+                // 首次加载自动寻找最密集的点
                 if (isFirstLoad && resultList.isNotEmpty()) {
-                    isFirstLoad = false // 标记已处理，防止后续拖动地图时乱跳
+                    isFirstLoad = false
                     findAndMoveToDensestPoint(resultList)
                 }
 
             } catch (e: Exception) {
-                // 静默失败，不打断用户操作
                 e.printStackTrace()
             }
-            // finally 块已移除，不再操作 Loading 状态
         }
     }
 
-    /**
-     * 寻找数量最多的聚合点，并生成相机移动指令
-     */
     private suspend fun findAndMoveToDensestPoint(points: List<PoleMapPointRes>) {
-        // 按 count 降序排序，取第一个
         val maxPoint = points.maxByOrNull { it.count }
-
         if (maxPoint != null) {
-            Log.d("SiteViewModel", "自动定位最密区域: count=${maxPoint.count} at [${maxPoint.lat}, ${maxPoint.lng}]")
-
-            // 创建指令：移动到该点，并直接放大到 Zoom 16 (街道级)
             val update = CameraUpdateFactory.newLatLngZoom(
                 LatLng(maxPoint.lat.toDoubleOrNull() ?: 0.0, maxPoint.lng.toDoubleOrNull() ?: 0.0),
-
                 16f
             )
             _cameraEffect.emit(update)
         }
     }
 
-
     // ================== 点击杆体获取详情 ==================
     fun fetchSiteDetail(siteId: Long) {
-//        viewModelScope.launch {
-//            _isDetailLoading.value = true
-//            try {
-//                val result = UniCallbackService<SiteInfo>().parseDataNewSuspend(
-//                    siteService.getSiteDetail(siteId),
-//                    context
-//                )
-//                _selectedSiteInfo.value = result
-//            } catch (e: Exception) {
-//                e.printStackTrace()
-//            } finally {
-//                _isDetailLoading.value = false
-//            }
-//        }
+        // 详情获取逻辑
     }
 
-    // 清除选中状态（关闭弹窗）
     fun clearSelection() {
         _selectedSiteInfo.value = null
     }
@@ -209,14 +182,50 @@ class SiteViewModel(
         return result?.list ?: emptyList()
     }
 
-    // ================== 筛选条件更新 ==================
+    // ================== 筛选与定位 ==================
+
     fun updateRoadFilter(roadId: String?) {
         _selectedRoadId.value = roadId
-        // 注意：UI层监听到筛选变化后，如果处于地图模式，应当触发一次刷新
+        triggerSearchAndLocate(_searchKeyword.value, roadId)
     }
 
     fun updateSearchKeyword(keyword: String) {
         _searchKeyword.value = keyword
+        triggerSearchAndLocate(keyword, _selectedRoadId.value)
+    }
+
+    private fun triggerSearchAndLocate(keyword: String, roadId: String?) {
+        searchLocateJob?.cancel()
+        if (keyword.isBlank() && roadId == null) return
+
+        searchLocateJob = viewModelScope.launch {
+            delay(800)
+            // 【优化】静默请求，不显示 Loading
+
+            try {
+                val rawResponse = siteService.getSiteList(
+                    curPage = 1,
+                    pageSize = 1,
+                    roadIdList = roadId?.toLongOrNull()?.let { listOf(it) },
+                    tagCondition = "or",
+                    keyword = keyword
+                )
+                val result = UniCallbackService<PageResponse<SiteInfo>>().parseDataNewSuspend(rawResponse, context)
+
+                val targetSite = result?.list?.firstOrNull()
+
+                if (targetSite != null) {
+                    val lat = targetSite.latitude
+                    val lng = targetSite.longitude
+
+                    if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+                        _cameraEffect.emit(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 16f))
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     private fun getRoadList() {
