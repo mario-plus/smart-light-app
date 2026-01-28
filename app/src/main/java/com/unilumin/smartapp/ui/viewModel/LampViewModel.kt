@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -18,12 +19,14 @@ import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
+import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LampJobInfo
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampStrategyInfo
 import com.unilumin.smartapp.client.data.LightDayEnergy
 import com.unilumin.smartapp.client.data.LightEnergy
 import com.unilumin.smartapp.client.data.LightYearEnergy
+import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
@@ -365,6 +368,41 @@ class LampViewModel(
             )
         _totalCount.value = parseDataNewSuspend?.total!!
         return parseDataNewSuspend.list
+    }
+
+    //设备控制按钮
+    fun lampCtl(deviceId: Long, cmdType: Int, cmdValue: Int) {
+        launchWithLoading {
+            try {
+                val call: Call<NewResponseData<String?>?>? = roadService.lampCtl(
+                    LampCtlReq(
+                        cmdType = cmdType,
+                        cmdValue = cmdValue,
+                        ids = listOf(deviceId),
+                        subSystemType = 1
+                    )
+                )
+                UniCallbackService<String>().parseDataNewSuspend(call, context)
+                Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    //设备控制按钮
+    fun loopCtl(id: Long, numList: List<Int>, onOff: Int) {
+        launchWithLoading {
+            try {
+                val call: Call<NewResponseData<String?>?>? = roadService.loopCtl(
+                    LoopCtlReq(listOf(id), numList, onOff)
+                )
+                UniCallbackService<String>().parseDataNewSuspend(call, context)
+                Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
 

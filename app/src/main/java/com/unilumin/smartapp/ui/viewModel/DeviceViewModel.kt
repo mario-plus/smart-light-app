@@ -24,6 +24,7 @@ import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.LampCtlReq
+import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LightDayEnergy
 import com.unilumin.smartapp.client.data.LightEnergy
 import com.unilumin.smartapp.client.data.LightYearEnergy
@@ -120,7 +121,7 @@ class DeviceViewModel(
     private val _historyDataList = MutableStateFlow<List<HistoryData>>(emptyList())
     val historyDataList = _historyDataList.asStateFlow()
 
-    private val _pagingState = MutableStateFlow<PagingState>(PagingState())
+    private val _pagingState = MutableStateFlow(PagingState())
     val pagingState = _pagingState.asStateFlow()
 
     //基础信息
@@ -141,7 +142,6 @@ class DeviceViewModel(
     //离线图表数据
     private val _deviceStatusAnalysis = MutableStateFlow<DeviceStatusAnalysisResp?>(null)
     val deviceStatusAnalysisData = _deviceStatusAnalysis.asStateFlow()
-
 
 
     //设备列表分页数据列表
@@ -298,40 +298,7 @@ class DeviceViewModel(
         }
     }
 
-    //设备控制按钮
-    fun lampCtl(deviceId: Long, cmdType: Int, cmdValue: Int) {
-        launchWithLoading {
-            try {
-                val call: Call<NewResponseData<String?>?>? = deviceService.lampCtl(
-                    LampCtlReq(
-                        cmdType = cmdType,
-                        cmdValue = cmdValue,
-                        ids = listOf(deviceId),
-                        subSystemType = 1
-                    )
-                )
-                UniCallbackService<String>().parseDataNewSuspend(call, context)
-                Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
 
-    //设备控制按钮
-    fun loopCtl(id: Long, numList: List<Int>, onOff: Int) {
-        launchWithLoading {
-            try {
-                val call: Call<NewResponseData<String?>?>? = deviceService.loopCtl(
-                    LoopCtlReq(listOf(id), numList, onOff)
-                )
-                UniCallbackService<String>().parseDataNewSuspend(call, context)
-                Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
 
     /**
      * 离线报表统计信息

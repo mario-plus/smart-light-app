@@ -23,6 +23,12 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,6 +45,7 @@ import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.DeviceStatusRow
 import com.unilumin.smartapp.ui.components.ModernStateSelector
+import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,10 +59,10 @@ fun LampLightContent(
         lampViewModel.updateSearch("")
         lampViewModel.updateState(-1)
     }
+    var selectedLamp by remember { mutableStateOf<LampLightInfo?>(null) }
+
     // 分页数据
     val lampLightFlow = lampViewModel.lampLightFlow.collectAsLazyPagingItems()
-
-
     val model = lampViewModel.lampModel.collectAsState()
     BaseLampListScreen(
         viewModel = lampViewModel,
@@ -73,15 +80,35 @@ fun LampLightContent(
                     lampViewModel.updateLampModel(newValue)
                 })
         }) { item ->
-        LampLightCard(item = item, onDetailClick = {})
+        LampLightCard(item = item, onDetailClick = { clickedItem ->
+            selectedLamp = clickedItem
+        })
     }
 
+    selectedLamp?.let { lamp ->
+        DeviceControlDialog(
+            productId = lamp.productId?.toString() ?: "",
+            deviceName = lamp.name ?: "未知设备",
+            initialBrightness = lamp.bright1?.toInt(),
+            initColorT = lamp.bright2?.toInt(),
+            onDismiss = {
+                //改字段不能移除，否则dialog无法关闭
+                selectedLamp = null
+            },
+            onClick = { a, b ->
+                lampViewModel.lampCtl(lamp.id, a, b)
+                selectedLamp = null
+            }
+        )
+    }
 }
 
 
 @Composable
 fun LampLightCard(
-    item: LampLightInfo, onDetailClick: (LampLightInfo) -> Unit, modifier: Modifier = Modifier
+    item: LampLightInfo,
+    onDetailClick: (LampLightInfo) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier

@@ -414,6 +414,7 @@ data class SystemConfig(
 
 
 data class LampLightInfo(
+
     var id: Long,
 
     var name: String? = null,

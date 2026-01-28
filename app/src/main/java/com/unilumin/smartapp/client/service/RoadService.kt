@@ -7,6 +7,7 @@ import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
+import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LampGateWayInfo
 import com.unilumin.smartapp.client.data.LampGroupInfo
 import com.unilumin.smartapp.client.data.LampJobInfo
@@ -16,6 +17,7 @@ import com.unilumin.smartapp.client.data.LampStrategyInfo
 import com.unilumin.smartapp.client.data.LightDayEnergy
 import com.unilumin.smartapp.client.data.LightEnergy
 import com.unilumin.smartapp.client.data.LightYearEnergy
+import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
@@ -24,6 +26,7 @@ import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Query
 
 interface RoadService {
@@ -102,4 +105,12 @@ interface RoadService {
     //近七天用电量
     @GET(RequestPathKey.KEY_GET_HOME_LIGHT_ENERGY)
     fun homeLightEnergy(): Call<NewResponseData<List<LightDayEnergy>?>?>?
+
+
+    @POST(RequestPathKey.KEY_LAMP_CTL)
+    fun lampCtl(@Body lampCtlReq: LampCtlReq): Call<NewResponseData<String?>?>?
+
+    @PUT(RequestPathKey.KEY_LOOP_CTL)
+    fun loopCtl(@Body loopCtlReq: LoopCtlReq): Call<NewResponseData<String?>?>?
+
 }

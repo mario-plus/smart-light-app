@@ -44,11 +44,6 @@ interface DeviceService {
     ): Call<NewResponseData<PageResponse<IotDevice>?>?>?
 
 
-    @POST(RequestPathKey.KEY_LAMP_CTL)
-    fun lampCtl(@Body lampCtlReq: LampCtlReq): Call<NewResponseData<String?>?>?
-
-    @PUT(RequestPathKey.KEY_LOOP_CTL)
-    fun loopCtl(@Body loopCtlReq: LoopCtlReq): Call<NewResponseData<String?>?>?
 
     @GET(RequestPathKey.KEY_ENV_DATA)
     fun getEnvData(@Query("id") id: Long): Call<NewResponseData<EnvData?>?>?
