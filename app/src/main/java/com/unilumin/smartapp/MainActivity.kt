@@ -137,8 +137,7 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                 retrofitClient = retrofitClient,
                                 onDetailClick = { lightDevice ->
                                     val deviceJson = Gson().toJson(lightDevice)
-                                    val encodedJson =
-                                        URLEncoder.encode(deviceJson, "UTF-8")
+                                    val encodedJson = URLEncoder.encode(deviceJson, "UTF-8")
                                     navController.navigate("deviceDetail/$encodedJson")
                                 },
                                 onMenuClick = { e ->
@@ -175,80 +174,81 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                     navController.popBackStack()
                                 })
                             }
-                            //智慧广播
-                            composable("smartBroadScreen") { e ->
-                                SmartBroadScreen(
-                                    retrofitClient, onBack = { navController.popBackStack() })
-                            }
-                            //智能感知
-                            composable("smartEnvScreen") { e ->
-                                SmartEnvScreen(
-                                    retrofitClient, onBack = { navController.popBackStack() })
-                            }
-
-                            //安防监控
-                            composable("smartMonitorScreen") { e ->
-                                SmartMonitorScreen(
-                                    retrofitClient, onBack = { navController.popBackStack() })
-                            }
-
-                            //智慧屏幕
-                            composable("smartPlayBoxScreen") { e ->
-                                SmartPlayBoxScreen(
-                                    retrofitClient, onBack = { navController.popBackStack() })
-                            }
-
-
-                            //设备详情页面
-                            composable("deviceDetail/{deviceJson}") { backStackEntry ->
-                                //如果此处的json过大，可以改成deviceId，deviceName进行传递
-                                val encodedJson = backStackEntry.arguments?.getString("deviceJson")
-                                val deviceJson = URLDecoder.decode(encodedJson, "UTF-8")
-                                val iotDevice =
-                                    Gson().fromJson(deviceJson, IotDevice::class.java)
-                                DeviceDetailScreen(
-                                    iotDevice = iotDevice,
-                                    retrofitClient = retrofitClient,
-                                    onBack = { navController.popBackStack() })
-                            }
-                            //站点
-                            composable("sites") { SitesScreen(retrofitClient) }
-
-                            //我的
-                            composable("profile") {
-                                ProfileScreen(
-                                    imageLoader = imageLoader,
-                                    retrofitClient = retrofitClient, onLogout = {
-                                        TokenManagerFactory.getInstance(context).clear()
-                                        isLoggedIn = false
-                                        sessionKey++
-                                    }, onItemClick = { name, profileViewMode ->
-                                        if (name == DeviceConstant.SYSTEM_INFO) {
-                                            cachedProfileViewModel = profileViewMode
-                                            navController.navigate("systemInfo")
-                                        } else if (name == DeviceConstant.SYSTEM_CONFIG) {
-                                            navController.navigate("systemConfig")
-                                        }
-                                    }
-
-                                )
-                            }
-                            //系统信息
-                            composable("systemInfo") { e ->
-                                cachedProfileViewModel?.let {
-                                    SystemInfoScreen(
-                                        profileViewModel = it,
-                                        onBack = { navController.popBackStack() })
-                                }
-                            }
-                            //系统配置
-                            composable("systemConfig") { e ->
-                                SystemConfigScreen(
-                                    retrofitClient = retrofitClient,
-                                    onBack = { navController.popBackStack() })
-                            }
-
                         }
+                        //智慧广播
+                        composable("smartBroadScreen") { e ->
+                            SmartBroadScreen(
+                                retrofitClient, onBack = { navController.popBackStack() })
+                        }
+                        //智能感知
+                        composable("smartEnvScreen") { e ->
+                            SmartEnvScreen(
+                                retrofitClient, onBack = { navController.popBackStack() })
+                        }
+
+                        //安防监控
+                        composable("smartMonitorScreen") { e ->
+                            SmartMonitorScreen(
+                                retrofitClient, onBack = { navController.popBackStack() })
+                        }
+
+                        //智慧屏幕
+                        composable("smartPlayBoxScreen") { e ->
+                            SmartPlayBoxScreen(
+                                retrofitClient, onBack = { navController.popBackStack() })
+                        }
+
+
+                        //设备详情页面
+                        composable("deviceDetail/{deviceJson}") { backStackEntry ->
+                            //如果此处的json过大，可以改成deviceId，deviceName进行传递
+                            val encodedJson = backStackEntry.arguments?.getString("deviceJson")
+                            val deviceJson = URLDecoder.decode(encodedJson, "UTF-8")
+                            val iotDevice = Gson().fromJson(deviceJson, IotDevice::class.java)
+                            DeviceDetailScreen(
+                                iotDevice = iotDevice,
+                                retrofitClient = retrofitClient,
+                                onBack = { navController.popBackStack() })
+                        }
+                        //站点
+                        composable("sites") { SitesScreen(retrofitClient) }
+
+                        //我的
+                        composable("profile") {
+                            ProfileScreen(
+                                imageLoader = imageLoader,
+                                retrofitClient = retrofitClient,
+                                onLogout = {
+                                    TokenManagerFactory.getInstance(context).clear()
+                                    isLoggedIn = false
+                                    sessionKey++
+                                },
+                                onItemClick = { name, profileViewMode ->
+                                    if (name == DeviceConstant.SYSTEM_INFO) {
+                                        cachedProfileViewModel = profileViewMode
+                                        navController.navigate("systemInfo")
+                                    } else if (name == DeviceConstant.SYSTEM_CONFIG) {
+                                        navController.navigate("systemConfig")
+                                    }
+                                }
+
+                            )
+                        }
+                        //系统信息
+                        composable("systemInfo") { e ->
+                            cachedProfileViewModel?.let {
+                                SystemInfoScreen(
+                                    profileViewModel = it,
+                                    onBack = { navController.popBackStack() })
+                            }
+                        }
+                        //系统配置
+                        composable("systemConfig") { e ->
+                            SystemConfigScreen(
+                                retrofitClient = retrofitClient,
+                                onBack = { navController.popBackStack() })
+                        }
+
                     }
                 }
             }

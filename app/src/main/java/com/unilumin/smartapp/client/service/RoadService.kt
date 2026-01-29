@@ -119,7 +119,7 @@ interface RoadService {
     fun loopCtl(@Body loopCtlReq: LoopCtlReq): Call<NewResponseData<String?>?>?
 
     @POST(RequestPathKey.KEY_GET_GROUP_MEMBER)
-    fun getGroupMembers(groupReq: GroupMemberReq): Call<NewResponseData<PageResponse<GroupMemberInfo>?>?>?
+    fun getGroupMembers(@Body groupReq: GroupMemberReq): Call<NewResponseData<PageResponse<GroupMemberInfo>?>?>?
 
 
 

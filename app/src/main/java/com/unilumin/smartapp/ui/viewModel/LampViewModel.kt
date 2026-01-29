@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -243,8 +244,7 @@ class LampViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val deviceAlarmFlow =
-        combine(state, searchQuery, alarmConfirm)
-        { level, searchQuery, alarmConfirm ->
+        combine(state, searchQuery, alarmConfirm) { level, searchQuery, alarmConfirm ->
             Triple(level, searchQuery, alarmConfirm)
         }.flatMapLatest { (level, searchQuery, alarmConfirm) ->
             Pager(
@@ -269,12 +269,11 @@ class LampViewModel(
         val parseDataNewSuspend =
             UniCallbackService<PageResponse<DeviceAlarmInfo>>().parseDataNewSuspend(
                 roadService.deviceAlarmList(
-                    curPage = curPage,
-                    pageSize = pageSize,
-                    keyword = searchQuery,
-                    level = level.takeIf { it != FILTER_NONE },
-                    isConfirm = confirm.takeIf { it != FILTER_NONE }
-                ), context
+                curPage = curPage,
+                pageSize = pageSize,
+                keyword = searchQuery,
+                level = level.takeIf { it != FILTER_NONE },
+                isConfirm = confirm.takeIf { it != FILTER_NONE }), context
             )
         return processPageResponse(parseDataNewSuspend, _totalCount)
     }
@@ -301,32 +300,33 @@ class LampViewModel(
     }
 
 
+    /**
+     * 注意此处bindState和state替换
+     * 目的是为了按条件隐藏在线/离线状态，所以使用state字段作为已绑定/未绑定，bindState作为在线/离线
+     * */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val groupMemberFlow =
-        combine(currentGroupInfo.map { it?.id }, state, searchQuery, bindState)
-        { groupId, state, searchQuery, bindState ->
-            GroupMemberFilter(
-                groupId = groupId,
-                state = state,
-                searchQuery = searchQuery,
-                bindState = bindState
-            )
-        }.flatMapLatest { filter ->
-            Pager(
-                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
-                pagingSourceFactory = {
-                    GenericPagingSource { page, pageSize ->
-                        getGroupMember(
-                            filter.groupId,
-                            page,
-                            pageSize,
-                            filter.searchQuery,
-                            filter.state,
-                            filter.bindState
-                        )
-                    }
-                }).flow
-        }.cachedIn(viewModelScope)
+    val groupMemberFlow = combine(
+        currentGroupInfo.map { it?.id }, bindState, searchQuery, state
+    ) { groupId, state, searchQuery, bindState ->
+        GroupMemberFilter(
+            groupId = groupId, state = state, searchQuery = searchQuery, bindState = bindState
+        )
+    }.flatMapLatest { filter ->
+        Pager(
+            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+            pagingSourceFactory = {
+                GenericPagingSource { page, pageSize ->
+                    getGroupMember(
+                        filter.groupId,
+                        page,
+                        pageSize,
+                        filter.searchQuery,
+                        filter.state,
+                        filter.bindState
+                    )
+                }
+            }).flow
+    }.cachedIn(viewModelScope)
 
     suspend fun getGroupMember(
         id: Long?,
@@ -336,20 +336,21 @@ class LampViewModel(
         netState: Int,
         bindState: Int,
     ): List<GroupMemberInfo> {
-        val parseDataNewSuspend =
-            UniCallbackService<PageResponse<GroupMemberInfo>>().parseDataNewSuspend(
-                roadService.getGroupMembers(
-                    GroupMemberReq(
-                        keyword = searchQuery,
-                        curPage = curPage,
-                        pageSize = pageSize,
-                        netState = netState.takeIf { it != FILTER_NONE },
-                        bindState = bindState.takeIf { it != FILTER_NONE },
-                        id = id
-                    )
-                ), context
-            )
-        return processPageResponse(parseDataNewSuspend, _totalCount)
+        val request = GroupMemberReq(
+            keyword = searchQuery,
+            curPage = curPage,
+            pageSize = pageSize,
+            netState = netState.takeIf { it != FILTER_NONE },
+            bindState = bindState.takeIf { it != FILTER_NONE },
+            id = id
+        )
+        val rawResponse = roadService.getGroupMembers(request)
+        val parsedData = UniCallbackService<PageResponse<GroupMemberInfo>>().parseDataNewSuspend(
+            rawResponse, context
+        )
+        val resultList = processPageResponse(parsedData, _totalCount)
+        return resultList
+
     }
 
 
@@ -554,8 +555,7 @@ class LampViewModel(
     }
 
     private fun <T> processPageResponse(
-        response: PageResponse<T>?,
-        countStateFlow: MutableStateFlow<Int>
+        response: PageResponse<T>?, countStateFlow: MutableStateFlow<Int>
     ): List<T> {
         return if (response != null) {
             countStateFlow.value = response.total

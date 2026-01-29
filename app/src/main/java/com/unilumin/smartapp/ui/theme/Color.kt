@@ -87,3 +87,10 @@ val DividerGrey = Color(0xFFE0E0E0)
 val SuccessColor = Color(0xFF4CAF50)     // 成功绿
 val FailColor = Color(0xFFE53935)        // 失败红
 val ProcessingColor = Color(0xFF2196F3)  // 进行中蓝
+
+// --- 配色方案 (参考 LampLightCard) ---
+val IconBgBlue = Color(0xFFEBF2FF)
+val IconTintBlue = Color(0xFF2F78FF)
+val PanelBg = Color(0xFFF7F8FA) // 中间灰色面板背景
+val StatusGreen = Color(0xFF52C41A)
+val StatusGray = Color(0xFFBFBFBF)
