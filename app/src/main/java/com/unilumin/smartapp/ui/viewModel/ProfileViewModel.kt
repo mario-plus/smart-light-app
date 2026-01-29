@@ -2,9 +2,7 @@ package com.unilumin.smartapp.ui.viewModel
 
 
 import android.app.Application
-import android.content.Context
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
@@ -54,18 +52,6 @@ class ProfileViewModel(
     //用户头像地址
     private val _userAvatarUrl = MutableStateFlow<String?>(null)
     val userAvatarUrl = _userAvatarUrl.asStateFlow()
-
-
-
-    fun loadData() {
-        fetchProjects()
-        fetchUserInfo()
-    }
-
-
-
-
-
 
     fun fetchProjects() {
         viewModelScope.launch {

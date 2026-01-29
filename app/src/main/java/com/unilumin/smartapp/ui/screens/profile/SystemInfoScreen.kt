@@ -1,3 +1,5 @@
+
+import android.app.Application
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -18,22 +20,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -43,11 +39,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.data.SystemFileInfo
@@ -56,32 +50,31 @@ import com.unilumin.smartapp.ui.components.DetailCard
 import com.unilumin.smartapp.ui.components.DetailRow
 import com.unilumin.smartapp.ui.components.LoadingContent
 import com.unilumin.smartapp.ui.components.UsageLinearBar
-import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.theme.TextDark
 import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
 import com.unilumin.smartapp.ui.viewModel.ViewModelFactory
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SystemInfoScreen(
-    profileViewModel: ProfileViewModel,
+    retrofitClient: RetrofitClient,
     onBack: () -> Unit
 ) {
+
+    val context = LocalContext.current
+    val application = context.applicationContext as Application
+
+    val profileViewModel: ProfileViewModel = viewModel(
+        factory = ViewModelFactory {
+            ProfileViewModel(retrofitClient, application)
+        })
 
     // 使用 collectAsState 观察数据流
     val systemInfo by profileViewModel.systemInfo.collectAsState()
     // 观察 ViewModel 状态
     val isLoading by profileViewModel.isLoading.collectAsState()
 
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            profileViewModel.getSystemInfo()
-            delay(5000) // 每 5 秒刷新一次
-        }
-    }
 
     Scaffold(
         topBar = {

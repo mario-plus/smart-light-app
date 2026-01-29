@@ -1,5 +1,6 @@
 package com.unilumin.smartapp.ui.screens.profile
 
+import android.app.Application
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,9 +57,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.menuItems
 import com.unilumin.smartapp.ui.components.ProfileMenuItem
 import com.unilumin.smartapp.ui.theme.Blue600
@@ -76,11 +80,17 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProfileScreen(
     imageLoader: ImageLoader,
-    profileViewModel: ProfileViewModel,
+    retrofitClient: RetrofitClient,
     onLogout: () -> Unit,
     onItemClick: (name: String, profileViewModel: ProfileViewModel) -> Unit
 ) {
     val context = LocalContext.current
+    val application = context.applicationContext as Application
+
+    val profileViewModel: ProfileViewModel = viewModel(
+        factory = ViewModelFactory {
+            ProfileViewModel(retrofitClient, application)
+        })
 
     val scope = rememberCoroutineScope()
     val currentProject by profileViewModel.currentProject.collectAsState()
@@ -90,6 +100,12 @@ fun ProfileScreen(
 
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+
+    LaunchedEffect(Unit) {
+        profileViewModel.fetchProjects()
+        profileViewModel.fetchUserInfo()
+    }
+
 
     // --- 底部抽屉 (切换项目) ---
     if (showBottomSheet) {
@@ -109,15 +125,16 @@ fun ProfileScreen(
                     items(
                         items = projectList, key = { it.id }) { project ->
                         val isSelected = project.id == currentProject?.id
-                        Row(modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                profileViewModel.switchProject(project)
-                                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                    if (!sheetState.isVisible) showBottomSheet = false
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    profileViewModel.switchProject(project)
+                                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                        if (!sheetState.isVisible) showBottomSheet = false
+                                    }
                                 }
-                            }
-                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                                .padding(horizontal = 24.dp, vertical = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween) {
                             Column(modifier = Modifier.weight(1f)) {

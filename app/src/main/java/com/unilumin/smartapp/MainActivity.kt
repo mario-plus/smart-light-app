@@ -1,9 +1,8 @@
 package com.unilumin.smartapp
-import androidx.compose.runtime.saveable.rememberSaveable
+
 import SmartLampScreen
 import SystemConfigScreen
 import SystemInfoScreen
-import android.app.Application
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,16 +13,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -42,11 +40,11 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_PLAY_BOX
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.mock.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
-import com.unilumin.smartapp.ui.screens.dashboard.DashboardScreen
 import com.unilumin.smartapp.ui.screens.app.broadcast.SmartBroadScreen
 import com.unilumin.smartapp.ui.screens.app.env.SmartEnvScreen
 import com.unilumin.smartapp.ui.screens.app.monitor.SmartMonitorScreen
 import com.unilumin.smartapp.ui.screens.app.playBox.SmartPlayBoxScreen
+import com.unilumin.smartapp.ui.screens.dashboard.DashboardScreen
 import com.unilumin.smartapp.ui.screens.dashboard.DeviceAlarmScreen
 import com.unilumin.smartapp.ui.screens.device.DeviceDetailScreen
 import com.unilumin.smartapp.ui.screens.device.DeviceStatusChartScreen
@@ -57,8 +55,6 @@ import com.unilumin.smartapp.ui.screens.site.SitesScreen
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.Gray900
-import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
-import com.unilumin.smartapp.ui.viewModel.ViewModelFactory
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -86,17 +82,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
     val context = LocalContext.current
-    val application = context.applicationContext as Application
-
     // 使用 sessionKey 来强制重置整个 App 的状态
     var sessionKey by rememberSaveable { mutableIntStateOf(0) }
     var isLoggedIn by rememberSaveable { mutableStateOf(false) }
-
-    val profileViewModel: ProfileViewModel = viewModel(
-        factory = ViewModelFactory {
-            ProfileViewModel(retrofitClient, application)
-        })
-
     var imageLoader: ImageLoader = retrofitClient.getImageLoader(context)
     MaterialTheme(
         colorScheme = lightColorScheme(
@@ -113,9 +101,6 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         sessionKey++
                     })
             } else {
-                LaunchedEffect(Unit) {
-                    profileViewModel.loadData()
-                }
                 Scaffold(
                     bottomBar = { BottomNavBar(navController) }) { innerPadding ->
                     NavHost(
@@ -124,15 +109,15 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         //概览
-                        composable("dashboard") { DashboardScreen(retrofitClient, onNotificationClick = {
-                            navController.navigate("deviceAlarmScreen")
-                        }) }
-
+                        composable("dashboard") {
+                            DashboardScreen(retrofitClient, onNotificationClick = {
+                                navController.navigate("deviceAlarmScreen")
+                            })
+                        }
                         composable("deviceAlarmScreen") { e ->
                             DeviceAlarmScreen(
                                 retrofitClient, onBack = { navController.popBackStack() })
                         }
-
                         //设备
                         composable("devices") {
                             DevicesScreen(
@@ -206,11 +191,9 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
 
                         //我的
                         composable("profile") {
-
-
                             ProfileScreen(
                                 imageLoader = imageLoader,
-                                profileViewModel = profileViewModel, onLogout = {
+                                retrofitClient = retrofitClient, onLogout = {
                                     TokenManagerFactory.getInstance(context).clear()
                                     isLoggedIn = false
                                     sessionKey++
@@ -227,7 +210,7 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         //系统信息
                         composable("systemInfo") { e ->
                             SystemInfoScreen(
-                                profileViewModel = profileViewModel,
+                                retrofitClient = retrofitClient,
                                 onBack = { navController.popBackStack() })
                         }
                         //系统配置

@@ -178,11 +178,14 @@ object DeviceConstant {
     const val SYSTEM_CONFIG = "系统配置"
     const val SERVER_ADDRESS = "服务器"
 
-    val menuItems = listOf(
-        Triple(SYSTEM_INFO, Icons.Rounded.Settings, null),
-        Triple(SYSTEM_CONFIG, Icons.Rounded.Settings, null),
-        Triple(SERVER_ADDRESS, Icons.Rounded.Dns, ServerConfig.getBaseUrl())
-    )
+
+    //使用get()，可以使得里面的内容实时变化
+    val menuItems: List<Triple<String, ImageVector, String?>>
+        get() = listOf(
+            Triple(SYSTEM_INFO, Icons.Rounded.Settings, null),
+            Triple(SYSTEM_CONFIG, Icons.Rounded.Settings, null),
+            Triple(SERVER_ADDRESS, Icons.Rounded.Dns, ServerConfig.getBaseUrl()) // 这里会实时调用
+        )
 
     fun getIconFromId(productType: Long): ImageVector {
         var name = DEVICE_PRODUCT_TYPE_LIST.stream().filter { e -> e.id == productType.toString() }

@@ -47,7 +47,7 @@ fun ServerSettingsDialog(
     onSave: () -> Unit,
     retrofitClient: RetrofitClient
 ) {
-    // 临时状态，用于在Dialog内部编辑，点击保存后再写入全局变量
+
     var tempProtocol by remember { mutableStateOf(ServerConfig.protocol) }
     var tempIp by remember { mutableStateOf(ServerConfig.ipAddress) }
     var tempPort by remember { mutableStateOf(ServerConfig.port) }
