@@ -1,5 +1,3 @@
-
-import android.app.Application
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -23,13 +21,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator // 引入 CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox // 1. 引入下拉刷新组件
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState // 1. 引入下拉刷新状态
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -38,135 +40,148 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.data.SystemFileInfo
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.DetailCard
 import com.unilumin.smartapp.ui.components.DetailRow
-import com.unilumin.smartapp.ui.components.LoadingContent
 import com.unilumin.smartapp.ui.components.UsageLinearBar
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.theme.TextDark
 import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
-import com.unilumin.smartapp.ui.viewModel.ViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SystemInfoScreen(
-    retrofitClient: RetrofitClient,
+    profileViewModel: ProfileViewModel,
     onBack: () -> Unit
 ) {
-
-    val context = LocalContext.current
-    val application = context.applicationContext as Application
-
-    val profileViewModel: ProfileViewModel = viewModel(
-        factory = ViewModelFactory {
-            ProfileViewModel(retrofitClient, application)
-        })
-
     // 使用 collectAsState 观察数据流
     val systemInfo by profileViewModel.systemInfo.collectAsState()
     // 观察 ViewModel 状态
     val isLoading by profileViewModel.isLoading.collectAsState()
 
+    // 定义：是否是首次加载（无数据且正在加载）
+    // 这样做的目的是：首次进入显示全屏 Loading，后续下拉刷新时列表不消失，只显示顶部刷新球
+    val isFirstLoad = systemInfo.system == null && isLoading
+
+    val refreshState = rememberPullToRefreshState()
+
+    LaunchedEffect(Unit) {
+        // 如果没有数据，才自动请求（避免重复刷新），或者根据需求每次进入都请求
+        if (systemInfo.system == null) {
+            profileViewModel.getSystemInfo()
+        }
+    }
 
     Scaffold(
         topBar = {
-            CommonTopAppBar(title = "系统资源监控",onBack={onBack()})
+            CommonTopAppBar(title = "系统资源监控", onBack = { onBack() })
         }, containerColor = PageBackground
     ) { padding ->
-        LoadingContent(isLoading = isLoading) {
-            LazyColumn(
+        if (isFirstLoad) {
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                contentAlignment = Alignment.Center
             ) {
-                if (systemInfo.system != null) {
-                    item {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // CPU 监控
-                            val cpuDetails = listOf(
-                                "核心数" to "${systemInfo.cpu?.cpuNum ?: 0}",
-                                "系统" to "${systemInfo.cpu?.sys ?: 0.0}%",
-                                "用户" to "${systemInfo.cpu?.used ?: 0.0}%"
-                            )
-                            DashboardPieCard(
-                                title = "CPU空闲率",
-                                usage = systemInfo.cpu?.free ?: 0.0,
-                                color = MaterialTheme.colorScheme.primary,
-                                details = cpuDetails,
-                                modifier = Modifier.fillMaxWidth() // 改为 fillMaxWidth
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            // 内存监控
-                            val memDetails = listOf(
-                                "总量" to "${systemInfo.memory?.total ?: 0.0}G",
-                                "已用" to "${systemInfo.memory?.used ?: 0.0}G",
-                                "剩余" to "${systemInfo.memory?.free ?: 0.0}G"
-                            )
-                            DashboardPieCard(
-                                title = "内存使用率",
-                                usage = systemInfo.memory?.usage ?: 0.0,
-                                color = Color(0xFF4CAF50),
-                                details = memDetails,
-                                modifier = Modifier.fillMaxWidth() // 改为 fillMaxWidth
-                            )
-                        }
-                    }
-                    // 2. 基础系统信息
-                    item {
-                        DetailCard("基础信息") {
-                            systemInfo.system?.let {
-                                DetailRow("计算机名", it.computerName)
-                                DetailRow("IP 地址", it.computerIp)
-                                DetailRow("操作系统", it.osName)
-                                DetailRow("系统架构", it.osArch)
+                CircularProgressIndicator()
+            }
+        } else {
+            PullToRefreshBox(
+                isRefreshing = isLoading, // 绑定 ViewModel 的 loading 状态
+                state = refreshState,
+                onRefresh = { profileViewModel.getSystemInfo() },
+                modifier = Modifier.padding(padding)
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (systemInfo.system != null) {
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                // CPU 监控
+                                val cpuDetails = listOf(
+                                    "核心数" to "${systemInfo.cpu?.cpuNum ?: 0}",
+                                    "系统" to "${systemInfo.cpu?.sys ?: 0.0}%",
+                                    "用户" to "${systemInfo.cpu?.used ?: 0.0}%"
+                                )
+                                DashboardPieCard(
+                                    title = "CPU空闲率",
+                                    usage = systemInfo.cpu?.free ?: 0.0,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    details = cpuDetails,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                // 内存监控
+                                val memDetails = listOf(
+                                    "总量" to "${systemInfo.memory?.total ?: 0.0}G",
+                                    "已用" to "${systemInfo.memory?.used ?: 0.0}G",
+                                    "剩余" to "${systemInfo.memory?.free ?: 0.0}G"
+                                )
+                                DashboardPieCard(
+                                    title = "内存使用率",
+                                    usage = systemInfo.memory?.usage ?: 0.0,
+                                    color = Color(0xFF4CAF50),
+                                    details = memDetails,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         }
-                    }
-                    // 3. JVM 运行状态
-                    item {
-                        DetailCard("JVM 状态") {
-                            systemInfo.jvm?.let {
-                                DetailRow("JVM 名称", it.name)
-                                DetailRow("Java 版本", it.version)
-                                DetailRow("已用堆内存", "${it.used} MB")
-                                DetailRow("空闲堆内存", "${it.free} MB")
-                                DetailRow("启动时间", it.startTime)
-                                DetailRow("运行时间", it.runTime)
-                                Spacer(Modifier.height(8.dp))
-                                UsageLinearBar("JVM 内存占用率", it.usage)
+                        // 2. 基础系统信息
+                        item {
+                            DetailCard("基础信息") {
+                                systemInfo.system?.let {
+                                    DetailRow("计算机名", it.computerName)
+                                    DetailRow("IP 地址", it.computerIp)
+                                    DetailRow("操作系统", it.osName)
+                                    DetailRow("系统架构", it.osArch)
+                                }
                             }
                         }
-                    }
-                    // 4. 磁盘空间信息
-                    item {
-                        Text(
-                            "磁盘空间",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(start = 4.dp)
-                        )
-                    }
-                    items(systemInfo.sysFiles ?: emptyList()) { file ->
-                        DiskCard(file)
+                        // 3. JVM 运行状态
+                        item {
+                            DetailCard("JVM 状态") {
+                                systemInfo.jvm?.let {
+                                    DetailRow("JVM 名称", it.name)
+                                    DetailRow("Java 版本", it.version)
+                                    DetailRow("已用堆内存", "${it.used} MB")
+                                    DetailRow("空闲堆内存", "${it.free} MB")
+                                    DetailRow("启动时间", it.startTime)
+                                    DetailRow("运行时间", it.runTime)
+                                    Spacer(Modifier.height(8.dp))
+                                    UsageLinearBar("JVM 内存占用率", it.usage)
+                                }
+                            }
+                        }
+                        // 4. 磁盘空间信息
+                        item {
+                            Text(
+                                "磁盘空间",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+                        items(systemInfo.sysFiles ?: emptyList()) { file ->
+                            DiskCard(file)
+                        }
                     }
                 }
-
             }
         }
     }
 }
+
+// ... DashboardPieCard 和 DiskCard 代码保持不变 ...
 
 
 @Composable

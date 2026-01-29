@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -55,6 +56,7 @@ import com.unilumin.smartapp.ui.screens.site.SitesScreen
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.Gray900
+import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -82,6 +84,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
     val context = LocalContext.current
+
     // 使用 sessionKey 来强制重置整个 App 的状态
     var sessionKey by rememberSaveable { mutableIntStateOf(0) }
     var isLoggedIn by rememberSaveable { mutableStateOf(false) }
@@ -91,8 +94,12 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
             primary = Blue600, background = Gray50, surface = Color.White, onSurface = Gray900
         )
     ) {
+
+        val profileViewModel: ProfileViewModel
         // 使用 key 包装，当 sessionKey 变化时，内部所有状态都会被销毁重置
         key(sessionKey) {
+
+            var cachedProfileViewModel by remember { mutableStateOf<ProfileViewModel?>(null) }
             val navController = rememberNavController()
             if (!isLoggedIn) {
                 LoginScreen(
@@ -197,8 +204,9 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                     TokenManagerFactory.getInstance(context).clear()
                                     isLoggedIn = false
                                     sessionKey++
-                                }, onItemClick = { name, _ ->
+                                }, onItemClick = { name, profileViewMode ->
                                     if (name == DeviceConstant.SYSTEM_INFO) {
+                                        cachedProfileViewModel = profileViewMode
                                         navController.navigate("systemInfo")
                                     } else if (name == DeviceConstant.SYSTEM_CONFIG) {
                                         navController.navigate("systemConfig")
@@ -209,9 +217,11 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         }
                         //系统信息
                         composable("systemInfo") { e ->
-                            SystemInfoScreen(
-                                retrofitClient = retrofitClient,
-                                onBack = { navController.popBackStack() })
+                            cachedProfileViewModel?.let {
+                                SystemInfoScreen(
+                                    profileViewModel = it,
+                                    onBack = { navController.popBackStack() })
+                            }
                         }
                         //系统配置
                         composable("systemConfig") { e ->
