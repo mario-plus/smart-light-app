@@ -2,9 +2,10 @@ package com.unilumin.smartapp.ui.screens.app.lamp
 
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeveloperBoard
@@ -39,12 +39,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampLoopCtlInfo
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.LoopCircleItem
-import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
 import com.unilumin.smartapp.ui.screens.dialog.LoopControlDialog
 import com.unilumin.smartapp.ui.theme.CardBgColor
 import com.unilumin.smartapp.ui.theme.IconBgColor
@@ -94,11 +92,12 @@ fun LampLoopCtlContent(
 }
 
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LampLoopCtlCard(
     loopCtlInfo: LampLoopCtlInfo,
     modifier: Modifier = Modifier,
-    onDetailClick: ((LampLoopCtlInfo) -> Unit)? = null // 预留点击事件
+    onDetailClick: ((LampLoopCtlInfo) -> Unit)? = null
 ) {
     Card(
         modifier = modifier
@@ -114,21 +113,21 @@ fun LampLoopCtlCard(
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            // --- 1. 头部信息区 (结构与 GatewayCard 对齐) ---
+            // --- 1. 头部信息区 (保持不变) ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
                 Row(modifier = Modifier.weight(1f)) {
-                    // 图标容器 (使用 DeveloperBoard 代表控制器)
+                    // 图标容器
                     Surface(
                         color = IconBgColor,
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.size(52.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.DeveloperBoard, // 或 Icons.Outlined.SettingsInputComponent
+                            imageVector = Icons.Default.DeveloperBoard,
                             contentDescription = "Loop Controller",
                             tint = ThemeBlue,
                             modifier = Modifier.padding(12.dp)
@@ -158,7 +157,7 @@ fun LampLoopCtlCard(
                             overflow = TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        // 所属网关 (这是控制器特有的重要层级信息)
+                        // 所属网关
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.Router,
@@ -182,25 +181,23 @@ fun LampLoopCtlCard(
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFF0F0F0))
             Spacer(modifier = Modifier.height(16.dp))
-            // --- 2. 回路状态区 ---
+
+            // --- 2. 回路状态区 (修改为自动换行) ---
             if (!loopCtlInfo.loops.isNullOrEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // 使用 FlowRow 替代 Row + horizontalScroll
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp), // 水平间距
+                    verticalArrangement = Arrangement.spacedBy(12.dp)    // 垂直间距 (换行后的行间距)
                 ) {
                     loopCtlInfo.loops!!.forEach { loop ->
                         LoopCircleItem(loop = loop)
                     }
                 }
             }
-
         }
     }
 }
-
 
 
 

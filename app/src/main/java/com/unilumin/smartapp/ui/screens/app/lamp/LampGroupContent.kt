@@ -1,23 +1,37 @@
 package com.unilumin.smartapp.ui.screens.app.lamp
 
-import androidx.compose.foundation.background
+import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Devices
-import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.twotone.GridView
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,9 +41,18 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.constant.DeviceConstant.groupTypeOptions
 import com.unilumin.smartapp.client.data.LampGroupInfo
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
-import com.unilumin.smartapp.ui.theme.*
+import com.unilumin.smartapp.ui.components.DeviceStatus
+import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
+import com.unilumin.smartapp.ui.theme.BluePrimary
+import com.unilumin.smartapp.ui.theme.CardBgColor
+import com.unilumin.smartapp.ui.theme.DataPanelBgColor
+import com.unilumin.smartapp.ui.theme.DividerColor
+import com.unilumin.smartapp.ui.theme.DividerGrey
+import com.unilumin.smartapp.ui.theme.IconBgColor
+import com.unilumin.smartapp.ui.theme.TextMain
+import com.unilumin.smartapp.ui.theme.TextSub
+import com.unilumin.smartapp.ui.theme.ThemeBlue
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +60,8 @@ import com.unilumin.smartapp.ui.viewModel.LampViewModel
 fun LampGroupContent(
     lampViewModel: LampViewModel
 ) {
+
+    var currentGroup by remember { mutableStateOf<LampGroupInfo?>(null) }
 
     val lampGroupFlow = lampViewModel.lampGroupFlow.collectAsLazyPagingItems()
     LaunchedEffect(Unit) {
@@ -51,10 +76,25 @@ fun LampGroupContent(
         keySelector = { it.id },
         searchTitle = "搜索分组名称或产品名称",
         middleContent = {
-
-        }
-    ) { item ->
-        LampGroupCard(item = item, onClick = {})
+        }) { item ->
+        LampGroupCard(item = item, onClick = { e ->
+            currentGroup = e
+        })
+    }
+    currentGroup?.let { group ->
+        DeviceControlDialog(
+            productId = group.productId?.toString() ?: "",
+            deviceName = group.groupName ?: "未知分组",
+            initialBrightness = 0,
+            initColorT = 0,
+            onDismiss = {
+                currentGroup = null
+            },
+            onClick = { a, b ->
+                lampViewModel.lampCtl(group.id, a, b)
+                currentGroup = null
+            }
+        )
     }
 
 }
@@ -65,9 +105,7 @@ fun LampGroupContent(
  */
 @Composable
 fun LampGroupCard(
-    item: LampGroupInfo,
-    modifier: Modifier = Modifier,
-    onClick: ((LampGroupInfo) -> Unit)? = null
+    item: LampGroupInfo, modifier: Modifier = Modifier, onClick: ((LampGroupInfo) -> Unit)? = null
 ) {
     Card(
         modifier = modifier
@@ -76,8 +114,7 @@ fun LampGroupCard(
             .then(if (onClick != null) Modifier.clickable { onClick(item) } else Modifier),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = CardBgColor), // 确保 CardBgColor 已定义，通常是 White
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
@@ -93,8 +130,7 @@ fun LampGroupCard(
                     // 图标容器
                     Surface(
                         color = IconBgColor, // 浅色背景，如 Color(0xFFE3F2FD)
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.size(48.dp)
+                        shape = RoundedCornerShape(12.dp), modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
                             // 使用 GridView 或 Folder 图标代表分组
@@ -110,14 +146,11 @@ fun LampGroupCard(
                     Column {
                         // 分组名称
                         Text(
-                            text = item.groupName ?: "未命名分组",
-                            style = TextStyle(
+                            text = item.groupName ?: "未命名分组", style = TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                                 color = TextMain // 深黑
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            ), maxLines = 1, overflow = TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         // 产品名称
@@ -129,9 +162,13 @@ fun LampGroupCard(
                         )
                     }
                 }
-
                 // 同步状态标签
-                SyncStatusChip(state = item.syncState)
+                DeviceStatus(
+                    item.syncState, mapOf(
+                        1 to Triple(Color(0xFFE3F2FD), BluePrimary, "已同步"),
+                        0 to Triple(Color(0xFFF5F5F5), Color(0xFFBDBDBD), "未同步")
+                    )
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -172,9 +209,8 @@ fun LampGroupCard(
 @Composable
 fun GroupInfoPanel(item: LampGroupInfo) {
     Surface(
-        color = DataPanelBgColor, // 浅灰背景，如 Color(0xFFF7F8FA)
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth()
+        color = DataPanelBgColor,
+        shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
@@ -182,8 +218,6 @@ fun GroupInfoPanel(item: LampGroupInfo) {
                 .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 1. 分组类型
-            // 映射类型：1->单灯控制器, 25->集控, 56->回路
             val typeName = when (item.groupType) {
                 1 -> "单灯控制器"
                 25 -> "集中控制器"
@@ -191,38 +225,31 @@ fun GroupInfoPanel(item: LampGroupInfo) {
                 else -> "未知类型"
             }
             InfoColumnItem(
-                label = "分组类型",
-                value = typeName,
-                icon = Icons.Outlined.Folder,
-                modifier = Modifier.weight(1.2f)
+                label = "分组类型", value = typeName, modifier = Modifier.weight(1.2f)
             )
-
             VerticalDivider(
-                modifier = Modifier.height(24.dp),
-                color = DividerGrey
+                modifier = Modifier.height(24.dp), color = DividerGrey
             )
+            if (item.groupType != 1) {
+                InfoColumnItem(
+                    label = "所属集控",
+                    value = item.deviceName ?: "--",
+                    modifier = Modifier.weight(1.2f)
+                )
+                VerticalDivider(
+                    modifier = Modifier.height(24.dp), color = DividerGrey
+                )
+            }
 
-            // 2. 所属集控 (如果为空则显示--)
-            InfoColumnItem(
-                label = "所属集控",
-                value = item.deviceName ?: "--",
-                icon = Icons.Outlined.Hub,
-                modifier = Modifier.weight(1.2f)
-            )
-
-            VerticalDivider(
-                modifier = Modifier.height(24.dp),
-                color = DividerGrey
-            )
-
-            // 3. 成员数量 (突出显示)
             InfoColumnItem(
                 label = "成员数",
                 value = "${item.deviceNum ?: 0}",
-                icon = Icons.Outlined.Devices,
                 isHighlight = true,
-                modifier = Modifier.weight(0.8f)
-            )
+                modifier = Modifier.weight(0.8f),
+                onClick = {
+                    //TODO 查看设备成员，添加分组成员
+
+                })
         }
     }
 }
@@ -231,19 +258,27 @@ fun GroupInfoPanel(item: LampGroupInfo) {
 fun InfoColumnItem(
     label: String,
     value: String,
-    icon: ImageVector,
     isHighlight: Boolean = false,
-    modifier: Modifier = Modifier
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
     Column(
-        modifier = modifier.padding(horizontal = 4.dp),
+        modifier = modifier
+            // 如果 onClick 不为空，则添加 clickable 效果
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+            )
+            .padding(horizontal = 4.dp)
+            .padding(vertical = 4.dp), // 增加垂直内边距，提升点击手感
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = label,
-                fontSize = 11.sp,
-                color = TextSub
+                text = label, fontSize = 11.sp, color = TextSub
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
@@ -258,36 +293,3 @@ fun InfoColumnItem(
     }
 }
 
-@Composable
-fun SyncStatusChip(state: Int?) {
-    // 假设 1 代表已同步
-    val isSynced = state == 1
-    val bgColor = if (isSynced) Color(0xFFE3F2FD) else Color(0xFFF5F5F5) // 浅蓝 vs 浅灰
-    val dotColor = if (isSynced) BluePrimary else Color(0xFFBDBDBD) // 蓝点 vs 灰点
-    val textColor = if (isSynced) BluePrimary else Color(0xFF757575)
-    val text = if (isSynced) "已同步" else "未同步"
-
-    Surface(
-        color = bgColor,
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .clip(CircleShape)
-                    .background(dotColor)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = text,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                color = textColor
-            )
-        }
-    }
-}

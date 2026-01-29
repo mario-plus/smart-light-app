@@ -136,13 +136,9 @@ fun LampGatewayCard(
                         )
                     }
                 }
-
-                // 在线/离线 状态标签
                 DeviceStatus(item.state)
             }
-
             Spacer(modifier = Modifier.height(16.dp))
-            // --- 第二部分：实时参数面板 (三相电压/电流) ---
             GatewayRealTimeDataPanel(item)
             Spacer(modifier = Modifier.height(16.dp))
             DeviceStatusRow(

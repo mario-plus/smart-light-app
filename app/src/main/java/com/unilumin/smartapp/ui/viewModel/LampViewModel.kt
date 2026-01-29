@@ -13,7 +13,6 @@ import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.constant.FILTER_NONE
 import com.unilumin.smartapp.client.constant.PAGE_SIZE
 import com.unilumin.smartapp.client.constant.PREFETCH_DIST
-import com.unilumin.smartapp.client.data.AlarmRequestParam
 import com.unilumin.smartapp.client.data.DeviceAlarmInfo
 import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.GroupRequestParam
@@ -389,6 +388,26 @@ class LampViewModel(
             }
         }
     }
+
+    fun groupCtl(groupId: Long, cmdType: Int, cmdValue: Int) {
+        launchWithLoading {
+            try {
+                val call: Call<NewResponseData<String?>?>? = roadService.groupCtl(
+                    LampCtlReq(
+                        cmdType = cmdType,
+                        cmdValue = cmdValue,
+                        ids = listOf(groupId),
+                        subSystemType = 1
+                    )
+                )
+                UniCallbackService<String>().parseDataNewSuspend(call, context)
+                Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
 
     //设备控制按钮
     fun loopCtl(id: Long, numList: List<Int>, onOff: Int) {

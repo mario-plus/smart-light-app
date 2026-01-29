@@ -4,10 +4,12 @@ import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -177,7 +179,50 @@ import com.unilumin.smartapp.client.data.LoopInfo
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.data.SystemConfig
-import com.unilumin.smartapp.ui.theme.*
+import com.unilumin.smartapp.ui.theme.AccentBlue
+import com.unilumin.smartapp.ui.theme.AlarmBg
+import com.unilumin.smartapp.ui.theme.AlarmRed
+import com.unilumin.smartapp.ui.theme.Amber50
+import com.unilumin.smartapp.ui.theme.Amber500
+import com.unilumin.smartapp.ui.theme.BackgroundGray
+import com.unilumin.smartapp.ui.theme.BgLightGray
+import com.unilumin.smartapp.ui.theme.Blue50
+import com.unilumin.smartapp.ui.theme.Blue600
+import com.unilumin.smartapp.ui.theme.BluePrimary
+import com.unilumin.smartapp.ui.theme.CardBorder
+import com.unilumin.smartapp.ui.theme.CardWhite
+import com.unilumin.smartapp.ui.theme.ControlBlue
+import com.unilumin.smartapp.ui.theme.DividerColor
+import com.unilumin.smartapp.ui.theme.Emerald50
+import com.unilumin.smartapp.ui.theme.Emerald600
+import com.unilumin.smartapp.ui.theme.Gray100
+import com.unilumin.smartapp.ui.theme.Gray200
+import com.unilumin.smartapp.ui.theme.Gray400
+import com.unilumin.smartapp.ui.theme.Gray50
+import com.unilumin.smartapp.ui.theme.Gray500
+import com.unilumin.smartapp.ui.theme.Gray900
+import com.unilumin.smartapp.ui.theme.Green50
+import com.unilumin.smartapp.ui.theme.Green500
+import com.unilumin.smartapp.ui.theme.GreenStatus
+import com.unilumin.smartapp.ui.theme.LineColor
+import com.unilumin.smartapp.ui.theme.OfflineGray
+import com.unilumin.smartapp.ui.theme.Orange50
+import com.unilumin.smartapp.ui.theme.Orange500
+import com.unilumin.smartapp.ui.theme.PlaceholderColor
+import com.unilumin.smartapp.ui.theme.PrimaryBlue
+import com.unilumin.smartapp.ui.theme.Red50
+import com.unilumin.smartapp.ui.theme.Red500
+import com.unilumin.smartapp.ui.theme.RedStatus
+import com.unilumin.smartapp.ui.theme.SafeBg
+import com.unilumin.smartapp.ui.theme.SafeGreen
+import com.unilumin.smartapp.ui.theme.SearchBarBg
+import com.unilumin.smartapp.ui.theme.TextDark
+import com.unilumin.smartapp.ui.theme.TextGray
+import com.unilumin.smartapp.ui.theme.TextPrimary
+import com.unilumin.smartapp.ui.theme.TextSecondary
+import com.unilumin.smartapp.ui.theme.TextSub
+import com.unilumin.smartapp.ui.theme.TextTitle
+import com.unilumin.smartapp.ui.theme.White
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -190,8 +235,6 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.regex.Pattern
 import kotlin.math.roundToInt
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 
 
 @Composable
@@ -418,16 +461,19 @@ fun VerticalDivider() {
  * 设备状态(按钮:在线/离线)
  * */
 @Composable
-fun DeviceStatus(status: Int?) {
-    // 这里使用 Green 代表在线，和左侧图标区分一点层次，或者你也改成 Blue 都可以
-    val (bgColor, fgColor, text) = when (status) {
-        1 -> Triple(Green50, Green500, "在线")       // 在线：绿
-        0 -> Triple(Gray100, Gray500, "离线")       // 离线：灰
-        else -> Triple(Orange50, Orange500, "未知") // 其他：橙
-    }
-
+fun DeviceStatus(
+    status: Int?,
+    statusMapping: Map<Int, Triple<Color, Color, String>> = mapOf(
+        1 to Triple(Green50, Green500, "在线"),
+        0 to Triple(Gray100, Gray500, "离线")
+    ),
+    defaultStatus: Triple<Color, Color, String> = Triple(Orange50, Orange500, "未知")
+) {
+    val (bgColor, fgColor, text) = statusMapping[status] ?: defaultStatus
     Surface(
-        color = bgColor, shape = RoundedCornerShape(percent = 50), modifier = Modifier.height(24.dp)
+        color = bgColor,
+        shape = RoundedCornerShape(percent = 50),
+        modifier = Modifier.height(24.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp),
@@ -444,7 +490,7 @@ fun DeviceStatus(status: Int?) {
                 color = fgColor,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 1.dp)
+                modifier = Modifier.padding(bottom = 0.5.dp)
             )
         }
     }
@@ -478,7 +524,7 @@ fun LoopCircleItem(loop: LoopInfo) {
     ) {
         Box(
             contentAlignment = Alignment.Center, modifier = Modifier
-                .size(36.dp) // 稍微加大尺寸，更易点击
+                .size(28.dp) // 稍微加大尺寸，更易点击
                 .background(color = baseColor, shape = CircleShape)
                 .border(1.dp, contentColor.copy(alpha = 0.3f), CircleShape) // 添加同色系的浅色边框
         ) {

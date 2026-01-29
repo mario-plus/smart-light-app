@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,7 +32,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,10 +56,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.unilumin.smartapp.client.constant.DeviceConstant
-import com.unilumin.smartapp.ui.components.BrightnessControlCard
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.ControlRed
-
 
 
 @Composable
@@ -96,7 +92,7 @@ fun DeviceControlDialog(
                 // --- 顶部标题栏 ---
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "单灯[${deviceName}]控制", // 简化标题，更干净
+                        text = "[${deviceName}]控制", // 简化标题，更干净
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF333333),
@@ -188,7 +184,11 @@ fun RowScope.PowerButton(text: String, color: Color, onClick: () -> Unit) {
         ),
         elevation = ButtonDefaults.buttonElevation(0.dp)
     ) {
-        Icon(Icons.Default.PowerSettingsNew, contentDescription = null, modifier = Modifier.size(18.dp))
+        Icon(
+            Icons.Default.PowerSettingsNew,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
         Spacer(modifier = Modifier.width(8.dp))
         Text(text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
     }
@@ -299,7 +299,10 @@ fun InteractiveControlCard(
                         }
                     }
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
                 keyboardActions = KeyboardActions(onDone = {
                     val finalVal = textValue.toIntOrNull()?.coerceIn(0, 100) ?: 0
                     textValue = finalVal.toString()
@@ -324,7 +327,12 @@ fun InteractiveControlCard(
                     }
             )
             if (unit.isNotEmpty()) {
-                Text(text = unit, color = Color.Gray, fontSize = 11.sp, modifier = Modifier.padding(start = 1.dp))
+                Text(
+                    text = unit,
+                    color = Color.Gray,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(start = 1.dp)
+                )
             }
         }
     }

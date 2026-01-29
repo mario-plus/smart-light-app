@@ -167,7 +167,7 @@ data class SiteDevice(
 )
 
 data class LampCtlReq(
-    val cmdType: Int, val cmdValue: Int, val ids: List<Long>, val subSystemType: Int
+    val cmdType: Int, val cmdValue: Int, val ids: List<Long>, val subSystemType: Int? = null
 )
 
 data class LoopCtlReq(

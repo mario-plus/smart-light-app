@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
-import com.unilumin.smartapp.client.data.AlarmRequestParam
 import com.unilumin.smartapp.client.data.DeviceAlarmInfo
 import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.GroupRequestParam
@@ -109,6 +108,10 @@ interface RoadService {
 
     @POST(RequestPathKey.KEY_LAMP_CTL)
     fun lampCtl(@Body lampCtlReq: LampCtlReq): Call<NewResponseData<String?>?>?
+
+    //uni_light_groupCtl
+    @POST(RequestPathKey.KEY_GROUP_CTL)
+    fun groupCtl(@Body lampCtlReq: LampCtlReq): Call<NewResponseData<String?>?>?
 
     @PUT(RequestPathKey.KEY_LOOP_CTL)
     fun loopCtl(@Body loopCtlReq: LoopCtlReq): Call<NewResponseData<String?>?>?
