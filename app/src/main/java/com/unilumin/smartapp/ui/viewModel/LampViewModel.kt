@@ -15,10 +15,14 @@ import com.unilumin.smartapp.client.constant.PAGE_SIZE
 import com.unilumin.smartapp.client.constant.PREFETCH_DIST
 import com.unilumin.smartapp.client.data.DeviceAlarmInfo
 import com.unilumin.smartapp.client.data.DeviceStatusSummary
+import com.unilumin.smartapp.client.data.GroupMemberFilter
+import com.unilumin.smartapp.client.data.GroupMemberInfo
+import com.unilumin.smartapp.client.data.GroupMemberReq
 import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
 import com.unilumin.smartapp.client.data.LampCtlReq
+import com.unilumin.smartapp.client.data.LampGroupInfo
 import com.unilumin.smartapp.client.data.LampJobInfo
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampStrategyInfo
@@ -38,6 +42,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import retrofit2.Call
 
@@ -94,10 +99,17 @@ class LampViewModel(
         lampModel.value = s
     }
 
+
     //0未确认，1 已确认
     val alarmConfirm = MutableStateFlow(0)
     fun updateAlarmConfirm(s: Int) {
         alarmConfirm.value = s
+    }
+
+    //绑定状态
+    val bindState = MutableStateFlow(-1)
+    fun updateBindState(s: Int) {
+        bindState.value = s
     }
 
 
@@ -110,6 +122,12 @@ class LampViewModel(
     //首页在线率和亮灯率
     private val _deviceStatusSummary = MutableStateFlow<DeviceStatusSummary?>(null)
     val deviceStatusSummary = _deviceStatusSummary.asStateFlow()
+
+    private val _currentGroupInfo = MutableStateFlow<LampGroupInfo?>(null)
+    val currentGroupInfo = _currentGroupInfo.asStateFlow()
+    fun updateCurrentGroupInfo(e: LampGroupInfo?) {
+        _currentGroupInfo.value = e
+    }
 
     //月度能耗对比
     private val _monthEnergyList = MutableStateFlow<List<LightEnergy>>(emptyList())
@@ -248,7 +266,6 @@ class LampViewModel(
         level: Int,
         confirm: Int,
     ): List<DeviceAlarmInfo> {
-
         val parseDataNewSuspend =
             UniCallbackService<PageResponse<DeviceAlarmInfo>>().parseDataNewSuspend(
                 roadService.deviceAlarmList(
@@ -259,15 +276,7 @@ class LampViewModel(
                     isConfirm = confirm.takeIf { it != FILTER_NONE }
                 ), context
             )
-        // 安全判空逻辑
-        if (parseDataNewSuspend != null) {
-            _totalCount.value = parseDataNewSuspend.total
-            return parseDataNewSuspend.list
-        } else {
-            _totalCount.value = 0
-            return emptyList()
-        }
-
+        return processPageResponse(parseDataNewSuspend, _totalCount)
     }
 
     suspend fun getLampList(
@@ -288,9 +297,61 @@ class LampViewModel(
                         workMode = workModel.takeIf { it != FILTER_NONE })
                 ), context
             )
-        _totalCount.value = parseDataNewSuspend?.total!!
-        return parseDataNewSuspend.list
+        return processPageResponse(parseDataNewSuspend, _totalCount)
     }
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val groupMemberFlow =
+        combine(currentGroupInfo.map { it?.id }, state, searchQuery, bindState)
+        { groupId, state, searchQuery, bindState ->
+            GroupMemberFilter(
+                groupId = groupId,
+                state = state,
+                searchQuery = searchQuery,
+                bindState = bindState
+            )
+        }.flatMapLatest { filter ->
+            Pager(
+                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+                pagingSourceFactory = {
+                    GenericPagingSource { page, pageSize ->
+                        getGroupMember(
+                            filter.groupId,
+                            page,
+                            pageSize,
+                            filter.searchQuery,
+                            filter.state,
+                            filter.bindState
+                        )
+                    }
+                }).flow
+        }.cachedIn(viewModelScope)
+
+    suspend fun getGroupMember(
+        id: Long?,
+        curPage: Int,
+        pageSize: Int,
+        searchQuery: String,
+        netState: Int,
+        bindState: Int,
+    ): List<GroupMemberInfo> {
+        val parseDataNewSuspend =
+            UniCallbackService<PageResponse<GroupMemberInfo>>().parseDataNewSuspend(
+                roadService.getGroupMembers(
+                    GroupMemberReq(
+                        keyword = searchQuery,
+                        curPage = curPage,
+                        pageSize = pageSize,
+                        netState = netState.takeIf { it != FILTER_NONE },
+                        bindState = bindState.takeIf { it != FILTER_NONE },
+                        id = id
+                    )
+                ), context
+            )
+        return processPageResponse(parseDataNewSuspend, _totalCount)
+    }
+
 
     suspend fun getStrategyList(
         curPage: Int,
@@ -310,8 +371,7 @@ class LampViewModel(
                         syncState = syncState.takeIf { it != FILTER_NONE })
                 ), context
             )
-        _totalCount.value = parseDataNewSuspend?.total!!
-        return parseDataNewSuspend.list
+        return processPageResponse(parseDataNewSuspend, _totalCount)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -365,8 +425,7 @@ class LampViewModel(
                     )
                 ), context
             )
-        _totalCount.value = parseDataNewSuspend?.total!!
-        return parseDataNewSuspend.list
+        return processPageResponse(parseDataNewSuspend, _totalCount)
     }
 
     //设备控制按钮
@@ -491,11 +550,19 @@ class LampViewModel(
         val rawCall = apiCall()
         val callbackService = UniCallbackService<PageResponse<T>>()
         val parsedResult = callbackService.parseDataNewSuspend(rawCall, context)
-        if (parsedResult != null) {
-            _totalCount.value = parsedResult.total
-        }
-        return parsedResult?.list ?: emptyList()
+        return processPageResponse(parsedResult, _totalCount)
     }
 
-
+    private fun <T> processPageResponse(
+        response: PageResponse<T>?,
+        countStateFlow: MutableStateFlow<Int>
+    ): List<T> {
+        return if (response != null) {
+            countStateFlow.value = response.total
+            response.list
+        } else {
+            countStateFlow.value = 0
+            emptyList()
+        }
+    }
 }

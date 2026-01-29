@@ -46,7 +46,7 @@ import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartLampScreen(
-    retrofitClient: RetrofitClient, onBack: () -> Unit
+    retrofitClient: RetrofitClient, onBack: () -> Unit, toNew: (LampViewModel) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -118,7 +118,7 @@ fun SmartLampScreen(
                 }
 
                 SMART_LAMP_GROUP -> {
-                    LampGroupContent(lampViewModel)
+                    LampGroupContent(lampViewModel, toNew = { toNew(lampViewModel) })
                 }
 
                 SMART_LAMP_STRATEGY -> {

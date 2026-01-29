@@ -43,6 +43,7 @@ import com.unilumin.smartapp.mock.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
 import com.unilumin.smartapp.ui.screens.app.broadcast.SmartBroadScreen
 import com.unilumin.smartapp.ui.screens.app.env.SmartEnvScreen
+import com.unilumin.smartapp.ui.screens.app.lamp.LampGroupMemberContent
 import com.unilumin.smartapp.ui.screens.app.monitor.SmartMonitorScreen
 import com.unilumin.smartapp.ui.screens.app.playBox.SmartPlayBoxScreen
 import com.unilumin.smartapp.ui.screens.dashboard.DashboardScreen
@@ -56,6 +57,7 @@ import com.unilumin.smartapp.ui.screens.site.SitesScreen
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.Gray900
+import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -100,6 +102,9 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
         key(sessionKey) {
 
             var cachedProfileViewModel by remember { mutableStateOf<ProfileViewModel?>(null) }
+
+            var cachedLampViewModel by remember { mutableStateOf<LampViewModel?>(null) }
+
             val navController = rememberNavController()
             if (!isLoggedIn) {
                 LoginScreen(
@@ -155,7 +160,18 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         //智慧路灯
                         composable("smartLampScreen") { e ->
                             SmartLampScreen(
-                                retrofitClient, onBack = { navController.popBackStack() })
+                                retrofitClient,
+                                onBack = { navController.popBackStack() },
+                                toNew = { e ->
+                                    cachedLampViewModel = e
+                                    navController.navigate("groupMemberScreen")
+                                })
+                        }
+                        //分组成员页面
+                        composable("groupMemberScreen") { e ->
+                            cachedLampViewModel?.let {
+                                LampGroupMemberContent(cachedLampViewModel!!)
+                            }
                         }
                         //智慧广播
                         composable("smartBroadScreen") { e ->

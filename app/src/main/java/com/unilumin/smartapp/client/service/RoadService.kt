@@ -3,6 +3,8 @@ package com.unilumin.smartapp.client.service
 import com.unilumin.smartapp.client.constant.RequestPathKey
 import com.unilumin.smartapp.client.data.DeviceAlarmInfo
 import com.unilumin.smartapp.client.data.DeviceStatusSummary
+import com.unilumin.smartapp.client.data.GroupMemberInfo
+import com.unilumin.smartapp.client.data.GroupMemberReq
 import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
@@ -85,7 +87,7 @@ interface RoadService {
         @Query("pageSize") pageSize: Int,
         @Query("isConfirm") isConfirm: Int? = null,
         @Query("level") level: Int? = null,
-        @Query("isDeal")  isDeal: Int? = 0
+        @Query("isDeal") isDeal: Int? = 0
     ): Call<NewResponseData<PageResponse<DeviceAlarmInfo>?>?>?
 
 
@@ -115,5 +117,10 @@ interface RoadService {
 
     @PUT(RequestPathKey.KEY_LOOP_CTL)
     fun loopCtl(@Body loopCtlReq: LoopCtlReq): Call<NewResponseData<String?>?>?
+
+    @POST(RequestPathKey.KEY_GET_GROUP_MEMBER)
+    fun getGroupMembers(groupReq: GroupMemberReq): Call<NewResponseData<PageResponse<GroupMemberInfo>?>?>?
+
+
 
 }

@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,12 +59,13 @@ import com.unilumin.smartapp.ui.viewModel.LampViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LampGroupContent(
-    lampViewModel: LampViewModel
+    lampViewModel: LampViewModel, toNew: (LampViewModel) -> Unit
 ) {
 
-    var currentGroup by remember { mutableStateOf<LampGroupInfo?>(null) }
-
+    var showDialog by remember { mutableStateOf(false) }
     val lampGroupFlow = lampViewModel.lampGroupFlow.collectAsLazyPagingItems()
+    val currentGroup = lampViewModel.currentGroupInfo.collectAsState()
+
     LaunchedEffect(Unit) {
         lampViewModel.updateSearch("")
         lampViewModel.updateState(-1)
@@ -78,34 +80,41 @@ fun LampGroupContent(
         middleContent = {
         }) { item ->
         LampGroupCard(item = item, onClick = { e ->
-            currentGroup = e
+            lampViewModel.updateCurrentGroupInfo(e)
+            showDialog = true
+        }, onMemberClick = { e ->
+            lampViewModel.updateCurrentGroupInfo(e)
+            toNew(lampViewModel)
         })
     }
-    currentGroup?.let { group ->
+    //分组控制
+    if (showDialog) {
         DeviceControlDialog(
-            productId = group.productId?.toString() ?: "",
-            deviceName = group.groupName ?: "未知分组",
+            productId = currentGroup.value?.productId?.toString() ?: "",
+            deviceName = currentGroup.value?.groupName ?: "未知分组",
             initialBrightness = 0,
             initColorT = 0,
             onDismiss = {
-                currentGroup = null
+                lampViewModel.updateCurrentGroupInfo(null)
+                showDialog = false
             },
             onClick = { a, b ->
-                lampViewModel.lampCtl(group.id, a, b)
-                currentGroup = null
+                lampViewModel.lampCtl(currentGroup.value?.id ?: 0L, a, b)
+                lampViewModel.updateCurrentGroupInfo(null)
+                showDialog = false
             }
         )
     }
 
+
 }
 
-/**
- * 分组信息卡片
- * 风格参考 LampGatewayCard
- */
 @Composable
 fun LampGroupCard(
-    item: LampGroupInfo, modifier: Modifier = Modifier, onClick: ((LampGroupInfo) -> Unit)? = null
+    item: LampGroupInfo,
+    modifier: Modifier = Modifier,
+    onClick: ((LampGroupInfo) -> Unit)? = null,
+    onMemberClick: ((LampGroupInfo) -> Unit)
 ) {
     Card(
         modifier = modifier
@@ -173,8 +182,9 @@ fun LampGroupCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- 2. 核心数据面板 (仿 GatewayRealTimeDataPanel) ---
-            GroupInfoPanel(item)
+            GroupInfoPanel(item, onClick = {
+                onMemberClick(item)
+            })
 
             // --- 3. 底部备注 (如果有) ---
             if (!item.description.isNullOrBlank()) {
@@ -207,7 +217,7 @@ fun LampGroupCard(
  * 展示：分组类型、集控名称、成员数量
  */
 @Composable
-fun GroupInfoPanel(item: LampGroupInfo) {
+fun GroupInfoPanel(item: LampGroupInfo, onClick: ((LampGroupInfo) -> Unit)) {
     Surface(
         color = DataPanelBgColor,
         shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()
@@ -246,10 +256,7 @@ fun GroupInfoPanel(item: LampGroupInfo) {
                 value = "${item.deviceNum ?: 0}",
                 isHighlight = true,
                 modifier = Modifier.weight(0.8f),
-                onClick = {
-                    //TODO 查看设备成员，添加分组成员
-
-                })
+                onClick = { onClick(item) })
         }
     }
 }

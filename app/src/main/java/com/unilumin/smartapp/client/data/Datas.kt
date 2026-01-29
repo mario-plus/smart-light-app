@@ -807,3 +807,40 @@ data class LightDayEnergy(
 
     val value: String?
 )
+
+data class GroupMemberReq(
+    val id: Long?,
+    val curPage: Int,
+    val pageSize: Int,
+    val netState: Int? = null,        // 网络状态 (例如: 1在线, 0离线, null全部)
+    val bindState: Int? = null,       // 绑定状态
+    val keyword: String? = "",        // 搜索关键字
+    val subSystemType: Int? = 1       // 子系统类型 (JSON中是1，这里给个默认值或可空)
+)
+
+data class GroupMemberInfo(
+    val deviceId: Long,          // 设备ID
+    val deviceName: String?,       // 设备名称
+    val serialNum: String?,        // 序列号 (SN)
+    val createTime: String?,       // 创建时间
+    val netState: Int?,            // 网络状态 (通常 1:在线, 0:离线)
+    val syncState: Int?,           // 同步状态
+    val bindState: Int?,           // 绑定状态
+    val operateState: Int?,        // 运行/操作状态 (例如: 开/关/故障)
+    val optType: Int?,             // 操作类型/模式
+    val gwId: String?,             // 所属网关ID
+    val gwName: String?,           // 所属网关名称
+    val loopCtlId: String?,        // 所属回路控制器ID
+    val loopCtlName: String?,      // 所属回路控制器名称
+    // 回路具体信息
+    val loopCode: String?,         // 回路编码
+    val loopNum: String?           // 回路编号 (JSON中是null，可能是Int也可能是String，String更安全)
+)
+
+// 定义一个数据类来存放所有的筛选参数
+data class GroupMemberFilter(
+    val state: Int,
+    val searchQuery: String,
+    val bindState: Int, // 如果之前改为 Long 这里也要改
+    val groupId: Long? // <--- 假设这是你的第4个参数
+)

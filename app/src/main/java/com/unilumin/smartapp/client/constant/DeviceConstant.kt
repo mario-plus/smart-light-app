@@ -160,16 +160,21 @@ object DeviceConstant {
     )
 
     val statusOptions = listOf(-1 to "全部", 1 to "在线", 0 to "离线")
+
     val lampModelOptions = listOf(-1 to "全部", 1 to "自动模式", 0 to "手动模式")
+
     val syncStrategyOptions = listOf(-1 to "全部", 1 to "已同步", 0 to "未同步")
+
     val groupTypeOptions = listOf(-1 to "全部", 1 to "单灯分组", 25 to "集控分组", 56 to "回路分组")
 
-    val jobOrStrategyStatusOptions = listOf(-1 to "全部", 1 to "待执行", 2 to "执行中", 3 to "成功", 4 to "失败")
+    val jobOrStrategyStatusOptions =
+        listOf(-1 to "全部", 1 to "待执行", 2 to "执行中", 3 to "成功", 4 to "失败")
 
-    val alarmLevelOptions = listOf(-1 to "全部", 0 to "正常", 1 to "提示", 2 to "次要", 3 to "重要", 4 to "紧急")
+    val alarmLevelOptions =
+        listOf(-1 to "全部", 0 to "正常", 1 to "提示", 2 to "次要", 3 to "重要", 4 to "紧急")
 
+    val groupDeviceBindOptions = listOf(-1 to "全部", 1 to "已绑定", 0 to "未绑定")
     val alarmConfirmOptions = listOf( 1 to "已确认", 0 to "未确认")
-
 
     //双色温单灯产品id
     val colorTempSupportedList = listOf("107", "125")
@@ -225,7 +230,6 @@ object DeviceConstant {
 }
 
 
-
- const val PAGE_SIZE = 20
- const val PREFETCH_DIST = 2
- const val FILTER_NONE = -1
+const val PAGE_SIZE = 20
+const val PREFETCH_DIST = 2
+const val FILTER_NONE = -1
