@@ -2,13 +2,7 @@ package com.unilumin.smartapp.ui.screens.app.lamp
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.filled.Router
-import androidx.compose.material3.*
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,8 +11,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Router
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -30,14 +28,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.data.LampGateWayInfo
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.DeviceStatusRow
-
-import com.unilumin.smartapp.ui.theme.*
-
+import com.unilumin.smartapp.ui.theme.CardBgColor
+import com.unilumin.smartapp.ui.theme.DataPanelBgColor
+import com.unilumin.smartapp.ui.theme.DividerGrey
+import com.unilumin.smartapp.ui.theme.IconBgColor
+import com.unilumin.smartapp.ui.theme.TextMain
+import com.unilumin.smartapp.ui.theme.TextSub
+import com.unilumin.smartapp.ui.theme.ThemeBlue
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,9 +145,8 @@ fun LampGatewayCard(
             // --- 第二部分：实时参数面板 (三相电压/电流) ---
             GatewayRealTimeDataPanel(item)
             Spacer(modifier = Modifier.height(16.dp))
-            //TODO 缺少告警字段
             DeviceStatusRow(
-                isDisable = item.alarmType == 0,
+                isDisable = item.deviceState == 0,
                 hasAlarm = item.alarmType == 1,
                 modifier = Modifier.fillMaxWidth()
             )

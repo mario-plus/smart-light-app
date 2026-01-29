@@ -493,6 +493,8 @@ data class LampGateWayInfo(
     // 工作状态 1告警 0正常
     var alarmType: Int? = null,
 
+    var deviceState: Int? = null,
+
     // A相电压
     var voltage1: Double? = null,
 
