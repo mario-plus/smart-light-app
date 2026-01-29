@@ -1,3 +1,5 @@
+package com.unilumin.smartapp.ui.screens.app.lamp
+
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -8,10 +10,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateOf // 修改：引入 mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -46,12 +50,13 @@ import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartLampScreen(
-    retrofitClient: RetrofitClient, onBack: () -> Unit, toNew: (LampViewModel) -> Unit
+    retrofitClient: RetrofitClient,
+    onBack: () -> Unit,
+    toNew: (LampViewModel) -> Unit
 ) {
     val context = LocalContext.current
-
     val application = context.applicationContext as Application
-    // 初始化 ViewModel
+
     val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return SystemViewModel(retrofitClient, application) as T
@@ -64,18 +69,22 @@ fun SmartLampScreen(
         }
     })
 
-
-    // 获取功能列表
     val lampFunctions by systemViewModel.lampFunctions.collectAsState()
-    var currentFunctionId by remember(lampFunctions) {
-        mutableStateOf(
-            lampFunctions.firstOrNull { it.isSelected }?.id ?: SMART_LAMP_LIGHT
-        )
+
+    var currentFunctionId by rememberSaveable { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(lampFunctions) {
+        if (currentFunctionId == null && lampFunctions.isNotEmpty()) {
+            currentFunctionId = lampFunctions.firstOrNull { it.isSelected }?.id ?: SMART_LAMP_LIGHT
+        }
     }
 
-    // 动态获取当前页面的标题（可选，如果标题需要跟随功能变化）
-    val currentTitle = remember(currentFunctionId) {
-        lampFunctions.find { it.id == currentFunctionId }?.name ?: getSmartAppName(SMART_LAMP)
+
+    val effectiveId = currentFunctionId ?: SMART_LAMP_LIGHT
+
+    // 动态获取当前页面的标题
+    val currentTitle = remember(effectiveId, lampFunctions) {
+        lampFunctions.find { it.id == effectiveId }?.name ?: getSmartAppName(SMART_LAMP)
     }
 
     Scaffold(
@@ -87,19 +96,20 @@ fun SmartLampScreen(
                         onBack = { onBack() },
                         menuItems = lampFunctions,
                         onMenuItemClick = { systemConfig ->
+                            // 更新 String 类型的 ID
                             currentFunctionId = systemConfig.id
                         })
                 }
             }
         }, containerColor = PageBackground
     ) { padding ->
-        // 3. 【核心修改】根据状态 ID 渲染不同的内容
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            when (currentFunctionId) {
+            // 根据 String 类型的 effectiveId 判断
+            when (effectiveId) {
                 // 单灯管理页面
                 SMART_LAMP_LIGHT -> {
                     LampLightContent(lampViewModel)
@@ -117,6 +127,7 @@ fun SmartLampScreen(
                     LampLightGwContent(lampViewModel)
                 }
 
+                // 分组管理
                 SMART_LAMP_GROUP -> {
                     LampGroupContent(lampViewModel, toNew = { toNew(lampViewModel) })
                 }
@@ -129,7 +140,6 @@ fun SmartLampScreen(
                     LampJobContent(lampViewModel)
                 }
 
-
                 else -> {
                     EmptyDataView("未开发的功能")
                 }
@@ -137,8 +147,3 @@ fun SmartLampScreen(
         }
     }
 }
-
-
-
-
-
