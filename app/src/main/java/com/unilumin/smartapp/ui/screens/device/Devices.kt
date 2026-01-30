@@ -104,6 +104,10 @@ fun DevicesScreen(
         }
     })
 
+    LaunchedEffect(Unit) {
+        deviceViewModel.updateFilter("1")
+    }
+
     val smartApps by systemViewModel.smartApps.collectAsState()
 
     val productTypes by systemViewModel.productTypes.collectAsState()
@@ -130,9 +134,7 @@ fun DevicesScreen(
     var lastSyncedParams by remember {
         mutableStateOf(
             Triple(
-                productType,
-                searchQuery,
-                deviceState
+                productType, searchQuery, deviceState
             )
         )
     }
@@ -196,15 +198,15 @@ fun DevicesScreen(
                         Row(
                             modifier = Modifier
                                 .height(48.dp) // 与常见 SearchBar 高度一致
-                                .clip(RoundedCornerShape(24.dp)) // 胶囊圆角
-                                .background(Gray100)
+                            .clip(RoundedCornerShape(24.dp)) // 胶囊圆角
+                            .background(Gray100)
                                 .clickable { statusExpanded = true }
                                 .padding(start = 12.dp, end = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                            verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 // 显示简化后的文本，例如去掉 "设备" 二字以节省空间
-                                text = DeviceConstant.statusOptions.find { it.first == deviceState }?.second?: "状态",
+                                text = DeviceConstant.statusOptions.find { it.first == deviceState }?.second
+                                    ?: "状态",
                                 fontSize = 14.sp,
                                 color = Gray900,
                                 fontWeight = FontWeight.Medium
@@ -223,20 +225,17 @@ fun DevicesScreen(
                             modifier = Modifier.background(Color.White)
                         ) {
                             DeviceConstant.statusOptions.forEach { (value, label) ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = label,
-                                            fontSize = 14.sp,
-                                            color = if (value == deviceState) Blue600 else Gray900,
-                                            fontWeight = if (value == deviceState) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    },
-                                    onClick = {
-                                        deviceViewModel.updateState(value)
-                                        statusExpanded = false
-                                    }
-                                )
+                                DropdownMenuItem(text = {
+                                    Text(
+                                        text = label,
+                                        fontSize = 14.sp,
+                                        color = if (value == deviceState) Blue600 else Gray900,
+                                        fontWeight = if (value == deviceState) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }, onClick = {
+                                    deviceViewModel.updateState(value)
+                                    statusExpanded = false
+                                })
                             }
                         }
                     }
@@ -258,8 +257,7 @@ fun DevicesScreen(
                 DeviceFilterSection(
                     activeTypes = activeTypes,
                     selectedId = productType.toLong(),
-                    onSelect = { id -> deviceViewModel.updateFilter(id) }
-                )
+                    onSelect = { id -> deviceViewModel.updateFilter(id) })
             }
         }
 
@@ -285,9 +283,7 @@ fun DevicesScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeviceFilterSection(
-    activeTypes: List<SystemConfig>,
-    selectedId: Long,
-    onSelect: (String) -> Unit
+    activeTypes: List<SystemConfig>, selectedId: Long, onSelect: (String) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -329,14 +325,10 @@ fun DeviceFilterSection(
                     ) {
                         //占位作用
                         Text(
-                            "",
-                            fontSize = 13.sp,
-                            color = Gray500,
-                            fontWeight = FontWeight.Medium
+                            "", fontSize = 13.sp, color = Gray500, fontWeight = FontWeight.Medium
                         )
                         IconButton(
-                            onClick = { isExpanded = false },
-                            modifier = Modifier.size(32.dp)
+                            onClick = { isExpanded = false }, modifier = Modifier.size(32.dp)
                         ) {
                             Icon(Icons.Default.KeyboardArrowUp, null, tint = Blue600)
                         }
@@ -348,8 +340,7 @@ fun DeviceFilterSection(
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(
-                            12.dp,
-                            Alignment.CenterHorizontally
+                            12.dp, Alignment.CenterHorizontally
                         ),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         maxItemsInEachRow = 4
@@ -361,8 +352,7 @@ fun DeviceFilterSection(
                                 onClick = {
                                     onSelect(type.id)
                                     isExpanded = false // 选中后自动收起
-                                }
-                            )
+                                })
                         }
                     }
                 }
@@ -382,8 +372,7 @@ fun DeviceFilterSection(
                             FilterChip(
                                 label = type.name,
                                 isActive = type.id == selectedId.toString(),
-                                onClick = { onSelect(type.id) }
-                            )
+                                onClick = { onSelect(type.id) })
                         }
                     }
 
@@ -391,8 +380,7 @@ fun DeviceFilterSection(
                         modifier = Modifier
                             .padding(end = 8.dp)
                             .size(40.dp)
-                            .clickable { isExpanded = true },
-                        contentAlignment = Alignment.Center
+                            .clickable { isExpanded = true }, contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.ChevronRight,
@@ -412,9 +400,7 @@ fun DeviceFilterSection(
  */
 @Composable
 fun GridFilterItem(
-    type: SystemConfig,
-    isSelected: Boolean,
-    onClick: () -> Unit
+    type: SystemConfig, isSelected: Boolean, onClick: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -422,8 +408,7 @@ fun GridFilterItem(
             .width(76.dp)
             .clip(RoundedCornerShape(8.dp))
             .clickable { onClick() }
-            .padding(vertical = 4.dp)
-    ) {
+            .padding(vertical = 4.dp)) {
         Surface(
             modifier = Modifier.size(48.dp),
             shape = CircleShape,
