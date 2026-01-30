@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -53,9 +54,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Apartment
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -2266,54 +2267,54 @@ fun CommonTopAppBar(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    height: Dp = 72.dp,
+    height: Dp = 56.dp, // 调整为标准高度
     menuItems: List<SystemConfig> = emptyList(),
     onMenuItemClick: (SystemConfig) -> Unit = {}
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val textMain = Color(0xFF1A1C1E) // 主标题深黑
-    val gradientBrush = Brush.verticalGradient(
-        colors = listOf(Color(0xFFF0F7FF), Gray50), startY = 0f, endY = 500f
-    )
+    val textMain = Color(0xFF1D1B20) // 更加深邃的 M3 文本色
 
+    // 使用简单的纯色背景，通过阴影或底部细线区分，比渐变更高级
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = Color.Transparent // Set Surface color to Transparent to let the gradient show
+        color = Color.White,
+        shadowElevation = 2.dp // 柔和的阴影
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding() // 确保适配刘海屏/状态栏
                 .height(height)
-                .background(brush = gradientBrush) // Apply the gradient background
                 .padding(horizontal = 4.dp)
         ) {
-            // === Left: Back Button ===
+            // === 左侧：返回按钮 (增加点击区域感) ===
             IconButton(
-                onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)
+                onClick = onBack,
+                modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack, // 使用自动镜像图标适配 RTL
                     contentDescription = "Back",
                     tint = textMain,
                     modifier = Modifier.size(24.dp)
                 )
             }
 
-            // === Center: Title ===
+            // === 中间：标题 (增加字重和间距优化) ===
             Text(
                 text = title,
                 style = TextStyle(
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold, // SemiBold 比 Bold 更具现代感
                     color = textMain,
-                    letterSpacing = 0.5.sp
+                    letterSpacing = 0.2.sp
                 ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.align(Alignment.Center)
             )
 
-            // === Right: Menu Button ===
+            // === 右侧：操作区 ===
             if (menuItems.isNotEmpty()) {
                 Box(
                     modifier = Modifier.align(Alignment.CenterEnd)

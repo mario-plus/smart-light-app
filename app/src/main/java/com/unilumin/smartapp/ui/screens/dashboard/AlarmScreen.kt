@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.ui.screens.dashboard
 
 import android.app.Application
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,7 +48,6 @@ import com.unilumin.smartapp.client.data.DeviceAlarmInfo
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.ModernStateSelector
-import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 
@@ -79,14 +77,7 @@ fun DeviceAlarmScreen(
 
     Scaffold(
         topBar = {
-            Surface(shadowElevation = 3.dp) {
-                Column(modifier = Modifier.background(CardWhite)) {
-                    CommonTopAppBar(
-                        title = "告警管理",
-                        onBack = { onBack() }
-                    )
-                }
-            }
+            CommonTopAppBar(title = "告警管理", onBack = { onBack() })
         }, containerColor = PageBackground
     ) { padding ->
         // 3. 【核心修改】根据状态 ID 渲染不同的内容

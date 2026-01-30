@@ -271,7 +271,6 @@ fun InfoColumnItem(
 ) {
     Column(
         modifier = modifier
-            // 如果 onClick 不为空，则添加 clickable 效果
             .then(
                 if (onClick != null) {
                     Modifier.clickable(onClick = onClick)
@@ -280,7 +279,7 @@ fun InfoColumnItem(
                 }
             )
             .padding(horizontal = 4.dp)
-            .padding(vertical = 4.dp), // 增加垂直内边距，提升点击手感
+            .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

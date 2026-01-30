@@ -1,25 +1,21 @@
 package com.unilumin.smartapp.ui.screens.app.lamp
 
 import android.app.Application
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf // 修改：引入 mutableStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,14 +31,6 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LIGHT_GATEWAY
 import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.EmptyDataView
-import com.unilumin.smartapp.ui.screens.app.lamp.LampGatewayContent
-import com.unilumin.smartapp.ui.screens.app.lamp.LampGroupContent
-import com.unilumin.smartapp.ui.screens.app.lamp.LampJobContent
-import com.unilumin.smartapp.ui.screens.app.lamp.LampLightContent
-import com.unilumin.smartapp.ui.screens.app.lamp.LampLightGwContent
-import com.unilumin.smartapp.ui.screens.app.lamp.LampLoopCtlContent
-import com.unilumin.smartapp.ui.screens.app.lamp.LampStrategyContent
-import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import com.unilumin.smartapp.ui.viewModel.SystemViewModel
@@ -89,18 +77,13 @@ fun SmartLampScreen(
 
     Scaffold(
         topBar = {
-            Surface(shadowElevation = 3.dp) {
-                Column(modifier = Modifier.background(CardWhite)) {
-                    CommonTopAppBar(
-                        title = currentTitle,
-                        onBack = { onBack() },
-                        menuItems = lampFunctions,
-                        onMenuItemClick = { systemConfig ->
-                            // 更新 String 类型的 ID
-                            currentFunctionId = systemConfig.id
-                        })
-                }
-            }
+            CommonTopAppBar(title = currentTitle,
+                onBack = { onBack() },
+                menuItems = lampFunctions,
+                onMenuItemClick = { systemConfig ->
+                    // 更新 String 类型的 ID
+                    currentFunctionId = systemConfig.id
+                })
         }, containerColor = PageBackground
     ) { padding ->
         Box(

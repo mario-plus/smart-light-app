@@ -1,5 +1,5 @@
+
 import android.app.Application
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -75,11 +75,7 @@ fun SystemConfigScreen(
 
     Scaffold(
         topBar = {
-            Surface(shadowElevation = 3.dp) {
-                Column(modifier = Modifier.background(CardWhite)) {
-                    CommonTopAppBar(title = "系统配置", onBack = { onBack() })
-                }
-            }
+            CommonTopAppBar(title = "系统配置", onBack = { onBack() })
         }, containerColor = PageBackground
     ) { padding ->
 

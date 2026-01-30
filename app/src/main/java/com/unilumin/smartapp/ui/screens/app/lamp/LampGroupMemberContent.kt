@@ -2,24 +2,39 @@ package com.unilumin.smartapp.ui.screens.app.lamp
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeviceHub
 import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.LinkOff
-import androidx.compose.material3.*
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
@@ -36,9 +51,14 @@ import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.ModernStateSelector
 import com.unilumin.smartapp.ui.theme.BluePrimary
-import com.unilumin.smartapp.ui.theme.CardWhite
+import com.unilumin.smartapp.ui.theme.IconBgBlue
+import com.unilumin.smartapp.ui.theme.IconTintBlue
 import com.unilumin.smartapp.ui.theme.PageBackground
-import com.unilumin.smartapp.ui.theme.*
+import com.unilumin.smartapp.ui.theme.PanelBg
+import com.unilumin.smartapp.ui.theme.StatusGray
+import com.unilumin.smartapp.ui.theme.StatusGreen
+import com.unilumin.smartapp.ui.theme.TextSub
+import com.unilumin.smartapp.ui.theme.TextTitle
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 
 
@@ -59,13 +79,7 @@ fun LampGroupMemberContent(
 
     Scaffold(
         topBar = {
-            Surface(shadowElevation = 3.dp) {
-                Column(modifier = Modifier.background(CardWhite)) {
-                    CommonTopAppBar(
-                        title = currentGroupInfo.value?.groupName ?: "分组成员",
-                        onBack = { onBack() })
-                }
-            }
+            CommonTopAppBar(title = "分组成员", onBack = { onBack() })
         }, containerColor = PageBackground
     ) { padding ->
         Box(
@@ -110,6 +124,8 @@ fun LampGroupMemberContent(
  */
 @Composable
 fun LoopControllerCard(item: GroupMemberInfo) {
+
+
     StyledGroupMemberCard(
         title = item.loopCtlName ?: "未知控制器",
         subTitle = "网关: ${item.gwName ?: "--"}",
@@ -145,7 +161,7 @@ fun LoopControllerCard(item: GroupMemberInfo) {
 }
 
 /**
- * 样式 2: 普通设备卡片
+ * 样式 2: 普通设备卡片（优化版）
  */
 @Composable
 fun NormalDeviceCard(item: GroupMemberInfo) {
@@ -158,20 +174,86 @@ fun NormalDeviceCard(item: GroupMemberInfo) {
             DeviceStatus(item.netState)
         }) {
 
+        // --- 优化后的中间内容区域 ---
+        // 不再使用深色背景块，改用简洁的布局
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(PanelBg, RoundedCornerShape(8.dp))
-                .padding(12.dp)
+                .padding(vertical = 4.dp)
         ) {
-            DataFieldItem(label = "加入时间", value = item.createTime, isFullWidth = true)
+            // 使用细分割线增加层次感
+            androidx.compose.material3.HorizontalDivider(
+                modifier = Modifier.padding(bottom = 12.dp),
+                thickness = 0.5.dp,
+                color = Color.LightGray.copy(alpha = 0.3f)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 添加一个小图标，让“时间”看起来更精致
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Outlined.Schedule,
+                    contentDescription = null,
+                    tint = TextSub.copy(alpha = 0.7f),
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+
+                Text(
+                    text = "加入时间",
+                    style = TextStyle(fontSize = 13.sp, color = TextSub)
+                )
+
+                Spacer(modifier = Modifier.weight(1f)) // 弹簧效果，将时间推向右侧
+
+                Text(
+                    text = item.createTime ?: "--",
+                    style = TextStyle(
+                        fontSize = 13.sp,
+                        color = TextTitle.copy(alpha = 0.8f),
+                        fontWeight = FontWeight.Normal
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
+        // 底部状态行
         GroupMemberStatusRow(item.bindState, item.operateState)
     }
 }
+
+/**
+ * 优化后的数据项展示（如果 LoopControllerCard 也要改，可以参考这个）
+ */
+@Composable
+fun DataFieldItem(
+    label: String, value: String?, modifier: Modifier = Modifier, isFullWidth: Boolean = false
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            style = TextStyle(fontSize = 12.sp, color = TextSub.copy(alpha = 0.8f))
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = value ?: "--",
+            style = TextStyle(
+                fontSize = 14.sp,
+                color = TextTitle,
+                fontWeight = FontWeight.SemiBold // 稍微加粗提高可读性
+            ),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+// 注意：请确保导入了以下图标（或者直接使用现有图标）
+// import androidx.compose.material.icons.outlined.Schedule
 
 // ==========================================
 //              基础组件封装
@@ -257,29 +339,12 @@ fun StyledGroupMemberCard(
     }
 }
 
-/**
- * 数据面板中的单个字段
- */
-@Composable
-fun DataFieldItem(
-    label: String, value: String?, modifier: Modifier = Modifier, isFullWidth: Boolean = false
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = label, style = TextStyle(fontSize = 12.sp, color = TextSub)
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = value ?: "--", style = TextStyle(
-                fontSize = 14.sp, color = TextTitle, fontWeight = FontWeight.Medium
-            ), maxLines = 1, overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
 
 /**
- * 底部带图标的状态项 (类似 DeviceStatusRow)
+ * @param isActive
+ * @param activeText 为true显示的内容
+ * @param inactiveText 为false显示的内容
+ * @param icon 图标
  */
 @Composable
 fun StatusIconText(isActive: Boolean, activeText: String, inactiveText: String, icon: ImageVector) {
@@ -299,10 +364,22 @@ fun StatusIconText(isActive: Boolean, activeText: String, inactiveText: String, 
     }
 }
 
+
 @Composable
 fun GroupMemberStatusRow(
     bindState: Int?, operateState: Int?, modifier: Modifier = Modifier
 ) {
+    val optType = if (operateState == 0) {
+        "绑定中"
+    } else if (operateState == 1) {
+        "绑定失败"
+    } else if (operateState == 3) {
+        "解绑中"
+    } else if (operateState == 4) {
+        "解绑失败"
+    } else {
+        "未知状态"
+    }
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -315,12 +392,11 @@ fun GroupMemberStatusRow(
             inactiveText = "未绑定",
             icon = if (bindState == 1) Icons.Outlined.Link else Icons.Outlined.LinkOff
         )
-
         // --- 右侧：操作状态 ---
         StatusIconText(
-            isActive = operateState == 1,
+            isActive = operateState == 2,
             activeText = "绑定成功",
-            inactiveText = "操作失败",
+            inactiveText = optType,
             icon = if (operateState == 1) Icons.Outlined.CheckCircle else Icons.Outlined.Info
         )
     }
