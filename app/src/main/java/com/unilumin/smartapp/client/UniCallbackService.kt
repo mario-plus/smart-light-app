@@ -116,13 +116,59 @@ class UniCallbackService<T> {
         }
     }
 
-    private fun resumeWithFailure(
+    /**
+     * 抽象泛型方法：处理直接返回实体类的接口
+     */
+    suspend fun <T> parseDirectSuspend(
+        call: Call<T>?,
+        context: Context?,
+        checkSuccess: (T) -> String? = { null }
+    ): T? {
+        return suspendCancellableCoroutine { continuation ->
+            continuation.invokeOnCancellation {
+                call?.cancel()
+            }
+            call?.enqueue(object : Callback<T> {
+                override fun onResponse(call: Call<T>, response: Response<T>) {
+                    val body = response.body()
+
+                    if (body == null) {
+                        resumeWithFailure(continuation, context, "响应数据为空")
+                        return
+                    }
+
+                    // 执行业务成功校验逻辑
+                    val errorMessage = checkSuccess(body)
+                    if (errorMessage != null) {
+                        resumeWithFailure(continuation, context, errorMessage)
+                        return
+                    }
+
+                    if (continuation.isActive) {
+                        continuation.resume(body)
+                    }
+                }
+
+                override fun onFailure(call: Call<T>, t: Throwable) {
+                    resumeWithFailure(continuation, context, "网络请求失败: ${t.message}")
+                }
+            })
+        }
+    }
+
+
+    /**
+     * 修复后的泛型失败处理函数
+     */
+    private fun <T> resumeWithFailure(
         continuation: kotlinx.coroutines.CancellableContinuation<T?>,
         context: Context?,
         message: String
     ) {
         if (continuation.isActive) {
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            }
             continuation.resumeWithException(Exception(message))
         }
     }

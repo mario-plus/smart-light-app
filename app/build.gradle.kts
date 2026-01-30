@@ -94,6 +94,10 @@ dependencies {
 
 
 
+    // Google 官方 WebRTC 库 (Android 版)
+    implementation(libs.google.webrtc)
 
+    // 如果你还需要处理 Retrofit 字符串 Body（用于 POST SDP）
+    implementation(libs.converter.scalars)
 
 }

@@ -3,7 +3,6 @@ package com.unilumin.smartapp.ui.viewModel
 import android.app.Application
 import android.content.Context
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,21 +18,14 @@ import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
-import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
-import com.unilumin.smartapp.client.data.LampCtlReq
-import com.unilumin.smartapp.client.data.LampLightInfo
-import com.unilumin.smartapp.client.data.LightDayEnergy
-import com.unilumin.smartapp.client.data.LightEnergy
-import com.unilumin.smartapp.client.data.LightYearEnergy
-import com.unilumin.smartapp.client.data.LoopCtlReq
-import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.PagingState
 import com.unilumin.smartapp.client.data.SequenceTsl
+import com.unilumin.smartapp.client.data.WebRTCResponse
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,7 +34,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
-import retrofit2.Call
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -144,6 +135,10 @@ class DeviceViewModel(
     val deviceStatusAnalysisData = _deviceStatusAnalysis.asStateFlow()
 
 
+    // WebRTC SDP 状态
+    private val _webRtcSdp = MutableStateFlow<WebRTCResponse?>(null)
+    val webRtcSdp = _webRtcSdp.asStateFlow()
+
     //设备列表分页数据列表
     @OptIn(ExperimentalCoroutinesApi::class)
     val devicePagingFlow =
@@ -196,8 +191,6 @@ class DeviceViewModel(
         _totalCount.value = parseDataNewSuspend?.total!!
         return parseDataNewSuspend.list
     }
-
-
 
 
     //获取设备列表
@@ -297,7 +290,6 @@ class DeviceViewModel(
             }
         }
     }
-
 
 
     /**
@@ -495,5 +487,42 @@ class DeviceViewModel(
             )
         }
         return list
+    }
+
+
+    /**
+     * 获取摄像头实时 SDP 信息
+     */
+    fun getCameraWebRtcSdp(deviceId: Long) {
+        launchWithLoading {
+            try {
+                val pathResult = UniCallbackService<String>().parseDataNewSuspend(
+                    deviceService.getCameraLiveUrl(deviceId, 1, 1), context
+                )
+                pathResult?.let { relativePath ->
+                    val uri = android.net.Uri.parse(relativePath)
+                    val app = uri.getQueryParameter("app") ?: ""
+                    val stream = uri.getQueryParameter("stream") ?: ""
+                    val type = uri.getQueryParameter("type") ?: "play"
+                    val localOfferSdp = createLocalWebRtcOffer()
+                    val sdpResponse = UniCallbackService<WebRTCResponse>().parseDirectSuspend(
+
+                        call = deviceService.getCameraLive(app, stream, type, localOfferSdp),
+                        context = context,
+                        checkSuccess = { resp ->
+                            if (resp.code == 0) null else "流媒体服务错误: ${resp.code}"
+                        }
+                    )
+                    _webRtcSdp.value = sdpResponse
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _webRtcSdp.value = null
+            }
+        }
+    }
+
+    fun clearWebRtcData() {
+        _webRtcSdp.value = null
     }
 }

@@ -1,4 +1,5 @@
 import android.app.Application
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +29,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +53,7 @@ import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchHeader
+import com.unilumin.smartapp.ui.screens.dialog.LivePlayerDialog
 import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
@@ -73,12 +79,22 @@ fun SmartMonitorScreen(
     LaunchedEffect(Unit) {
         deviceViewModel.updateFilter("2")
     }
+    var showPlayer by remember { mutableStateOf(false) }
+    var activeDevice by remember { mutableStateOf<IotDevice?>(null) }
+
+
+    // 播放弹窗
+    if (showPlayer && activeDevice != null) {
+        LivePlayerDialog(
+            device = activeDevice!!,
+            viewModel = deviceViewModel,
+            onDismiss = { showPlayer = false })
+    }
 
     Scaffold(
         topBar = {
             CommonTopAppBar(title = "监控设备", onBack = onBack)
-        },
-        containerColor = PageBackground
+        }, containerColor = PageBackground
     ) { padding ->
         Column(
             modifier = Modifier
@@ -91,8 +107,7 @@ fun SmartMonitorScreen(
                 searchQuery = searchQuery.value,
                 searchTitle = "",
                 onStatusChanged = { deviceViewModel.updateState(it) },
-                onSearchChanged = { deviceViewModel.updateSearch(it) }
-            )
+                onSearchChanged = { deviceViewModel.updateSearch(it) })
             PagingList(
                 totalCount = totalCount.value,
                 lazyPagingItems = devicePagingFlow,
@@ -101,13 +116,17 @@ fun SmartMonitorScreen(
                 modifier = Modifier.weight(1f),
                 emptyMessage = "未找到数据",
                 contentPadding = PaddingValues(
-                    top = 12.dp,
-                    bottom = 24.dp,
-                    start = 16.dp,
-                    end = 16.dp
+                    top = 12.dp, bottom = 24.dp, start = 16.dp, end = 16.dp
                 )
             ) { device ->
-                MonitorDeviceCard(device, onClick = {})
+                MonitorDeviceCard(device, onClick = {
+                    if (device.state == 1) {
+                        activeDevice = device
+                        showPlayer = true
+                    } else {
+                        Toast.makeText(context, "设备已离线", Toast.LENGTH_SHORT).show()
+                    }
+                })
             }
         }
     }
@@ -116,8 +135,7 @@ fun SmartMonitorScreen(
 
 @Composable
 fun MonitorDeviceCard(
-    device: IotDevice,
-    onClick: () -> Unit
+    device: IotDevice, onClick: () -> Unit
 ) {
     ElevatedCard(
         onClick = onClick,
@@ -135,11 +153,11 @@ fun MonitorDeviceCard(
                     .background(Color.Black)
             ) {
                 AsyncImage(
-                    model = "https://picsum.photos/seed/${device.id}/800/450", // 占位图
+                    model = "https://picsum.photos/seed/${device.id}/800/450", // 如果访问不了，就会出现黑色封面，不影响
                     contentDescription = "Preview",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
-                    alpha = if ( device.state == 1) 1f else 0.5f // 离线时画面压暗
+                    alpha = if (device.state == 1) 1f else 0.5f // 离线时画面压暗
                 )
 
                 Surface(

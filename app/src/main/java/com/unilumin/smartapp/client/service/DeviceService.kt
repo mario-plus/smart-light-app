@@ -1,23 +1,15 @@
 package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
-import com.unilumin.smartapp.client.data.AlarmRequestParam
-import com.unilumin.smartapp.client.data.DeviceAlarmInfo
 import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
-import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.EnvData
 import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
-import com.unilumin.smartapp.client.data.LampCtlReq
-import com.unilumin.smartapp.client.data.LightDayEnergy
-import com.unilumin.smartapp.client.data.LightEnergy
-import com.unilumin.smartapp.client.data.LightYearEnergy
-import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PageResponse
@@ -27,7 +19,6 @@ import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
-import retrofit2.http.PUT
 import retrofit2.http.Query
 
 
@@ -42,7 +33,6 @@ interface DeviceService {
         @Query("productTypeId") productTypeId: Int,
         @Query("subSystemType") subSystemType: Int
     ): Call<NewResponseData<PageResponse<IotDevice>?>?>?
-
 
 
     @GET(RequestPathKey.KEY_ENV_DATA)
@@ -69,9 +59,10 @@ interface DeviceService {
         @Query("streamType") streamType: Int
     ): Call<NewResponseData<String?>?>?
 
-    @GET(RequestPathKey.KEY_CAMERA_LIVE)
+    @POST(RequestPathKey.KEY_CAMERA_LIVE)
     fun getCameraLive(
-        @Query("app") app: String, @Query("stream") stream: String, @Query("type") type: String
+        @Query("app") app: String, @Query("stream") stream: String, @Query("type") type: String,
+        @Body offerSdp: String
     ): Call<WebRTCResponse>
 
     @GET(RequestPathKey.KEY_GET_DEVICE_DETAIL)
@@ -119,9 +110,6 @@ interface DeviceService {
         @Query("timeType") timeType: Int?,
         @Query("primaryClass") primaryClass: Int?
     ): Call<NewResponseData<PageResponse<OfflineDevice>?>?>?
-
-
-
 
 
 }
