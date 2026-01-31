@@ -34,8 +34,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
+import org.webrtc.EglBase
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import androidx.core.net.toUri
+import com.unilumin.smartapp.client.WebRtcClient
 
 class DeviceViewModel(
     retrofitClient: RetrofitClient, application: Application
@@ -490,29 +493,33 @@ class DeviceViewModel(
     }
 
 
-    /**
-     * 获取摄像头实时 SDP 信息
-     */
+
+    private val rootEglBase = EglBase.create()
+    private val webRtcClient by lazy { WebRtcClient(context, rootEglBase) }
+
     fun getCameraWebRtcSdp(deviceId: Long) {
         launchWithLoading {
             try {
+
                 val pathResult = UniCallbackService<String>().parseDataNewSuspend(
                     deviceService.getCameraLiveUrl(deviceId, 1, 1), context
                 )
                 pathResult?.let { relativePath ->
-                    val uri = android.net.Uri.parse(relativePath)
+                    val uri = relativePath.toUri()
                     val app = uri.getQueryParameter("app") ?: ""
                     val stream = uri.getQueryParameter("stream") ?: ""
                     val type = uri.getQueryParameter("type") ?: "play"
-                    val localOfferSdp = createLocalWebRtcOffer()
+                    val localOfferSdp = webRtcClient.createOffer()
                     val sdpResponse = UniCallbackService<WebRTCResponse>().parseDirectSuspend(
-
                         call = deviceService.getCameraLive(app, stream, type, localOfferSdp),
                         context = context,
                         checkSuccess = { resp ->
                             if (resp.code == 0) null else "流媒体服务错误: ${resp.code}"
                         }
                     )
+                    sdpResponse?.sdp?.let { remoteAnswerSdp ->
+                        webRtcClient.setRemoteDescription(remoteAnswerSdp)
+                    }
                     _webRtcSdp.value = sdpResponse
                 }
             } catch (e: Exception) {
@@ -524,5 +531,6 @@ class DeviceViewModel(
 
     fun clearWebRtcData() {
         _webRtcSdp.value = null
+        webRtcClient.release()
     }
 }
