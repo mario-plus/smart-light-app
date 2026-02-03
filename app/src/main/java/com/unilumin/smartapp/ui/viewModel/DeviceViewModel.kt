@@ -387,14 +387,19 @@ class DeviceViewModel(
     private val rootEglBase = EglBase.create()
     private val webRtcClient by lazy { WebRtcClient(context, rootEglBase) }
 
-    // 新增：提供给 UI 使用
     fun getEglBaseContext(): EglBase.Context {
         return rootEglBase.eglBaseContext
     }
 
-    // 新增：绑定渲染器
     fun attachRenderer(sink: VideoSink) {
         webRtcClient.setRemoteRender(sink)
+    }
+
+    /**
+     * 【关键】解绑渲染器
+     */
+    fun detachRenderer() {
+        webRtcClient.removeRemoteRender()
     }
 
     fun getCameraWebRtcSdp(deviceId: Long) {
@@ -402,7 +407,6 @@ class DeviceViewModel(
             try {
                 Log.d("DeviceViewModel", "Starting WebRTC flow for device: $deviceId")
 
-                // 1. 获取推流路径 (实际上触发了服务器调用 ZLM addStreamProxy)
                 val pathResult = UniCallbackService<String>().parseDataNewSuspend(
                     deviceService.getCameraLiveUrl(deviceId, 1, 1), context
                 )
@@ -412,12 +416,9 @@ class DeviceViewModel(
                     return@launchWithLoading
                 }
 
-                Log.d("DeviceViewModel", "Got path result: $pathResult")
-
-                // 解析参数
                 val uri = pathResult.toUri()
-                val app = uri.getQueryParameter("app")
-                val stream = uri.getQueryParameter("stream")
+                val app = uri.getQueryParameter("app") ?: ""
+                val stream = uri.getQueryParameter("stream") ?: ""
                 val type = uri.getQueryParameter("type") ?: "play"
 
                 if (app.isNullOrEmpty() || stream.isNullOrEmpty()) {
@@ -425,22 +426,22 @@ class DeviceViewModel(
                     return@launchWithLoading
                 }
 
-                // 2. 创建本地 Offer
+                // 1. 创建 Offer
                 Log.d("DeviceViewModel", "Creating Offer...")
                 val localOfferSdp = webRtcClient.createOffer()
-                Log.d("DeviceViewModel", "Offer Created. Length: ${localOfferSdp.length}")
 
-                // 3. 构造 Raw RequestBody (text/plain)
+                // 2. 【关键】构造 Raw RequestBody (text/plain)，解决 ZLM -400 错误
+                // ZLM 期望收到原始 SDP 字符串，而不是 JSON
                 val mediaType = "text/plain".toMediaTypeOrNull()
                 val requestBody = localOfferSdp.toRequestBody(mediaType)
 
-                // 4. 发送 Offer 到服务器 (请求 ZLM WebRTC 接口)
+                // 3. 发送 Offer 到服务器
                 val sdpResponse = UniCallbackService<WebRTCResponse>().parseDirectSuspend(
                     call = deviceService.getCameraLive(
                         app,
                         stream,
                         type,
-                        requestBody // 发送 raw body 而不是被封装的对象
+                        requestBody // 发送 raw body
                     ),
                     context = context,
                     checkSuccess = { resp ->
@@ -451,7 +452,7 @@ class DeviceViewModel(
                 sdpResponse?.sdp?.let { remoteAnswerSdp ->
                     Log.d("DeviceViewModel", "Got Answer SDP. Setting remote desc...")
                     webRtcClient.setRemoteDescription(remoteAnswerSdp)
-                    _webRtcSdp.value = sdpResponse // 这会触发 UI 从 Loading 变为显示
+                    _webRtcSdp.value = sdpResponse
                 } ?: run {
                     Log.e("DeviceViewModel", "SDP Answer is null!")
                 }

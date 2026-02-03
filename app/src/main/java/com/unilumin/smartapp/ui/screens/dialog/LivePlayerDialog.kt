@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -32,6 +33,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
+import org.webrtc.RendererCommon
+import org.webrtc.SurfaceViewRenderer
 
 @Composable
 fun LivePlayerDialog(
@@ -41,16 +44,13 @@ fun LivePlayerDialog(
 ) {
     val sdpData by viewModel.webRtcSdp.collectAsState()
 
-    // 获取 EglBaseContext 以初始化渲染器
-    val eglBaseContext = viewModel.getEglBaseContext()
-
-    // 进入自动开始协商
     LaunchedEffect(device.id) {
         viewModel.getCameraWebRtcSdp(device.id)
     }
 
     androidx.compose.ui.window.Dialog(
         onDismissRequest = {
+            // 在关闭 Dialog 前清理数据
             viewModel.clearWebRtcData()
             onDismiss()
         },
@@ -60,9 +60,7 @@ fun LivePlayerDialog(
             Column {
                 // 1. 顶部栏
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     androidx.compose.material3.IconButton(onClick = {
@@ -78,7 +76,7 @@ fun LivePlayerDialog(
                     Text(device.deviceName ?: "监控直播", color = Color.White)
                 }
 
-                // 2. 视频预览区 (16:9)
+                // 2. 视频预览区
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -87,45 +85,39 @@ fun LivePlayerDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     if (sdpData == null) {
-                        androidx.compose.material3.CircularProgressIndicator(color = Color.White)
+                        CircularProgressIndicator(color = Color.White)
                     } else {
                         // 使用 AndroidView 嵌入 WebRTC 的 SurfaceViewRenderer
                         AndroidView(
                             factory = { ctx ->
-                                org.webrtc.SurfaceViewRenderer(ctx).apply {
+                                SurfaceViewRenderer(ctx).apply {
                                     init(viewModel.getEglBaseContext(), null)
-                                    setScalingType(org.webrtc.RendererCommon.ScalingType.SCALE_ASPECT_FIT)
+                                    setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
+                                    setMirror(false)
                                     setEnableHardwareScaler(true)
-                                    // 必须调用这个来绑定底层数据
+
+                                    // 绑定渲染器
                                     viewModel.attachRenderer(this)
                                 }
                             },
                             modifier = Modifier.fillMaxSize(),
+                            // 【关键修复】确保先解绑后销毁，解决 Dropping frame 日志
                             onRelease = { renderer ->
+                                viewModel.detachRenderer()
                                 renderer.release()
                             }
                         )
                     }
                 }
 
-                // 3. 云台控制区 (PTZ)
+                // 3. 云台控制区
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
+                    modifier = Modifier.fillMaxSize().padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        "云台控制",
-                        color = Color.Gray,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                    PTZJoystick { direction ->
-                        // 调用后端接口控制摄像头
-                        // viewModel.controlCamera(device.id, direction)
-                    }
+                    Text("云台控制", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(bottom = 16.dp))
+                    PTZJoystick { direction -> /* ... */ }
                 }
             }
         }
@@ -149,9 +141,7 @@ fun PTZJoystick(onMove: (String) -> Unit) {
 fun PTZIconBtn(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     androidx.compose.material3.IconButton(
         onClick = onClick,
-        modifier = Modifier
-            .size(60.dp)
-            .background(Color.White.copy(alpha = 0.1f), CircleShape)
+        modifier = Modifier.size(60.dp).background(Color.White.copy(alpha = 0.1f), CircleShape)
     ) {
         Icon(icon, null, tint = Color.White, modifier = Modifier.size(36.dp))
     }
