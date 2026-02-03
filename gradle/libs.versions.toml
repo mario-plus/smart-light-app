@@ -1,6 +1,7 @@
 [versions]
 agp = "8.10.0"
-webrtc = "1.0.45036"
+
+webrtc = "125.6422.06.1"
 coilCompose = "2.6.0"
 converterGson = "2.9.0"
 datastorePreferences = "1.0.0"
@@ -26,7 +27,7 @@ xdmap = "latest.integration"
 material3 = "1.4.0"
 
 [libraries]
-google-webrtc = { group = "com.infobip", name = "google-webrtc", version.ref = "webrtc" }
+webrtc = { module = "io.github.webrtc-sdk:android", version.ref = "webrtc" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }

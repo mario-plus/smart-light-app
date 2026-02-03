@@ -18,6 +18,7 @@ import com.unilumin.smartapp.client.data.WebRTCResponse
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Query
 
@@ -59,10 +60,13 @@ interface DeviceService {
         @Query("streamType") streamType: Int
     ): Call<NewResponseData<String?>?>?
 
+    @Headers("No-Auth: true")
     @POST(RequestPathKey.KEY_CAMERA_LIVE)
     fun getCameraLive(
-        @Query("app") app: String, @Query("stream") stream: String, @Query("type") type: String,
-        @Body offerSdp: String
+        @Query("app") app: String,
+        @Query("stream") stream: String,
+        @Query("type") type: String,
+        @Body sdp: okhttp3.RequestBody // <--- 改成 RequestBody
     ): Call<WebRTCResponse>
 
     @GET(RequestPathKey.KEY_GET_DEVICE_DETAIL)

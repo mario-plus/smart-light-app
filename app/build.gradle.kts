@@ -87,13 +87,12 @@ dependencies {
     implementation(libs.xdmap)
 
     //视频流
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.media3.ui)
-    implementation(libs.androidx.media3.datasource.rtmp)
+
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.webrtc)
 
 
 
-    implementation(libs.google.webrtc)
+
 
 }

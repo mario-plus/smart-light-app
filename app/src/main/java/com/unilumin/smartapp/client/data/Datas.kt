@@ -844,3 +844,7 @@ data class GroupMemberFilter(
     val bindState: Int, // 如果之前改为 Long 这里也要改
     val groupId: Long? // <--- 假设这是你的第4个参数
 )
+
+data class WebRTCRequest(
+    val sdp: String
+)

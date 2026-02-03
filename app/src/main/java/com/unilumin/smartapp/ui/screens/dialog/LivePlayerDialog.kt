@@ -15,15 +15,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Camera
-import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 
@@ -45,6 +40,9 @@ fun LivePlayerDialog(
     onDismiss: () -> Unit
 ) {
     val sdpData by viewModel.webRtcSdp.collectAsState()
+
+    // 获取 EglBaseContext 以初始化渲染器
+    val eglBaseContext = viewModel.getEglBaseContext()
 
     // 进入自动开始协商
     LaunchedEffect(device.id) {
@@ -67,7 +65,10 @@ fun LivePlayerDialog(
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    androidx.compose.material3.IconButton(onClick = onDismiss) {
+                    androidx.compose.material3.IconButton(onClick = {
+                        viewModel.clearWebRtcData()
+                        onDismiss()
+                    }) {
                         Icon(
                             androidx.compose.material.icons.Icons.Default.ArrowBack,
                             null,
@@ -88,8 +89,22 @@ fun LivePlayerDialog(
                     if (sdpData == null) {
                         androidx.compose.material3.CircularProgressIndicator(color = Color.White)
                     } else {
-                        // 占位提示：实际需配合 SurfaceViewRenderer
-                        Text("视频流已建立", color = Color.Green)
+                        // 使用 AndroidView 嵌入 WebRTC 的 SurfaceViewRenderer
+                        AndroidView(
+                            factory = { ctx ->
+                                org.webrtc.SurfaceViewRenderer(ctx).apply {
+                                    init(viewModel.getEglBaseContext(), null)
+                                    setScalingType(org.webrtc.RendererCommon.ScalingType.SCALE_ASPECT_FIT)
+                                    setEnableHardwareScaler(true)
+                                    // 必须调用这个来绑定底层数据
+                                    viewModel.attachRenderer(this)
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                            onRelease = { renderer ->
+                                renderer.release()
+                            }
+                        )
                     }
                 }
 

@@ -3,7 +3,9 @@ package com.unilumin.smartapp.ui.viewModel
 import android.app.Application
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -13,6 +15,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
+import com.unilumin.smartapp.client.WebRtcClient
 import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceModelData
@@ -34,115 +37,85 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.webrtc.EglBase
+import org.webrtc.VideoSink
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import androidx.core.net.toUri
-import com.unilumin.smartapp.client.WebRtcClient
 
 class DeviceViewModel(
     retrofitClient: RetrofitClient, application: Application
 ) : AndroidViewModel(application) {
     val context = getApplication<Application>()
 
-
     //分页数据总数
     private val _totalCount = MutableStateFlow<Int>(0)
     val totalCount = _totalCount.asStateFlow()
 
-
     private val deviceService = retrofitClient.getService(DeviceService::class.java)
 
-    //设备列表查询参数(产品类型)
+    //设备列表查询参数
     val productType = MutableStateFlow("1")
-    fun updateFilter(type: String) {
-        productType.value = type
-    }
+    fun updateFilter(type: String) { productType.value = type }
 
-    //0离线，1在线
     val state = MutableStateFlow(-1)
-    fun updateState(s: Int) {
-        state.value = s
-    }
+    fun updateState(s: Int) { state.value = s }
 
-    //设备列表查询参数(关键词)
     val searchQuery = MutableStateFlow("")
-    fun updateSearch(query: String) {
-        searchQuery.value = query
-    }
+    fun updateSearch(query: String) { searchQuery.value = query }
 
-
-    //图表类型(最近活跃时间，最近七天，最近30天，最近90天)
     val chartType = MutableStateFlow(0)
-    fun updateChartType(query: Int) {
-        chartType.value = query
-    }
+    fun updateChartType(query: Int) { chartType.value = query }
 
-    //产品类型
     val primaryClass = MutableStateFlow(0)
-    fun updatePrimary(type: Int) {
-        primaryClass.value = type
-    }
+    fun updatePrimary(type: Int) { primaryClass.value = type }
 
     @RequiresApi(Build.VERSION_CODES.O)
     val timeFormat: DateTimeFormatter? = DateTimeFormatter.ofPattern("HH:mm:ss")
 
-    // --- 状态管理 ---
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    //属性
+    // 各种数据列表
     private val _propertiesList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     private val _devicePropertiesDataList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     val devicePropertiesDataList = _devicePropertiesDataList.asStateFlow()
 
-    //服务
     private val _serviceList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     private val _deviceServiceDataList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     val deviceServiceDataList = _deviceServiceDataList.asStateFlow()
 
-    //遥测
     private val _telemetryList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     private val _deviceTelemetryDataList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     val deviceTelemetryDataList = _deviceTelemetryDataList.asStateFlow()
 
-    //事件
     private val _eventList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     private val _deviceEventsDataList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     val deviceEventsDataList = _deviceEventsDataList.asStateFlow()
 
-    //历史数据
     private val _historyDataList = MutableStateFlow<List<HistoryData>>(emptyList())
     val historyDataList = _historyDataList.asStateFlow()
 
     private val _pagingState = MutableStateFlow(PagingState())
     val pagingState = _pagingState.asStateFlow()
 
-    //基础信息
     private val _baseInfoList = MutableStateFlow<Map<String, String>>(emptyMap())
     val baseInfoList = _baseInfoList.asStateFlow()
 
-
-    //遥测，属性统计报表数据
     private val _chartDataList = MutableStateFlow<List<SequenceTsl>>(emptyList())
     val chartDataList = _chartDataList.asStateFlow()
 
-
-    //设备认证配置
     private val _deviceConfigList = MutableStateFlow<Map<String, String>>(emptyMap())
     val deviceConfigList = _deviceConfigList.asStateFlow()
 
-
-    //离线图表数据
     private val _deviceStatusAnalysis = MutableStateFlow<DeviceStatusAnalysisResp?>(null)
     val deviceStatusAnalysisData = _deviceStatusAnalysis.asStateFlow()
 
-
-    // WebRTC SDP 状态
     private val _webRtcSdp = MutableStateFlow<WebRTCResponse?>(null)
     val webRtcSdp = _webRtcSdp.asStateFlow()
 
-    //设备列表分页数据列表
+    // Paging Flows
     @OptIn(ExperimentalCoroutinesApi::class)
     val devicePagingFlow =
         combine(state, productType, searchQuery) { state, productType, keywords ->
@@ -164,7 +137,6 @@ class DeviceViewModel(
                 }).flow
         }.cachedIn(viewModelScope)
 
-
     @OptIn(ExperimentalCoroutinesApi::class)
     val offlineDeviceList = combine(chartType, primaryClass) { timeType, primaryClass ->
         Pair(timeType, primaryClass)
@@ -176,11 +148,9 @@ class DeviceViewModel(
                     getOfflineDeviceList(
                         timeType = filter, curPage = page, pageSize = pageSize, primaryClass = query
                     )
-
                 }
             }).flow
     }.cachedIn(viewModelScope)
-
 
     suspend fun getOfflineDeviceList(
         curPage: Int, pageSize: Int, timeType: Int, primaryClass: Int
@@ -195,8 +165,6 @@ class DeviceViewModel(
         return parseDataNewSuspend.list
     }
 
-
-    //获取设备列表
     suspend fun getDeviceList(
         state: Int,
         productType: Long,
@@ -208,57 +176,6 @@ class DeviceViewModel(
         return getIotDevices(
             state, productType, deviceService, searchQuery, page, pageSize, context
         )
-//        if (type == DeviceType.LAMP) {
-//            var parseDataNewSuspend =
-//                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
-//                    deviceService.getLightCtlList(
-//                        RequestParam(searchQuery, page, pageSize)
-//                    ), context
-//                )
-//            _totalCount.value = parseDataNewSuspend?.total!!
-//            return parseDataNewSuspend.list
-//        } else if (type == DeviceType.CONCENTRATOR) {
-//            var parseDataNewSuspend =
-//                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
-//                    deviceService.getGwCtlList(
-//                        RequestParam(searchQuery, page, pageSize, 1)
-//                    ), context
-//                )
-//            _totalCount.value = parseDataNewSuspend?.total!!
-//            return parseDataNewSuspend.list
-//        } else if (type == DeviceType.LOOP) {
-//            var parseDataNewSuspend =
-//                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
-//                    deviceService.getLoopCtlList(searchQuery, page, pageSize, 1), context
-//                )
-//            _totalCount.value = parseDataNewSuspend?.total!!
-//            return parseDataNewSuspend.list
-//        } else if (type == DeviceType.PLAY_BOX) {
-//            var parseDataNewSuspend =
-//                UniCallbackService<PageResponse<LightDevice>>().parseDataNewSuspend(
-//                    deviceService.getLedList(searchQuery, page, pageSize, 12, 3), context
-//                )
-//            _totalCount.value = parseDataNewSuspend?.total!!
-//            return parseDataNewSuspend.list
-//        } else if (type == DeviceType.ENV) {
-//            var iotDevices =
-//                getIotDevices(type, deviceService, searchQuery, page, pageSize, context)
-//            val deviceIds = iotDevices.map { it.id }
-//            //填充环境传感器设备数据
-//            val envDataMap = if (deviceIds.isNotEmpty()) {
-//                UniCallbackService<Map<Long, EnvData>>().parseDataNewSuspend(
-//                    deviceService.getEnvDataList(EnvDataReq(deviceIds)), context
-//                ) ?: emptyMap()
-//            } else {
-//                emptyMap()
-//            }
-//            iotDevices.forEach { device ->
-//                val envData = envDataMap[device.id]
-//                device.envData = envData
-//            }
-//            return iotDevices
-//        }
-//        return emptyList()
     }
 
     suspend fun getIotDevices(
@@ -280,7 +197,6 @@ class DeviceViewModel(
         return parseDataNewSuspend.list
     }
 
-
     fun launchWithLoading(consumer: suspend () -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -294,10 +210,6 @@ class DeviceViewModel(
         }
     }
 
-
-    /**
-     * 离线报表统计信息
-     * */
     fun deviceStatusAnalysis() {
         launchWithLoading {
             try {
@@ -312,7 +224,6 @@ class DeviceViewModel(
         }
     }
 
-    //图表数据
     fun loadChartData(
         deviceId: Long, startTime: String, endTime: String, currentData: DeviceModelData
     ) {
@@ -338,12 +249,6 @@ class DeviceViewModel(
         }
     }
 
-
-    /**
-     * 获取实时数据（通用方法）
-     * @param deviceId 设备ID
-     * @param isTelemetry 是否为遥测数据（true: 遥测, false: 属性）
-     */
     fun getDeviceRealData(deviceId: Long, isTelemetry: Boolean) {
         launchWithLoading {
             val sourceTemplate = if (isTelemetry) {
@@ -374,9 +279,6 @@ class DeviceViewModel(
         }
     }
 
-    /**
-     * 设备详情
-     * */
     fun getDeviceDetail(deviceId: Long) {
         launchWithLoading {
             val deviceDetail = UniCallbackService<DeviceDetail>().parseDataNewSuspend(
@@ -411,14 +313,10 @@ class DeviceViewModel(
                     }
                     _deviceConfigList.value = newConfigMap
                 }
-
             }
         }
     }
 
-    /**
-     * 历史数据，暂不修改
-     * */
     @RequiresApi(Build.VERSION_CODES.O)
     fun loadHistoryData(
         deviceId: Long,
@@ -466,22 +364,15 @@ class DeviceViewModel(
         }
     }
 
-
-    /**
-     * 解析元数据
-     * */
     fun getDeviceModelData(jsonObject: JsonObject, type: String): List<DeviceModelData> {
         val list = mutableListOf<DeviceModelData>()
         jsonObject.getAsJsonArray(type)?.forEach { element ->
             val asJsonObject = element.asJsonObject
-
             val specsObject = asJsonObject.get("specs")?.asJsonObject
             val unit = specsObject?.get("unit")?.takeIf { it.isJsonPrimitive }?.asString ?: ""
             list.add(
                 DeviceModelData(
-                    key = asJsonObject.get(
-                        "id"
-                    ).asString,
+                    key = asJsonObject.get("id").asString,
                     name = asJsonObject.get("name").asString,
                     keyDes = asJsonObject.get("description").asString,
                     unit = unit,
@@ -492,38 +383,81 @@ class DeviceViewModel(
         return list
     }
 
-
-
+    // --- WebRTC 部分 ---
     private val rootEglBase = EglBase.create()
     private val webRtcClient by lazy { WebRtcClient(context, rootEglBase) }
+
+    // 新增：提供给 UI 使用
+    fun getEglBaseContext(): EglBase.Context {
+        return rootEglBase.eglBaseContext
+    }
+
+    // 新增：绑定渲染器
+    fun attachRenderer(sink: VideoSink) {
+        webRtcClient.setRemoteRender(sink)
+    }
 
     fun getCameraWebRtcSdp(deviceId: Long) {
         launchWithLoading {
             try {
+                Log.d("DeviceViewModel", "Starting WebRTC flow for device: $deviceId")
 
+                // 1. 获取推流路径 (实际上触发了服务器调用 ZLM addStreamProxy)
                 val pathResult = UniCallbackService<String>().parseDataNewSuspend(
                     deviceService.getCameraLiveUrl(deviceId, 1, 1), context
                 )
-                pathResult?.let { relativePath ->
-                    val uri = relativePath.toUri()
-                    val app = uri.getQueryParameter("app") ?: ""
-                    val stream = uri.getQueryParameter("stream") ?: ""
-                    val type = uri.getQueryParameter("type") ?: "play"
-                    val localOfferSdp = webRtcClient.createOffer()
-                    val sdpResponse = UniCallbackService<WebRTCResponse>().parseDirectSuspend(
-                        call = deviceService.getCameraLive(app, stream, type, localOfferSdp),
-                        context = context,
-                        checkSuccess = { resp ->
-                            if (resp.code == 0) null else "流媒体服务错误: ${resp.code}"
-                        }
-                    )
-                    sdpResponse?.sdp?.let { remoteAnswerSdp ->
-                        webRtcClient.setRemoteDescription(remoteAnswerSdp)
-                    }
-                    _webRtcSdp.value = sdpResponse
+
+                if (pathResult.isNullOrEmpty()) {
+                    Log.e("DeviceViewModel", "Failed to get live URL path")
+                    return@launchWithLoading
                 }
+
+                Log.d("DeviceViewModel", "Got path result: $pathResult")
+
+                // 解析参数
+                val uri = pathResult.toUri()
+                val app = uri.getQueryParameter("app")
+                val stream = uri.getQueryParameter("stream")
+                val type = uri.getQueryParameter("type") ?: "play"
+
+                if (app.isNullOrEmpty() || stream.isNullOrEmpty()) {
+                    Log.e("DeviceViewModel", "Invalid App or Stream from path: $pathResult")
+                    return@launchWithLoading
+                }
+
+                // 2. 创建本地 Offer
+                Log.d("DeviceViewModel", "Creating Offer...")
+                val localOfferSdp = webRtcClient.createOffer()
+                Log.d("DeviceViewModel", "Offer Created. Length: ${localOfferSdp.length}")
+
+                // 3. 构造 Raw RequestBody (text/plain)
+                val mediaType = "text/plain".toMediaTypeOrNull()
+                val requestBody = localOfferSdp.toRequestBody(mediaType)
+
+                // 4. 发送 Offer 到服务器 (请求 ZLM WebRTC 接口)
+                val sdpResponse = UniCallbackService<WebRTCResponse>().parseDirectSuspend(
+                    call = deviceService.getCameraLive(
+                        app,
+                        stream,
+                        type,
+                        requestBody // 发送 raw body 而不是被封装的对象
+                    ),
+                    context = context,
+                    checkSuccess = { resp ->
+                        if (resp.code == 0) null else "流媒体服务错误: ${resp.code}"
+                    }
+                )
+
+                sdpResponse?.sdp?.let { remoteAnswerSdp ->
+                    Log.d("DeviceViewModel", "Got Answer SDP. Setting remote desc...")
+                    webRtcClient.setRemoteDescription(remoteAnswerSdp)
+                    _webRtcSdp.value = sdpResponse // 这会触发 UI 从 Loading 变为显示
+                } ?: run {
+                    Log.e("DeviceViewModel", "SDP Answer is null!")
+                }
+
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("DeviceViewModel", "WebRTC Error", e)
                 _webRtcSdp.value = null
             }
         }
