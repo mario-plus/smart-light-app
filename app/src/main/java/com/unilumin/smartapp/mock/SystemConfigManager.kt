@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.unilumin.smartapp.client.constant.DeviceConstant.DEVICE_PRODUCT_TYPE_LIST
+import com.unilumin.smartapp.client.constant.DeviceConstant.ENV_PRODUCT_TYPE_LIST
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_APP_LIST
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_FUNC_LIST
 import com.unilumin.smartapp.client.data.SystemConfig
@@ -13,12 +14,14 @@ import kotlinx.coroutines.flow.map
 
 
 private val Context.dataStore by preferencesDataStore(name = "device_settings")
+
 class SystemConfigManager(private val context: Context) {
     companion object {
         // 定义 Keys
         private val KEY_PRODUCT_TYPE_IDS = stringPreferencesKey("selected_product_ids")
         private val KEY_SMART_APP_IDS = stringPreferencesKey("selected_smart_app_ids")
         private val KEY_SMART_LAMP_FUNC = stringPreferencesKey("selected_smart_lamp_func")
+        private val KEY_ENV_PRODUCT_TYPE_IDS = stringPreferencesKey("selected_env_product_type_ids")
 
     }
 
@@ -26,6 +29,7 @@ class SystemConfigManager(private val context: Context) {
         key = KEY_PRODUCT_TYPE_IDS,
         defaultList = DEVICE_PRODUCT_TYPE_LIST
     )
+
     suspend fun saveProductTypes(list: List<SystemConfig>) {
         saveConfig(KEY_PRODUCT_TYPE_IDS, list)
     }
@@ -34,22 +38,26 @@ class SystemConfigManager(private val context: Context) {
         key = KEY_SMART_APP_IDS,
         defaultList = SMART_APP_LIST // 请替换为你实际的默认列表变量
     )
+
     suspend fun saveSmartApps(list: List<SystemConfig>) {
         saveConfig(KEY_SMART_APP_IDS, list)
     }
-
-
     val lampFunctionsFlow: Flow<List<SystemConfig>> = loadConfigFlow(
         key = KEY_SMART_LAMP_FUNC,
-        defaultList =  SMART_LAMP_FUNC_LIST// 请替换为你实际的默认列表变量
+        defaultList = SMART_LAMP_FUNC_LIST
     )
+
     suspend fun saveLampFunctions(list: List<SystemConfig>) {
         saveConfig(KEY_SMART_LAMP_FUNC, list)
     }
 
-
-
-
+    val envProductTypeListFlow: Flow<List<SystemConfig>> = loadConfigFlow(
+        key = KEY_ENV_PRODUCT_TYPE_IDS,
+        defaultList = ENV_PRODUCT_TYPE_LIST
+    )
+    suspend fun saveEnvProductTypeIds(list: List<SystemConfig>) {
+        saveConfig(KEY_ENV_PRODUCT_TYPE_IDS, list)
+    }
 
 
     /**

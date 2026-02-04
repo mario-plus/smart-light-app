@@ -1,4 +1,3 @@
-
 import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -52,8 +51,7 @@ import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SystemConfigScreen(
-    retrofitClient: RetrofitClient,
-    onBack: () -> Unit
+    retrofitClient: RetrofitClient, onBack: () -> Unit
 ) {
 
     val context = LocalContext.current
@@ -68,10 +66,12 @@ fun SystemConfigScreen(
     val productTypes by systemViewModel.productTypes.collectAsState()
     val smartApps by systemViewModel.smartApps.collectAsState()
     val lampFunctions by systemViewModel.lampFunctions.collectAsState()
+    val envProductTypeList by systemViewModel.envProductTypeList.collectAsState()
 
     var isDeviceListExpanded by remember { mutableStateOf(false) }
     var isSmartAppExpanded by remember { mutableStateOf(false) }
     var isLampFunctionExpanded by remember { mutableStateOf(false) }
+    var isEnvProductTypeExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -87,72 +87,70 @@ fun SystemConfigScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // ================== 第一部分：设备类型配置 ==================
-            // 1. 标题卡片单独作为一个 item
             item {
                 ConfigExpandableCard(
                     title = "设备类型配置",
                     subtitle = "设备列表显示的设备类型",
                     isExpanded = isDeviceListExpanded,
-                    onExpandClick = { isDeviceListExpanded = !isDeviceListExpanded }
-                )
+                    onExpandClick = { isDeviceListExpanded = !isDeviceListExpanded })
             }
-
-            // 2. 如果展开，显示设备类型列表 (items 必须直接在 LazyColumn 作用域内)
             if (isDeviceListExpanded) {
                 items(productTypes, key = { it.id }) { product ->
                     DeviceTypeSwitchItem(
-                        systemConfig = product,
-                        onCheckedChange = { isChecked ->
+                        systemConfig = product, onCheckedChange = { isChecked ->
                             systemViewModel.toggleProductType(product.id, isChecked)
-                        }
-                    )
+                        })
                 }
             }
-
             // ================== 第二部分：智慧应用配置 ==================
-            // 3. 智慧应用的标题卡片单独作为一个 item (放在设备列表下方)
             item {
                 ConfigExpandableCard(
                     title = "智慧应用配置",
                     subtitle = "设备列表智慧应用项",
                     isExpanded = isSmartAppExpanded,
-                    onExpandClick = { isSmartAppExpanded = !isSmartAppExpanded }
-                )
+                    onExpandClick = { isSmartAppExpanded = !isSmartAppExpanded })
             }
-
-            // 4. 如果展开，显示智慧应用列表
             if (isSmartAppExpanded) {
                 items(smartApps, key = { it.id }) { systemConfig ->
                     DeviceTypeSwitchItem(
-                        systemConfig = systemConfig,
-                        onCheckedChange = { isChecked ->
+                        systemConfig = systemConfig, onCheckedChange = { isChecked ->
                             systemViewModel.toggleSmartApps(systemConfig.id, isChecked)
-                        }
-                    )
+                        })
                 }
             }
-
-
-            // 3. 智慧应用的标题卡片单独作为一个 item (放在设备列表下方)
+            // ================== 第三部分：智慧路灯功能配置 ==================
             item {
                 ConfigExpandableCard(
                     title = "智慧路灯功能配置",
                     subtitle = "设备列表智慧应用功能模块配置",
                     isExpanded = isLampFunctionExpanded,
-                    onExpandClick = { isLampFunctionExpanded = !isLampFunctionExpanded }
-                )
+                    onExpandClick = { isLampFunctionExpanded = !isLampFunctionExpanded })
             }
             if (isLampFunctionExpanded) {
                 items(lampFunctions, key = { it.id }) { systemConfig ->
                     DeviceTypeSwitchItem(
-                        systemConfig = systemConfig,
-                        onCheckedChange = { isChecked ->
+                        systemConfig = systemConfig, onCheckedChange = { isChecked ->
                             systemViewModel.toggleLampFunctions(systemConfig.id, isChecked)
-                        }
-                    )
+                        })
                 }
             }
 
+            // ================== 第四部分：智能感知产品类型配置 ==================
+            item {
+                ConfigExpandableCard(
+                    title = "智能感知产品类型配置",
+                    subtitle = "设备列表智能感知产品类型配置",
+                    isExpanded = isEnvProductTypeExpanded,
+                    onExpandClick = { isEnvProductTypeExpanded = !isEnvProductTypeExpanded })
+            }
+            if (isEnvProductTypeExpanded) {
+                items(envProductTypeList, key = { it.id }) { systemConfig ->
+                    DeviceTypeSwitchItem(
+                        systemConfig = systemConfig, onCheckedChange = { isChecked ->
+                            systemViewModel.toggleEnvProductTypeList(systemConfig.id, isChecked)
+                        })
+                }
+            }
         }
     }
 }
@@ -162,21 +160,16 @@ fun SystemConfigScreen(
  */
 @Composable
 fun ConfigExpandableCard(
-    title: String,
-    subtitle: String,
-    isExpanded: Boolean,
-    onExpandClick: () -> Unit
+    title: String, subtitle: String, isExpanded: Boolean, onExpandClick: () -> Unit
 ) {
     Surface(
         color = CardWhite,
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onExpandClick() }
-    ) {
+            .clickable { onExpandClick() }) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 Icons.Default.Settings,
@@ -203,19 +196,16 @@ fun ConfigExpandableCard(
  */
 @Composable
 fun DeviceTypeSwitchItem(
-    systemConfig: SystemConfig,
-    onCheckedChange: (Boolean) -> Unit
+    systemConfig: SystemConfig, onCheckedChange: (Boolean) -> Unit
 ) {
     Surface(
-        color = CardWhite.copy(alpha = 0.8f),
-        shape = RoundedCornerShape(12.dp), // 调大圆角更美观
+        color = CardWhite.copy(alpha = 0.8f), shape = RoundedCornerShape(12.dp), // 调大圆角更美观
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 4.dp, vertical = 2.dp)
     ) {
         Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp), // 增加点击区域高度
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), // 增加点击区域高度
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 显示图标（如果 ProductType 有图标字段的话）

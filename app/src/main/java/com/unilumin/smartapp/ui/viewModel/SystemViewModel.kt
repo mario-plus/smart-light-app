@@ -1,12 +1,11 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import android.content.Context
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.DEVICE_PRODUCT_TYPE_LIST
+import com.unilumin.smartapp.client.constant.DeviceConstant.ENV_PRODUCT_TYPE_LIST
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_APP_LIST
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_FUNC_LIST
 import com.unilumin.smartapp.client.data.SystemConfig
@@ -83,6 +82,25 @@ class SystemViewModel(
             }
             // 写入 DataStore，这会触发 productTypesFlow 发射新值，从而自动更新 UI
             configStore.saveLampFunctions(currentList)
+        }
+    }
+
+
+    // 暴露给 UI 的状态流：使用 stateIn 保持热流，确保跨页面感知
+    val envProductTypeList: StateFlow<List<SystemConfig>> = configStore.envProductTypeListFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ENV_PRODUCT_TYPE_LIST
+        )
+
+    // 切换选中状态
+    fun toggleEnvProductTypeList(id: String, isSelected: Boolean) {
+        viewModelScope.launch {
+            val currentList = envProductTypeList.value.map {
+                if (it.id == id) it.copy(isSelected = isSelected) else it
+            }
+            configStore.saveEnvProductTypeIds(currentList)
         }
     }
 

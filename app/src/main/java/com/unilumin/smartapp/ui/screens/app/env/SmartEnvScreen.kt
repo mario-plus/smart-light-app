@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,6 +28,7 @@ import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchHeader
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
+import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +44,16 @@ fun SmartEnvScreen(
             return DeviceViewModel(retrofitClient, application) as T
         }
     })
+
+
+    val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return SystemViewModel(retrofitClient, application) as T
+        }
+    })
+
+    val envProductTypeList by systemViewModel.envProductTypeList.collectAsState()
+
     val devicePagingFlow = deviceViewModel.devicePagingFlow.collectAsLazyPagingItems()
     val deviceState by deviceViewModel.state.collectAsState()
     val searchQuery by deviceViewModel.searchQuery.collectAsState()
@@ -55,12 +67,20 @@ fun SmartEnvScreen(
 
     Scaffold(
         topBar = {
-            CommonTopAppBar(title = getSmartAppName(SMART_ENV), onBack = { onBack() })
+            CommonTopAppBar(
+                title = getSmartAppName(SMART_ENV),
+                onBack = { onBack() },
+                menuItems = envProductTypeList,
+                onMenuItemClick = { e ->
+                    deviceViewModel.updateFilter(e.id)
+                })
         }, containerColor = PageBackground
     ) { padding ->
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
             SearchHeader(
                 statusOptions = statusOptions,
                 currentStatus = deviceState,
@@ -78,6 +98,7 @@ fun SmartEnvScreen(
                 contentPadding = PaddingValues(16.dp)
             ) { device ->
                 //加载设备后，获取物模型数据
+                Text(device.deviceName.toString())
             }
         }
     }
