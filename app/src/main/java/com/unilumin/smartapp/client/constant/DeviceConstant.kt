@@ -62,8 +62,6 @@ object DeviceConstant {
     const val SMART_LAMP_STRATEGY = "lightStrategy"
     const val SMART_LAMP_JOB = "lightJob"
 
-    const val SMART_LAMP_STATISTIC = "lightStatistic"
-
     val SMART_LAMP_FUNC_LIST = listOf<SystemConfig>(
         SystemConfig(SMART_LAMP_LIGHT, "单灯管理", getIconForName(SMART_LAMP_LIGHT), true),
         SystemConfig(SMART_LIGHT_GATEWAY, "灯控网关", getIconForName(SMART_LIGHT_GATEWAY), true),
@@ -72,14 +70,12 @@ object DeviceConstant {
         SystemConfig(SMART_LAMP_GROUP, "分组管理", getIconForName(SMART_LAMP_GROUP), true),
         SystemConfig(SMART_LAMP_STRATEGY, "策略管理", getIconForName(SMART_LAMP_STRATEGY), true),
         SystemConfig(SMART_LAMP_JOB, "任务管理", getIconForName(SMART_LAMP_JOB), true),
-        //SystemConfig(SMART_LAMP_STATISTIC, "业务统计", getIconForName(SMART_LAMP_STATISTIC), true)
     )
 
 
     fun getSmartAppName(id: String): String {
         return SMART_APP_LIST.find { it.id == id }?.name ?: "未知应用"
     }
-
 
     // 设备列表--产品类型
     val DEVICE_PRODUCT_TYPE_LIST = listOf(
