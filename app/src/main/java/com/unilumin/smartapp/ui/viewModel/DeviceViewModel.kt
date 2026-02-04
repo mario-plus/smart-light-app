@@ -3,9 +3,7 @@ package com.unilumin.smartapp.ui.viewModel
 import android.app.Application
 import android.content.Context
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -15,7 +13,6 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
-import com.unilumin.smartapp.client.WebRtcClient
 import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceModelData
@@ -28,7 +25,6 @@ import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.PagingState
 import com.unilumin.smartapp.client.data.SequenceTsl
-import com.unilumin.smartapp.client.data.WebRTCResponse
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,10 +33,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.webrtc.EglBase
-import org.webrtc.VideoSink
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -49,13 +41,10 @@ class DeviceViewModel(
 ) : AndroidViewModel(application) {
     val context = getApplication<Application>()
 
-    //分页数据总数
+    private val deviceService = retrofitClient.getService(DeviceService::class.java)
     private val _totalCount = MutableStateFlow<Int>(0)
     val totalCount = _totalCount.asStateFlow()
 
-    private val deviceService = retrofitClient.getService(DeviceService::class.java)
-
-    //设备列表查询参数
     val productType = MutableStateFlow("1")
     fun updateFilter(type: String) { productType.value = type }
 
@@ -77,7 +66,6 @@ class DeviceViewModel(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    // 各种数据列表
     private val _propertiesList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     private val _devicePropertiesDataList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     val devicePropertiesDataList = _devicePropertiesDataList.asStateFlow()
@@ -112,8 +100,7 @@ class DeviceViewModel(
     private val _deviceStatusAnalysis = MutableStateFlow<DeviceStatusAnalysisResp?>(null)
     val deviceStatusAnalysisData = _deviceStatusAnalysis.asStateFlow()
 
-    private val _webRtcSdp = MutableStateFlow<WebRTCResponse?>(null)
-    val webRtcSdp = _webRtcSdp.asStateFlow()
+
 
     // Paging Flows
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -383,89 +370,5 @@ class DeviceViewModel(
         return list
     }
 
-    // --- WebRTC 部分 ---
-    private val rootEglBase = EglBase.create()
-    private val webRtcClient by lazy { WebRtcClient(context, rootEglBase) }
 
-    fun getEglBaseContext(): EglBase.Context {
-        return rootEglBase.eglBaseContext
-    }
-
-    fun attachRenderer(sink: VideoSink) {
-        webRtcClient.setRemoteRender(sink)
-    }
-
-    /**
-     * 【关键】解绑渲染器
-     */
-    fun detachRenderer() {
-        webRtcClient.removeRemoteRender()
-    }
-
-    fun getCameraWebRtcSdp(deviceId: Long) {
-        launchWithLoading {
-            try {
-                Log.d("DeviceViewModel", "Starting WebRTC flow for device: $deviceId")
-
-                val pathResult = UniCallbackService<String>().parseDataNewSuspend(
-                    deviceService.getCameraLiveUrl(deviceId, 1, 1), context
-                )
-
-                if (pathResult.isNullOrEmpty()) {
-                    Log.e("DeviceViewModel", "Failed to get live URL path")
-                    return@launchWithLoading
-                }
-
-                val uri = pathResult.toUri()
-                val app = uri.getQueryParameter("app") ?: ""
-                val stream = uri.getQueryParameter("stream") ?: ""
-                val type = uri.getQueryParameter("type") ?: "play"
-
-                if (app.isNullOrEmpty() || stream.isNullOrEmpty()) {
-                    Log.e("DeviceViewModel", "Invalid App or Stream from path: $pathResult")
-                    return@launchWithLoading
-                }
-
-                // 1. 创建 Offer
-                Log.d("DeviceViewModel", "Creating Offer...")
-                val localOfferSdp = webRtcClient.createOffer()
-
-                // 2. 【关键】构造 Raw RequestBody (text/plain)，解决 ZLM -400 错误
-                // ZLM 期望收到原始 SDP 字符串，而不是 JSON
-                val mediaType = "text/plain".toMediaTypeOrNull()
-                val requestBody = localOfferSdp.toRequestBody(mediaType)
-
-                // 3. 发送 Offer 到服务器
-                val sdpResponse = UniCallbackService<WebRTCResponse>().parseDirectSuspend(
-                    call = deviceService.getCameraLive(
-                        app,
-                        stream,
-                        type,
-                        requestBody // 发送 raw body
-                    ),
-                    context = context,
-                    checkSuccess = { resp ->
-                        if (resp.code == 0) null else "流媒体服务错误: ${resp.code}"
-                    }
-                )
-
-                sdpResponse?.sdp?.let { remoteAnswerSdp ->
-                    Log.d("DeviceViewModel", "Got Answer SDP. Setting remote desc...")
-                    webRtcClient.setRemoteDescription(remoteAnswerSdp)
-                    _webRtcSdp.value = sdpResponse
-                } ?: run {
-                    Log.e("DeviceViewModel", "SDP Answer is null!")
-                }
-
-            } catch (e: Exception) {
-                Log.e("DeviceViewModel", "WebRTC Error", e)
-                _webRtcSdp.value = null
-            }
-        }
-    }
-
-    fun clearWebRtcData() {
-        _webRtcSdp.value = null
-        webRtcClient.release()
-    }
 }
