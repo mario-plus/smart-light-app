@@ -166,10 +166,21 @@ class UniCallbackService<T> {
         message: String
     ) {
         if (continuation.isActive) {
-            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            // 修复风险 1：Toast 判空保护
+            if (context != null) {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    try {
+                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                    } catch (e: Exception) {
+                        // 防止 Toast 内部（如 BadTokenException）导致的崩溃
+                        e.printStackTrace()
+                    }
+                }
             }
+            // 方案 A：依然抛出异常（标准做法），但在 ViewModel 调用处必须死守 try-catch
             continuation.resumeWithException(Exception(message))
+            // 方案 B：(仅限 T 是可空类型) 返回 null，吞掉异常，避免崩溃
+            //continuation.resume(null)
         }
     }
 

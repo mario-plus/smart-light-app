@@ -144,6 +144,8 @@ fun SmartMonitorScreen(
                     MonitorDeviceCard(
                         device = device,
                         isPlaying = (device.id == currentPlayingId),
+                        // Loading 逻辑优化：只有当明确 ID 匹配且没有 SDP 数据时才转圈
+                        // 如果 ViewModel 出错回滚了 ID，这里会自动变为 false，停止转圈
                         isConnecting = isSwitching || (device.id == currentPlayingId && sdpData == null),
                         viewModel = cameraViewModel,
                         onPlayClick = {
@@ -161,6 +163,7 @@ fun SmartMonitorScreen(
             }
         }
 
+        // 遮罩层，防止频繁点击
         if (isSwitching) {
             Box(Modifier.fillMaxSize().background(Color.Transparent).clickable(enabled = true) { })
         }
@@ -201,7 +204,8 @@ fun FullScreenPlayer(
                 )
 
         onDispose {
-            viewModel.attachSurfaceView(null)
+            // 退出全屏时，先解绑，防止 Native 崩溃
+            viewModel.attachRenderer(null)
             activity.requestedOrientation = originalOrientation
             window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
             window.decorView.systemUiVisibility = originalVisibility
@@ -222,13 +226,13 @@ fun FullScreenPlayer(
                         init(viewModel.getEglBaseContext(), null)
                         setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
                         setEnableHardwareScaler(true)
-                        viewModel.attachSurfaceView(this)
+                        viewModel.attachRenderer(this)
                     }
                 },
                 modifier = Modifier.fillMaxSize(),
                 onRelease = { renderer ->
-                    viewModel.attachSurfaceView(null)
-                    // 增加 try-catch 保护，防止 release 时 native 还未断开
+                    // 全屏 View 销毁时，立即解绑
+                    viewModel.attachRenderer(null)
                     try {
                         renderer.release()
                     } catch (e: Exception) {
@@ -289,14 +293,16 @@ fun MonitorDeviceCard(
                                 SurfaceViewRenderer(ctx).apply {
                                     init(viewModel.getEglBaseContext(), null)
                                     setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
-                                    viewModel.attachSurfaceView(this)
+                                    viewModel.attachRenderer(this)
                                 }
                             },
                             update = { renderer ->
-                                viewModel.attachSurfaceView(renderer)
+                                viewModel.attachRenderer(renderer)
                             },
                             modifier = Modifier.fillMaxSize(),
                             onRelease = { renderer ->
+                                // 关键：列表项滑出屏幕时，必须解绑！否则 Native 线程会崩溃
+                                viewModel.detachRenderer(renderer)
                                 try {
                                     renderer.release()
                                 } catch (e: Exception) {

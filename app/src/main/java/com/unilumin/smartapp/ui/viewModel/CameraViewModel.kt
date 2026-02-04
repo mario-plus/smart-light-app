@@ -27,7 +27,6 @@ import org.webrtc.VideoSink
 
 /**
  * 全局单例 EGL 管理器
- * 确保整个 App 生命周期内只有一个 Root EGL Context，避免底层句柄泄露或冲突
  */
 object EglManager {
     private var eglBase: EglBase? = null
@@ -35,8 +34,8 @@ object EglManager {
     @Synchronized
     fun getEglBase(): EglBase {
         if (eglBase == null) {
-            // 使用 configAttributes 防止部分模拟器 EGL_BAD_ATTRIBUTE
-            eglBase = EglBase.create()
+            // 使用 CONFIG_PLAIN 兼容性更好，减少模拟器崩溃
+            eglBase = EglBase.create(null, EglBase.CONFIG_PLAIN)
         }
         return eglBase!!
     }
@@ -47,7 +46,7 @@ object EglManager {
             try {
                 eglBase?.release()
             } catch (e: Exception) {
-                // ignore
+                e.printStackTrace()
             }
             eglBase = null
         }
@@ -70,20 +69,22 @@ class CameraViewModel(
     private val _isSwitching = MutableStateFlow(false)
     val isSwitching = _isSwitching.asStateFlow()
 
-    // 引用全局 EGL
     private val rootEglBase = EglManager.getEglBase()
-
     private var webRtcClient: WebRtcClient? = null
 
-    // 核心修复：带锁的代理渲染器
+    // 核心：带锁的代理渲染器，防止 Native 崩溃
     private val proxyVideoSink = ProxyVideoSink()
 
     private val rtcLock = Mutex()
     private var currentJob: Job? = null
 
+    /**
+     * 切换/播放设备
+     */
     fun switchListPlayer(deviceId: Long, forceReconnect: Boolean = true) {
         val isSameDevice = (_currentPlayingId.value == deviceId)
 
+        // 无缝切换逻辑
         if (isSameDevice && _webRtcSdp.value != null && !forceReconnect) {
             Log.d("CameraViewModel", "Seamless: Keeping connection for $deviceId")
             return
@@ -91,54 +92,59 @@ class CameraViewModel(
 
         currentJob?.cancel()
         currentJob = viewModelScope.launch {
-            _isSwitching.value = true
+            _isSwitching.value = true // UI 进入 Loading 态
 
             withContext(Dispatchers.IO) {
                 rtcLock.withLock {
                     try {
                         if (!isSameDevice || forceReconnect) {
                             Log.d("CameraViewModel", "Switching device: $deviceId")
-
-                            // 1. 立即切断渲染链路 (加锁操作)
+                            // 1. 立即切断渲染，防止 Native 向 UI 写数据
                             proxyVideoSink.setTarget(null)
+                            // 2. 清理状态
                             _webRtcSdp.value = null
-                            _currentPlayingId.value = null
-
-                            // 2. 释放旧客户端 (Soft Release)
+                            // 注意：这里先置空 ID，等连接成功后再赋值？
+                            // 为了 UI 显示 Loading，我们这里先保留 ID 或者赋值新 ID
+                            // 但如果失败，必须在 catch 里回滚！
+                            _currentPlayingId.value = deviceId
+                            // 3. 释放旧 Client (Soft Release)
                             if (webRtcClient != null) {
                                 try {
-                                    // 先尝试停止 PeerConnection (如果 Client 有这个方法最好，没有则直接 release)
-                                    // 模拟器环境 Native 释放极慢，必须先断引用
                                     webRtcClient?.release()
                                     webRtcClient = null
                                 } catch (e: Exception) {
-                                    Log.e("CameraViewModel", "Release error", e)
+                                    Log.w("CameraViewModel", "Release warning: ${e.message}")
                                 }
                             }
-
-                            // 3. 强制 GC：帮助 Native 层检测到 Java 对象已不可达，加速底层资源释放
+                            // 4. 强制 GC 并延时，等待 Native 线程退出 (解决 SIGSEGV 关键)
                             System.gc()
-
-                            // 4. 延长安全等待时间
-                            // 模拟器 + libndk_translation 非常慢，800ms 可能不够，增加到 1000ms
-                            delay(1000)
-
-                            // 5. 重建环境
+                            delay(800)
+                            // 5. 初始化新 Client
                             initWebRtcClient()
-
-                            Log.d("CameraViewModel", "Connecting new device: $deviceId")
-                            _currentPlayingId.value = deviceId
-
+                            // 6. 执行连接
                             executeWebRtcEstablish(deviceId)
                         }
                     } catch (e: Exception) {
-                        Log.e("CameraViewModel", "Switch Error", e)
-                        _webRtcSdp.value = null
+                        Log.e("CameraViewModel", "Switch Fatal Error", e)
+                        handleConnectionFailure()
                     } finally {
                         _isSwitching.value = false
                     }
                 }
             }
+        }
+    }
+
+    private fun handleConnectionFailure() {
+        // 发生错误时，必须重置所有状态，否则 UI 会一直转圈
+        _webRtcSdp.value = null
+        _currentPlayingId.value = null
+        // 释放可能初始化了一半的 Client
+        try {
+            webRtcClient?.release()
+            webRtcClient = null
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -149,67 +155,87 @@ class CameraViewModel(
                 webRtcClient?.setRemoteRender(proxyVideoSink)
             } catch (e: Exception) {
                 Log.e("CameraViewModel", "Init client failed", e)
+                throw e // 抛出异常触发 handleConnectionFailure
             }
         }
     }
 
     private suspend fun executeWebRtcEstablish(deviceId: Long) {
-        val client = webRtcClient ?: return
+        val client = webRtcClient ?: throw Exception("WebRTC Client is null")
+
         try {
+            // 1. 获取推流地址
+            // 关键修复：如果返回 null，抛出异常，进入 catch 块清理状态
             val pathResult = UniCallbackService<String>().parseDataNewSuspend(
                 deviceService.getCameraLiveUrl(deviceId, 1, 1), context
-            ) ?: return
+            ) ?: throw Exception("Live URL response is empty")
 
             val uri = pathResult.toUri()
             val app = uri.getQueryParameter("app") ?: ""
             val stream = uri.getQueryParameter("stream") ?: ""
             val type = uri.getQueryParameter("type") ?: "play"
 
-            // 耗时操作放在 IO 线程
+            // 2. 创建 SDP Offer
             val localOfferSdp = client.createOffer()
             val requestBody = localOfferSdp.toRequestBody("text/plain".toMediaTypeOrNull())
 
+            // 3. 交换 SDP
             val sdpResponse = UniCallbackService<WebRTCResponse>().parseDirectSuspend(
                 call = deviceService.getCameraLive(app, stream, type, requestBody),
                 context = context,
-                checkSuccess = { resp -> if (resp.code == 0) null else "Error: ${resp.id}" }
+                checkSuccess = { resp -> if (resp.code == 0) null else "Server Error: ${resp.id}" }
             )
 
-            sdpResponse?.sdp?.let { remoteAnswerSdp ->
-                // 再次检查 client 是否还存在 (防止切换过程中被释放)
-                if (webRtcClient != null) {
-                    client.setRemoteDescription(remoteAnswerSdp)
+            // 4. 设置远程 SDP
+            if (sdpResponse?.sdp != null) {
+                if (webRtcClient != null) { // 双重检查
+                    client.setRemoteDescription(sdpResponse.sdp)
                     _webRtcSdp.value = sdpResponse
+                    Log.d("CameraViewModel", "Connection established for $deviceId")
                 }
+            } else {
+                throw Exception("SDP Response is empty")
             }
+
         } catch (e: Exception) {
-            Log.e("CameraViewModel", "Establish failed: ${e.message}")
-            _webRtcSdp.value = null
+            // 捕获所有业务异常（网络、解析、空数据）
+            Log.e("CameraViewModel", "Establish Logic Failed: ${e.message}")
+            throw e // 抛给 switchListPlayer 的 catch 块统一处理
         }
+    }
+
+    /**
+     * UI 解绑渲染器 (列表滚动复用时调用)
+     */
+    fun detachRenderer(renderer: VideoSink?) {
+        proxyVideoSink.detachIfMatches(renderer)
+    }
+
+    /**
+     * UI 绑定渲染器
+     */
+    fun attachRenderer(renderer: VideoSink?) {
+        proxyVideoSink.setTarget(renderer)
     }
 
     fun stopListPlayer() {
         currentJob?.cancel()
         viewModelScope.launch(Dispatchers.IO) {
             rtcLock.withLock {
-                proxyVideoSink.setTarget(null)
-                _currentPlayingId.value = null
-                _webRtcSdp.value = null
                 try {
+                    proxyVideoSink.setTarget(null)
+                    _currentPlayingId.value = null
+                    _webRtcSdp.value = null
                     webRtcClient?.release()
                     webRtcClient = null
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e("CameraViewModel", "Stop error", e)
                 }
             }
         }
     }
 
     fun getEglBaseContext(): EglBase.Context = rootEglBase.eglBaseContext
-
-    fun attachSurfaceView(renderer: VideoSink?) {
-        proxyVideoSink.setTarget(renderer)
-    }
 
     override fun onCleared() {
         super.onCleared()
@@ -218,8 +244,6 @@ class CameraViewModel(
 
     /**
      * 线程安全的代理渲染器
-     * 使用 synchronized 确保 onFrame 和 setTarget 不会并发执行
-     * 这是防止 SIGSEGV 的最后一道防线
      */
     private class ProxyVideoSink : VideoSink {
         private var target: VideoSink? = null
@@ -231,22 +255,24 @@ class CameraViewModel(
             }
         }
 
+        fun detachIfMatches(sink: VideoSink?) {
+            synchronized(lock) {
+                if (this.target === sink) {
+                    this.target = null
+                }
+            }
+        }
+
         override fun onFrame(frame: VideoFrame) {
             synchronized(lock) {
                 if (target != null) {
                     try {
                         target?.onFrame(frame)
                     } catch (e: Exception) {
-                        // 捕获所有渲染异常，防止崩溃传导至 Native
                         Log.e("ProxyVideoSink", "Render error", e)
                     }
-                } else {
-                    // 必须显式释放 frame，否则 Native 层内存泄漏
-                    // 这里的 release 是 Java 层的封装，最终会减少 C++ 引用计数
-                    // 这一步非常重要！
-                    // 注意：WebRTC Java 包装层通常会在 onFrame 返回后自动 release，
-                    // 但如果 Native 还在等回调，我们需要快速返回。
                 }
+                // WebRTC 内部会自动 release frame
             }
         }
     }
