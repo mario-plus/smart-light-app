@@ -11,14 +11,18 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -26,6 +30,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,13 +55,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -72,6 +84,10 @@ import com.unilumin.smartapp.ui.viewModel.CameraViewModel
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 import org.webrtc.RendererCommon
 import org.webrtc.SurfaceViewRenderer
+
+enum class PtzDirection {
+    UP, DOWN, LEFT, RIGHT
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -144,8 +160,6 @@ fun SmartMonitorScreen(
                     MonitorDeviceCard(
                         device = device,
                         isPlaying = (device.id == currentPlayingId),
-                        // Loading 逻辑优化：只有当明确 ID 匹配且没有 SDP 数据时才转圈
-                        // 如果 ViewModel 出错回滚了 ID，这里会自动变为 false，停止转圈
                         isConnecting = isSwitching || (device.id == currentPlayingId && sdpData == null),
                         viewModel = cameraViewModel,
                         onPlayClick = {
@@ -163,33 +177,47 @@ fun SmartMonitorScreen(
             }
         }
 
-        // 遮罩层，防止频繁点击
         if (isSwitching) {
             Box(Modifier.fillMaxSize().background(Color.Transparent).clickable(enabled = true) { })
         }
 
         if (fullscreenDevice != null) {
-            FullScreenPlayer(
-                deviceName = fullscreenDevice!!.deviceName,
-                isConnecting = isSwitching || sdpData == null,
-                viewModel = cameraViewModel,
-                onClose = {
-                    fullscreenDevice = null
-                }
-            )
+            Dialog(
+                onDismissRequest = { fullscreenDevice = null },
+                properties = DialogProperties(
+                    usePlatformDefaultWidth = false,
+                    decorFitsSystemWindows = false
+                )
+            ) {
+                FullScreenPlayer(
+                    deviceName = fullscreenDevice!!.deviceName,
+                    isConnecting = isSwitching || sdpData == null,
+                    viewModel = cameraViewModel,
+                    onClose = {
+                        fullscreenDevice = null
+                    },
+                    onPtzControl = { direction ->
+                        // 实际控制逻辑
+                        Toast.makeText(context, "云台: $direction", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
         }
     }
 }
 
 @Composable
 fun FullScreenPlayer(
-    deviceName: String?, isConnecting: Boolean, viewModel: CameraViewModel, onClose: () -> Unit
+    deviceName: String?,
+    isConnecting: Boolean,
+    viewModel: CameraViewModel,
+    onClose: () -> Unit,
+    onPtzControl: (PtzDirection) -> Unit
 ) {
     val context = LocalContext.current
 
     DisposableEffect(Unit) {
         val activity = context.findActivity() ?: return@DisposableEffect onDispose {}
-
         val originalOrientation = activity.requestedOrientation
         val window = activity.window
         val originalVisibility = window.decorView.systemUiVisibility
@@ -204,7 +232,6 @@ fun FullScreenPlayer(
                 )
 
         onDispose {
-            // 退出全屏时，先解绑，防止 Native 崩溃
             viewModel.attachRenderer(null)
             activity.requestedOrientation = originalOrientation
             window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
@@ -231,17 +258,13 @@ fun FullScreenPlayer(
                 },
                 modifier = Modifier.fillMaxSize(),
                 onRelease = { renderer ->
-                    // 全屏 View 销毁时，立即解绑
                     viewModel.attachRenderer(null)
-                    try {
-                        renderer.release()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                    try { renderer.release() } catch (e: Exception) { e.printStackTrace() }
                 }
             )
         }
 
+        // 1. 左上角标题栏
         Row(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -252,7 +275,7 @@ fun FullScreenPlayer(
             IconButton(
                 onClick = onClose,
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(40.dp)
                     .background(Color.Black.copy(alpha = 0.4f), CircleShape)
             ) {
                 Icon(Icons.Default.Close, "Close", tint = Color.White)
@@ -266,6 +289,123 @@ fun FullScreenPlayer(
                 style = MaterialTheme.typography.titleMedium
             )
         }
+
+        // 2. 右下角云台控制 (优化位置与样式)
+        if (!isConnecting) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd) // 放在右下角
+                    .padding(end = 48.dp, bottom = 48.dp) // 留出大拇指操作的边距
+            ) {
+                PtzController(onControl = onPtzControl)
+            }
+        }
+    }
+}
+
+/**
+ * 优化的半透明云台控制盘
+ */
+@Composable
+fun PtzController(onControl: (PtzDirection) -> Unit) {
+    val buttonSize = 52.dp // 增大触控面积
+    val spacing = 4.dp // 缩短间距，看起来更整体
+    val baseColor = Color.Black.copy(alpha = 0.3f) // 半透明底
+    val iconColor = Color.White.copy(alpha = 0.9f) // 高亮图标
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        // 上
+        PtzButton(
+            icon = Icons.Default.KeyboardArrowUp,
+            backgroundColor = baseColor,
+            iconColor = iconColor,
+            size = buttonSize,
+            onClick = { onControl(PtzDirection.UP) }
+        )
+
+        Spacer(modifier = Modifier.height(spacing))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            // 左
+            PtzButton(
+                icon = Icons.Default.KeyboardArrowLeft,
+                backgroundColor = baseColor,
+                iconColor = iconColor,
+                size = buttonSize,
+                onClick = { onControl(PtzDirection.LEFT) }
+            )
+
+            // 中心装饰圆点 (或者复位键)
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = spacing)
+                    .size(buttonSize * 0.4f)
+                    .background(Color.White.copy(alpha = 0.2f), CircleShape)
+            )
+
+            // 右
+            PtzButton(
+                icon = Icons.Default.KeyboardArrowRight,
+                backgroundColor = baseColor,
+                iconColor = iconColor,
+                size = buttonSize,
+                onClick = { onControl(PtzDirection.RIGHT) }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(spacing))
+
+        // 下
+        PtzButton(
+            icon = Icons.Default.KeyboardArrowDown,
+            backgroundColor = baseColor,
+            iconColor = iconColor,
+            size = buttonSize,
+            onClick = { onControl(PtzDirection.DOWN) }
+        )
+    }
+}
+
+/**
+ * 自定义云台按钮
+ */
+@Composable
+fun PtzButton(
+    icon: ImageVector,
+    backgroundColor: Color,
+    iconColor: Color,
+    size: androidx.compose.ui.unit.Dp,
+    onClick: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    // 按下时变亮，提供反馈
+    val currentColor = if (isPressed) backgroundColor.copy(alpha = 0.6f) else backgroundColor
+
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(RoundedCornerShape(30)) // 稍微圆润一点，但不完全是圆
+            .background(currentColor)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null
+            ) { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconColor,
+            modifier = Modifier.size(size * 0.6f)
+        )
     }
 }
 
@@ -301,13 +441,8 @@ fun MonitorDeviceCard(
                             },
                             modifier = Modifier.fillMaxSize(),
                             onRelease = { renderer ->
-                                // 关键：列表项滑出屏幕时，必须解绑！否则 Native 线程会崩溃
                                 viewModel.detachRenderer(renderer)
-                                try {
-                                    renderer.release()
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
+                                try { renderer.release() } catch (e: Exception) { e.printStackTrace() }
                             }
                         )
 
