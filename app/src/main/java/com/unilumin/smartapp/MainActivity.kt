@@ -99,15 +99,10 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
             primary = Blue600, background = Gray50, surface = Color.White, onSurface = Gray900
         )
     ) {
-
-        val profileViewModel: ProfileViewModel
         // 使用 key 包装，当 sessionKey 变化时，内部所有状态都会被销毁重置
         key(sessionKey) {
-
             var cachedProfileViewModel by remember { mutableStateOf<ProfileViewModel?>(null) }
-
             var cachedLampViewModel by remember { mutableStateOf<LampViewModel?>(null) }
-
             val navController = rememberNavController()
             if (!isLoggedIn) {
                 LoginScreen(

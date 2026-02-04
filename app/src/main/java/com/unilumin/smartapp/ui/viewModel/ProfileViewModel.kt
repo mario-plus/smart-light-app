@@ -1,7 +1,8 @@
 package com.unilumin.smartapp.ui.viewModel
 
-
 import android.app.Application
+import android.content.Context
+import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.unilumin.smartapp.client.RetrofitClient
@@ -23,6 +24,10 @@ class ProfileViewModel(
     val retrofitClient: RetrofitClient, application: Application
 ) : AndroidViewModel(application) {
     val context = getApplication<Application>()
+
+    // 本地存储 Key
+    private val SP_NAME = "app_config"
+    private val KEY_CURRENT_PROJECT_ID = "current_project_id"
 
     val userService = retrofitClient.getService(UserService::class.java)
     val projectService = retrofitClient.getService(ProjectService::class.java)
@@ -59,22 +64,40 @@ class ProfileViewModel(
                 val list = UniCallbackService<List<ProjectInfo>>().parseDataSuspend(
                     projectService.getProjects(), context
                 )
-                if (list != null) {
+                if (list != null && list.isNotEmpty()) {
                     _projectList.value = list
-                    val current = _currentProject.value
 
-                    if (current == null && list.isNotEmpty()) {
-                        _currentProject.value = list[0]
-                    } else if (current != null && list.isNotEmpty()) {
-                        val found = list.find { it.id == current.id }
-                        if (found != null) {
-                            _currentProject.value = found
-                        } else {
-                            _currentProject.value = list[0]
-                        }
-                    } else {
-                        _currentProject.value = null
+                    // --- 核心修复逻辑 ---
+                    // 1. 获取本地存储的 ID (使用 getLong，默认值为 -1)
+                    val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+                    val savedProjectId = sp.getLong(KEY_CURRENT_PROJECT_ID, -1L)
+
+                    var targetProject: ProjectInfo? = null
+
+                    // 2. 优先级 1: 内存中已有的选中项 (防止刷新列表时突变)
+                    if (_currentProject.value != null) {
+                        targetProject = list.find { it.id == _currentProject.value!!.id }
                     }
+
+                    // 3. 优先级 2: 本地存储的 ID (判断不为 -1)
+                    if (targetProject == null && savedProjectId != -1L) {
+                        targetProject = list.find { it.id == savedProjectId }
+                    }
+
+                    // 4. 优先级 3: 列表默认第一项
+                    if (targetProject == null) {
+                        targetProject = list[0]
+                    }
+
+                    // 5. 更新状态并同步保存
+                    _currentProject.value = targetProject
+                    // 如果当前选中的 ID 与保存的 ID 不一致，则更新本地存储
+                    if (savedProjectId != targetProject.id) {
+                        sp.edit { putLong(KEY_CURRENT_PROJECT_ID, targetProject.id) }
+                    }
+                } else {
+                    _projectList.value = emptyList()
+                    _currentProject.value = null
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -109,6 +132,11 @@ class ProfileViewModel(
 
     fun switchProject(project: ProjectInfo) {
         _currentProject.value = project
+
+        // --- 核心修复：保存用户选择 (使用 putLong) ---
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        sp.edit { putLong(KEY_CURRENT_PROJECT_ID, project.id) }
+
         launchWithLoading {
             UniCallbackService<String>().parseDataSuspend(
                 projectService.switchProject(project.id),
