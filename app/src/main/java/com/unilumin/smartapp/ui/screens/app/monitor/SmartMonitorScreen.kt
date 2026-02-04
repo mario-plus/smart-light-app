@@ -161,7 +161,6 @@ fun SmartMonitorScreen(
             }
         }
 
-        // 加厚遮罩，防止并发点击
         if (isSwitching) {
             Box(Modifier.fillMaxSize().background(Color.Transparent).clickable(enabled = true) { })
         }
@@ -202,7 +201,6 @@ fun FullScreenPlayer(
                 )
 
         onDispose {
-            // 先断开数据流
             viewModel.attachSurfaceView(null)
             activity.requestedOrientation = originalOrientation
             window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
@@ -221,7 +219,6 @@ fun FullScreenPlayer(
             AndroidView(
                 factory = { ctx ->
                     SurfaceViewRenderer(ctx).apply {
-                        // 使用 ViewModel 提供的单例 Context
                         init(viewModel.getEglBaseContext(), null)
                         setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
                         setEnableHardwareScaler(true)
@@ -230,8 +227,8 @@ fun FullScreenPlayer(
                 },
                 modifier = Modifier.fillMaxSize(),
                 onRelease = { renderer ->
-                    // AndroidView 销毁时，先确保解绑
                     viewModel.attachSurfaceView(null)
+                    // 增加 try-catch 保护，防止 release 时 native 还未断开
                     try {
                         renderer.release()
                     } catch (e: Exception) {
@@ -301,9 +298,6 @@ fun MonitorDeviceCard(
                             modifier = Modifier.fillMaxSize(),
                             onRelease = { renderer ->
                                 try {
-                                    // 列表项回收时，如果是当前播放项，解绑
-                                    // 注意：这里不需要调用 viewModel.stopListPlayer()
-                                    // 只是 View 销毁，后台流可能还需要给全屏用
                                     renderer.release()
                                 } catch (e: Exception) {
                                     e.printStackTrace()
