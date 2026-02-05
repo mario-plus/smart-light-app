@@ -73,23 +73,24 @@ object DeviceConstant {
     )
 
 
+    //传感器
     val ENV_PRODUCT_TYPE_LIST = listOf<SystemConfig>(
-        SystemConfig("88", "蜂鸣报警器", Icons.Outlined.Thermostat, true),
         SystemConfig("7", "环境传感器", Icons.Outlined.Thermostat, true),
+        SystemConfig("88", "蜂鸣报警器", Icons.Outlined.Thermostat, true),
         SystemConfig("57", "亮度传感器", Icons.Outlined.Thermostat, true),
-        SystemConfig("70", "光感探头",  Icons.Outlined.Thermostat, true),
-        SystemConfig("34", "温湿度传感器",  Icons.Outlined.Thermostat, true),
+        SystemConfig("70", "光感探头", Icons.Outlined.Thermostat, true),
+        SystemConfig("34", "温湿度传感器", Icons.Outlined.Thermostat, true),
         SystemConfig("58", "行人监测传感器", Icons.Outlined.Thermostat, true),
         SystemConfig("35", "倾角传感器", Icons.Outlined.Thermostat, true),
         SystemConfig("42", "烟雾传感器", Icons.Outlined.Thermostat, true),
-        SystemConfig("28", "垃圾桶传感器",  Icons.Outlined.Thermostat, true),
+        SystemConfig("28", "垃圾桶传感器", Icons.Outlined.Thermostat, true),
         SystemConfig("31", "水浸传感器", Icons.Outlined.Thermostat, true),
         SystemConfig("27", "井盖传感器", Icons.Outlined.Thermostat, true),
         SystemConfig("37", "积水传感器", Icons.Outlined.Thermostat, true),
         SystemConfig("39", "门磁传感器", Icons.Outlined.Thermostat, true),
         SystemConfig("62", "风光互补控制器", Icons.Outlined.Thermostat, true),
         SystemConfig("78", "红外探测器", Icons.Outlined.Thermostat, true),
-        )
+    )
 
     fun getSmartAppName(id: String): String {
         return SMART_APP_LIST.find { it.id == id }?.name ?: "未知应用"

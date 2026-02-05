@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.client.data
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import java.math.BigDecimal
 
 data class ResponseData<T>(
     var code: Int?, var message: String?, var data: T?
@@ -47,7 +48,9 @@ data class IotDevice(
     //设备状态（0停用 1启用）
     var deviceState: Int?,
     //工作状态: 1告警 0正常
-    var alarmType: Int? = null
+    var alarmType: Int? = null,
+    //遥测实时信息
+    var telemetryList: List<DeviceModelData>
 )
 
 data class LoopInfo(
@@ -772,13 +775,10 @@ data class DeviceAlarmInfo(
 )
 
 data class AlarmRequestParam(
-    val keyword: String,
-    val curPage: Int,
-    val pageSize: Int,
+    val keyword: String, val curPage: Int, val pageSize: Int,
     //0未确认
     //1已确认
-    val isConfirm: Int? = null,
-    val level: Int? = null
+    val isConfirm: Int? = null, val level: Int? = null
 )
 
 
@@ -792,13 +792,11 @@ data class DeviceStatusSummary(
 )
 
 data class LightEnergy(
-    val month: String?,
-    val degree: String?
+    val month: String?, val degree: String?
 )
 
 data class LightYearEnergy(
-    val thisYear: List<LightEnergy>? = null,
-    val lastYear: List<LightEnergy>? = null
+    val thisYear: List<LightEnergy>? = null, val lastYear: List<LightEnergy>? = null
 )
 
 data class LightDayEnergy(
@@ -839,12 +837,35 @@ data class GroupMemberInfo(
 
 // 定义一个数据类来存放所有的筛选参数
 data class GroupMemberFilter(
-    val state: Int,
-    val searchQuery: String,
-    val bindState: Int, // 如果之前改为 Long 这里也要改
+    val state: Int, val searchQuery: String, val bindState: Int, // 如果之前改为 Long 这里也要改
     val groupId: Long? // <--- 假设这是你的第4个参数
 )
 
-data class WebRTCRequest(
-    val sdp: String
+//产品详情
+data class IotProductDetail(
+    var id: Long? = null,
+    var productTypeId: Int? = null,
+    var productTypeName: String? = null,
+    var productFactoryId: Long? = null,
+    var productFactoryName: String? = null,
+    var name: String? = null,
+    var model: String? = null,
+    var productProperties: String? = null,
+    var installPosition: String? = null,
+    var functionId: Int? = null,
+    var accessType: Int? = null,
+    var transportProtocol: String? = null,
+    var protocolId: Int? = null,
+    var messageProtocol: String? = null,
+    var gwMetadata: String? = null,
+    var metadata: String? = null,
+    var photoUrl: String? = null,
+    var power: String? = null,
+    var warranty: String? = null,
+    var description: String? = null,
+    var cataloguePrice: BigDecimal? = null,
+    var discountPrice: BigDecimal? = null,
+    var specialPrice: BigDecimal? = null,
+    var state: Int? = null,
+    var isDeletable: Int? = null
 )

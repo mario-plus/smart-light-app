@@ -92,6 +92,8 @@ object RequestPathKey {
 
     //告警列表
     const val KEY_GET_DEVICE_ALARM_LIST: String = "$IOT_HUB_MANAGER/device_alarm_manage_list"
+    //产品详情
+    const val KEY_GET_PRODUCT_LIST: String = "$IOT_HUB_MANAGER/iot_product_list"
 
 
 }

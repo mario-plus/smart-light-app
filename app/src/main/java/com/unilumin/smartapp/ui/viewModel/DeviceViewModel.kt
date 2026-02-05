@@ -3,6 +3,7 @@ package com.unilumin.smartapp.ui.viewModel
 import android.app.Application
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,6 +22,7 @@ import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
+import com.unilumin.smartapp.client.data.IotProductDetail
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.PagingState
@@ -28,6 +30,9 @@ import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -46,25 +51,43 @@ class DeviceViewModel(
     val totalCount = _totalCount.asStateFlow()
 
     val productType = MutableStateFlow("1")
-    fun updateFilter(type: String) { productType.value = type }
+    fun updateFilter(type: String) {
+        productType.value = type
+    }
+
 
     val state = MutableStateFlow(-1)
-    fun updateState(s: Int) { state.value = s }
+    fun updateState(s: Int) {
+        state.value = s
+    }
 
     val searchQuery = MutableStateFlow("")
-    fun updateSearch(query: String) { searchQuery.value = query }
+    fun updateSearch(query: String) {
+        searchQuery.value = query
+    }
 
     val chartType = MutableStateFlow(0)
-    fun updateChartType(query: Int) { chartType.value = query }
+    fun updateChartType(query: Int) {
+        chartType.value = query
+    }
 
     val primaryClass = MutableStateFlow(0)
-    fun updatePrimary(type: Int) { primaryClass.value = type }
+    fun updatePrimary(type: Int) {
+        primaryClass.value = type
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     val timeFormat: DateTimeFormatter? = DateTimeFormatter.ofPattern("HH:mm:ss")
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
+
+
+    /**
+     * 产品遥测信息
+     * */
+    private val _productTel = MutableStateFlow<Map<Long, List<DeviceModelData>>>(emptyMap())
+
 
     private val _propertiesList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     private val _devicePropertiesDataList = MutableStateFlow<List<DeviceModelData>>(emptyList())
@@ -101,7 +124,6 @@ class DeviceViewModel(
     val deviceStatusAnalysisData = _deviceStatusAnalysis.asStateFlow()
 
 
-
     // Paging Flows
     @OptIn(ExperimentalCoroutinesApi::class)
     val devicePagingFlow =
@@ -123,6 +145,71 @@ class DeviceViewModel(
                     }
                 }).flow
         }.cachedIn(viewModelScope)
+
+    /**
+     * 环境传感器数据，实现过程
+     * 加载设备列表数据
+     * 加载产品物模型，获取遥测数据
+     * 获取实时遥测数据，直接显示，对于传感器，遥测数据，基本就是实时监控数据
+     * 这种方式，新增的产品的，不用修改代码就能兼容
+     * 下拉加载分页数据
+     * */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val envDevicePagingFlow =
+        combine(state, productType, searchQuery) { state, productType, keywords ->
+            Triple(state, productType, keywords)
+        }.flatMapLatest { (state, productType, keywords) ->
+            Pager(
+                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+                pagingSourceFactory = {
+                    GenericPagingSource { page, pageSize ->
+                        var deviceList = getDeviceList(
+                            state = state,
+                            productType = productType.toLong(),
+                            searchQuery = keywords,
+                            page = page,
+                            pageSize = pageSize,
+                            context = context
+                        )
+                        coroutineScope {
+                            deviceList.map { device ->
+                                async {
+                                    fillRealTimeData(device)
+                                }
+                            }.awaitAll()
+                        }
+                        deviceList
+                    }
+                }).flow
+        }.cachedIn(viewModelScope)
+
+    /**
+     * 填充设备实时信息
+     * */
+    suspend fun fillRealTimeData(device: IotDevice) {
+        val productId = device.productId?.toLong() ?: return
+        val baseTelList = _productTel.value[productId]
+        val sourceTemplateKeys = baseTelList?.mapNotNull { it.key }
+        if (!sourceTemplateKeys.isNullOrEmpty()) {
+            val deviceId = device.id
+            try {
+                val realTimeDataMap =
+                    UniCallbackService<Map<String, Map<String, String>>>().parseDataNewSuspend(
+                        deviceService.getDeviceRealTimeData(
+                            DeviceRealTimeDataReq(deviceId, sourceTemplateKeys)
+                        ), context
+                    )
+                val realTimeValues = realTimeDataMap?.get(deviceId.toString())
+                val updatedList = baseTelList.map { modelData ->
+                    val newValue = realTimeValues?.get(modelData.key)
+                    modelData.copy(value = newValue)
+                }
+                device.telemetryList = updatedList
+            } catch (e: Exception) {
+                Log.e("Paging", "Fetch real-time data failed for ${device.id}", e)
+            }
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val offlineDeviceList = combine(chartType, primaryClass) { timeType, primaryClass ->
@@ -165,6 +252,7 @@ class DeviceViewModel(
         )
     }
 
+
     suspend fun getIotDevices(
         state: Int,
         productType: Long,
@@ -182,6 +270,44 @@ class DeviceViewModel(
         )
         _totalCount.value = parseDataNewSuspend?.total!!
         return parseDataNewSuspend.list
+    }
+
+
+    /**
+     * 产品遥测
+     * */
+    /**
+     * 支持多类型初始化产品遥测数据
+     * @param productTypeIds 产品类型 ID 列表
+     * @return 聚合后的 Map<产品ID, 遥测数据列表>
+     */
+    suspend fun getProductTels(productTypeIds: List<Int>): Map<Long/**productId*/, List<DeviceModelData>> {
+        return coroutineScope {
+            val deferredResults = productTypeIds.map { typeId ->
+                async {
+                    UniCallbackService<List<IotProductDetail>>().parseDataNewSuspend(
+                        deviceService.getProductList(typeId),
+                        context
+                    )
+                }
+            }
+            val allProducts = deferredResults.awaitAll()
+                .filterNotNull()
+                .flatten()
+            allProducts.mapNotNull { product ->
+                val productId = product.id ?: return@mapNotNull null
+                val deviceModelList = product.metadata?.let { metadataStr ->
+                    try {
+                        val jsonObject = JsonParser().parse(metadataStr).asJsonObject
+                        getDeviceModelData(jsonObject, "telemetry")
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: emptyList()
+
+                productId to deviceModelList
+            }.toMap()
+        }
     }
 
     fun launchWithLoading(consumer: suspend () -> Unit) {

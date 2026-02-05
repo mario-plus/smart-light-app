@@ -10,6 +10,7 @@ import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
+import com.unilumin.smartapp.client.data.IotProductDetail
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PageResponse
@@ -115,5 +116,10 @@ interface DeviceService {
         @Query("primaryClass") primaryClass: Int?
     ): Call<NewResponseData<PageResponse<OfflineDevice>?>?>?
 
+    /**
+     * 获取产品详情
+     * */
+    @GET(RequestPathKey.KEY_GET_PRODUCT_LIST)
+    fun getProductList(productTypeId: Int): Call<NewResponseData<List<IotProductDetail>?>?>?
 
 }

@@ -107,7 +107,7 @@
 //
 //
 //@Composable
-//fun EnvSensorCard(info: EnvDisplayInfo) {
+//fun EnvSensorCard(  label: String,  value: String,  unit: String) {
 //    Column(
 //        modifier = Modifier
 //            .fillMaxWidth()
@@ -120,7 +120,7 @@
 //    ) {
 //        // 标题：名称 + 单位
 //        Text(
-//            text = "${info.label}${if (info.unit.isNotEmpty()) "(${info.unit})" else ""}",
+//            text = "${label}${if (unit.isNotEmpty()) "(${unit})" else ""}",
 //            fontSize = 11.sp,
 //            color = Color(0xFF999999), // 浅灰色，突出数值
 //            textAlign = TextAlign.Center,
@@ -131,7 +131,7 @@
 //        Spacer(modifier = Modifier.height(6.dp)) // 固定间距，避免拉伸
 //        // 数值
 //        Text(
-//            text = info.value,
+//            text = value,
 //            fontSize = 18.sp,
 //            fontWeight = FontWeight.Bold,
 //            color = Color(0xFF3B7CFF), // 采用更柔和的商务蓝
