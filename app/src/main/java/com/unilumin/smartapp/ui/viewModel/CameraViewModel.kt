@@ -166,8 +166,8 @@ class CameraViewModel(
         try {
             // 1. 获取推流地址
             // 关键修复：如果返回 null，抛出异常，进入 catch 块清理状态
-            val pathResult = UniCallbackService<String>().parseDataNewSuspend(
-                deviceService.getCameraLiveUrl(deviceId, 1, 1), context
+            val pathResult = UniCallbackService.parseDataNewSuspend(
+                deviceService.getCameraLiveUrl(deviceId, 1, 1)
             ) ?: throw Exception("Live URL response is empty")
 
             val uri = pathResult.toUri()
@@ -180,9 +180,8 @@ class CameraViewModel(
             val requestBody = localOfferSdp.toRequestBody("text/plain".toMediaTypeOrNull())
 
             // 3. 交换 SDP
-            val sdpResponse = UniCallbackService<WebRTCResponse>().parseDirectSuspend(
+            val sdpResponse = UniCallbackService.parseDirectSuspend(
                 call = deviceService.getCameraLive(app, stream, type, requestBody),
-                context = context,
                 checkSuccess = { resp -> if (resp.code == 0) null else "Server Error: ${resp.id}" }
             )
 

@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -147,8 +146,8 @@ class LampViewModel(
      * 首页在线率和亮灯率
      * */
     suspend fun getStatusSummary() {
-        val parseDataNewSuspend = UniCallbackService<DeviceStatusSummary>().parseDataNewSuspend(
-            roadService.deviceStatusSummary(), context
+        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+            roadService.deviceStatusSummary()
         )
         _deviceStatusSummary.value = parseDataNewSuspend
     }
@@ -157,8 +156,8 @@ class LampViewModel(
      * 当月数据对比
      * */
     suspend fun monthEnergyData() {
-        val parseDataNewSuspend = UniCallbackService<List<LightEnergy>>().parseDataNewSuspend(
-            roadService.contrastLightEnergy(), context
+        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+            roadService.contrastLightEnergy()
         )
         if (parseDataNewSuspend != null) {
             _monthEnergyList.value = parseDataNewSuspend
@@ -169,8 +168,8 @@ class LampViewModel(
      * 7天能耗
      * */
     suspend fun dayEnergyData() {
-        val parseDataNewSuspend = UniCallbackService<List<LightDayEnergy>>().parseDataNewSuspend(
-            roadService.homeLightEnergy(), context
+        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+            roadService.homeLightEnergy()
         )
         if (parseDataNewSuspend != null) {
             _dayEnergyList.value = parseDataNewSuspend
@@ -178,8 +177,8 @@ class LampViewModel(
     }
 
     suspend fun yearEnergyData() {
-        val parseDataNewSuspend = UniCallbackService<LightYearEnergy>().parseDataNewSuspend(
-            roadService.annualPowerConsumptionTrend(), context
+        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+            roadService.annualPowerConsumptionTrend()
         )
         if (parseDataNewSuspend != null) {
             _yearEnergyList.value = parseDataNewSuspend
@@ -267,13 +266,13 @@ class LampViewModel(
         confirm: Int,
     ): List<DeviceAlarmInfo> {
         val parseDataNewSuspend =
-            UniCallbackService<PageResponse<DeviceAlarmInfo>>().parseDataNewSuspend(
+            UniCallbackService.parseDataNewSuspend(
                 roadService.deviceAlarmList(
                 curPage = curPage,
                 pageSize = pageSize,
                 keyword = searchQuery,
                 level = level.takeIf { it != FILTER_NONE },
-                isConfirm = confirm.takeIf { it != FILTER_NONE }), context
+                isConfirm = confirm.takeIf { it != FILTER_NONE })
             )
         return processPageResponse(parseDataNewSuspend, _totalCount)
     }
@@ -286,7 +285,7 @@ class LampViewModel(
         workModel: Int,
     ): List<LampLightInfo> {
         val parseDataNewSuspend =
-            UniCallbackService<PageResponse<LampLightInfo>>().parseDataNewSuspend(
+            UniCallbackService.parseDataNewSuspend(
                 roadService.getLightCtlList(
                     RequestParam(
                         keyword = searchQuery,
@@ -294,7 +293,7 @@ class LampViewModel(
                         pageSize = pageSize,
                         state = state.takeIf { it != FILTER_NONE },
                         workMode = workModel.takeIf { it != FILTER_NONE })
-                ), context
+                )
             )
         return processPageResponse(parseDataNewSuspend, _totalCount)
     }
@@ -345,8 +344,8 @@ class LampViewModel(
             id = id
         )
         val rawResponse = roadService.getGroupMembers(request)
-        val parsedData = UniCallbackService<PageResponse<GroupMemberInfo>>().parseDataNewSuspend(
-            rawResponse, context
+        val parsedData = UniCallbackService.parseDataNewSuspend(
+            rawResponse
         )
         val resultList = processPageResponse(parsedData, _totalCount)
         return resultList
@@ -362,7 +361,7 @@ class LampViewModel(
         syncState: Int,
     ): List<LampStrategyInfo> {
         val parseDataNewSuspend =
-            UniCallbackService<PageResponse<LampStrategyInfo>>().parseDataNewSuspend(
+            UniCallbackService.parseDataNewSuspend(
                 roadService.getStrategyList(
                     StrategyRequestParam(
                         keyword = searchQuery,
@@ -370,7 +369,7 @@ class LampViewModel(
                         pageSize = pageSize,
                         taskState = taskState.takeIf { it != FILTER_NONE },
                         syncState = syncState.takeIf { it != FILTER_NONE })
-                ), context
+                )
             )
         return processPageResponse(parseDataNewSuspend, _totalCount)
     }
@@ -415,7 +414,7 @@ class LampViewModel(
 
         val s = state.takeIf { it != FILTER_NONE }
         val parseDataNewSuspend =
-            UniCallbackService<PageResponse<LampJobInfo>>().parseDataNewSuspend(
+            UniCallbackService.parseDataNewSuspend(
                 roadService.getJobList(
                     JobRequestParam(
                         businessTypes = sceneIds,
@@ -424,7 +423,7 @@ class LampViewModel(
                         pageSize = pageSize,
                         status = s
                     )
-                ), context
+                )
             )
         return processPageResponse(parseDataNewSuspend, _totalCount)
     }
@@ -441,7 +440,7 @@ class LampViewModel(
                         subSystemType = 1
                     )
                 )
-                UniCallbackService<String>().parseDataNewSuspend(call, context)
+                UniCallbackService.parseDataNewSuspend(call)
                 Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -460,7 +459,7 @@ class LampViewModel(
                         subSystemType = 1
                     )
                 )
-                UniCallbackService<String>().parseDataNewSuspend(call, context)
+                UniCallbackService.parseDataNewSuspend(call)
                 Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -476,7 +475,7 @@ class LampViewModel(
                 val call: Call<NewResponseData<String?>?>? = roadService.loopCtl(
                     LoopCtlReq(listOf(id), numList, onOff)
                 )
-                UniCallbackService<String>().parseDataNewSuspend(call, context)
+                UniCallbackService.parseDataNewSuspend(call )
                 Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -504,7 +503,7 @@ class LampViewModel(
                 val call: Call<NewResponseData<List<JobSceneElement>?>?>? =
                     roadService.getJobSceneList()
                 val parseDataNewSuspend =
-                    UniCallbackService<List<JobSceneElement>>().parseDataNewSuspend(call, context)
+                    UniCallbackService.parseDataNewSuspend(call)
                 _sceneOptions.value = buildList {
                     parseDataNewSuspend?.forEach { e ->
                         e.list.forEach { k ->
@@ -549,8 +548,7 @@ class LampViewModel(
         apiCall: suspend () -> Call<NewResponseData<PageResponse<T>?>?>?
     ): List<T> {
         val rawCall = apiCall()
-        val callbackService = UniCallbackService<PageResponse<T>>()
-        val parsedResult = callbackService.parseDataNewSuspend(rawCall, context)
+        val parsedResult = UniCallbackService.parseDataNewSuspend(rawCall)
         return processPageResponse(parsedResult, _totalCount)
     }
 

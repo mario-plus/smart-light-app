@@ -2,9 +2,8 @@ package com.unilumin.smartapp.client.service
 
 interface UniCallback<T> {
 
-    fun success(responseData: T?)
+    fun success(data: T?)
 
-    fun failed() {
-    }
+    fun failed(errorMessage: String)
 
 }

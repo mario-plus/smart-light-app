@@ -14,17 +14,13 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
-import com.unilumin.smartapp.client.data.DeviceConfig
-import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
-import com.unilumin.smartapp.client.data.IotProductDetail
 import com.unilumin.smartapp.client.data.OfflineDevice
-import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.PagingState
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.service.DeviceService
@@ -194,10 +190,10 @@ class DeviceViewModel(
             val deviceId = device.id
             try {
                 val realTimeDataMap =
-                    UniCallbackService<Map<String, Map<String, String>>>().parseDataNewSuspend(
+                    UniCallbackService.parseDataNewSuspend(
                         deviceService.getDeviceRealTimeData(
                             DeviceRealTimeDataReq(deviceId, sourceTemplateKeys)
-                        ), context
+                        )
                     )
                 val realTimeValues = realTimeDataMap?.get(deviceId.toString())
                 val updatedList = baseTelList.map { modelData ->
@@ -232,8 +228,8 @@ class DeviceViewModel(
         val tType = timeType.takeIf { it != 0 }
         val pClass = primaryClass.takeIf { it != 0 }
         val parseDataNewSuspend =
-            UniCallbackService<PageResponse<OfflineDevice>>().parseDataNewSuspend(
-                deviceService.offlineDeviceList(curPage, pageSize, tType, pClass), context
+            UniCallbackService.parseDataNewSuspend(
+                deviceService.offlineDeviceList(curPage, pageSize, tType, pClass)
             )
         _totalCount.value = parseDataNewSuspend?.total!!
         return parseDataNewSuspend.list
@@ -263,10 +259,10 @@ class DeviceViewModel(
         context: Context
     ): List<IotDevice> {
         val s = state.takeIf { it != -1 }
-        val parseDataNewSuspend = UniCallbackService<PageResponse<IotDevice>>().parseDataNewSuspend(
+        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
             deviceService.getDeviceList(
                 searchQuery, page, pageSize, productType, s
-            ), context
+            )
         )
         _totalCount.value = parseDataNewSuspend?.total!!
         return parseDataNewSuspend.list
@@ -285,9 +281,8 @@ class DeviceViewModel(
         return coroutineScope {
             val deferredResults = productTypeIds.map { typeId ->
                 async {
-                    UniCallbackService<List<IotProductDetail>>().parseDataNewSuspend(
-                        deviceService.getProductList(typeId),
-                        context
+                    UniCallbackService.parseDataNewSuspend(
+                        deviceService.getProductList(typeId)
                     )
                 }
             }
@@ -327,8 +322,8 @@ class DeviceViewModel(
         launchWithLoading {
             try {
                 var parseDataNewSuspend =
-                    UniCallbackService<DeviceStatusAnalysisResp>().parseDataNewSuspend(
-                        deviceService.deviceStatusAnalysis(), context
+                    UniCallbackService.parseDataNewSuspend(
+                        deviceService.deviceStatusAnalysis()
                     )
                 _deviceStatusAnalysis.value = parseDataNewSuspend
             } catch (e: Exception) {
@@ -344,7 +339,7 @@ class DeviceViewModel(
             try {
                 val startFormatted = if (startTime.isNotBlank()) "$startTime 00:00:00" else ""
                 val endFormatted = if (endTime.isNotBlank()) "$endTime 23:59:59" else ""
-                val response = UniCallbackService<List<SequenceTsl>>().parseDataNewSuspend(
+                val response = UniCallbackService.parseDataNewSuspend(
                     deviceService.getSequenceTsl(
                         deviceId = deviceId,
                         id = currentData.key,
@@ -352,7 +347,7 @@ class DeviceViewModel(
                         startTime = startFormatted,
                         endTime = endFormatted,
                         isAggregation = false
-                    ), context
+                    )
                 )
                 _chartDataList.value = response ?: emptyList()
             } catch (e: Exception) {
@@ -371,10 +366,10 @@ class DeviceViewModel(
             }
             try {
                 val result =
-                    UniCallbackService<Map<String, Map<String, String>>>().parseDataNewSuspend(
+                    UniCallbackService.parseDataNewSuspend(
                         deviceService.getDeviceRealTimeData(
                             DeviceRealTimeDataReq(deviceId, sourceTemplate.map { it.key })
-                        ), context
+                        )
                     )
                 val realDataMap = result?.get(deviceId.toString()) ?: emptyMap()
                 val updatedList = sourceTemplate.map { templateItem ->
@@ -394,8 +389,8 @@ class DeviceViewModel(
 
     fun getDeviceDetail(deviceId: Long) {
         launchWithLoading {
-            val deviceDetail = UniCallbackService<DeviceDetail>().parseDataNewSuspend(
-                deviceService.getDeviceDetail(deviceId), context
+            val deviceDetail = UniCallbackService.parseDataNewSuspend(
+                deviceService.getDeviceDetail(deviceId)
             )
             deviceDetail?.let { detail ->
                 _baseInfoList.value = buildMap {
@@ -416,8 +411,8 @@ class DeviceViewModel(
                     _telemetryList.value = getDeviceModelData(jsonObject, "telemetry")
                     _eventList.value = getDeviceModelData(jsonObject, "events")
                 }
-                val deviceConfig = UniCallbackService<List<DeviceConfig>>().parseDataNewSuspend(
-                    deviceService.getDeviceConfig(deviceId), context
+                val deviceConfig = UniCallbackService.parseDataNewSuspend(
+                    deviceService.getDeviceConfig(deviceId)
                 )
                 deviceConfig?.let { configs ->
                     val newConfigMap = mutableMapOf<String, String>()
@@ -453,7 +448,7 @@ class DeviceViewModel(
             if (endTime.isNotBlank()) {
                 end = "$endTime $format"
             }
-            val response = UniCallbackService<PageResponse<HistoryData>>().parseDataNewSuspend(
+            val response = UniCallbackService.parseDataNewSuspend(
                 deviceService.getDeviceHistoryData(
                     HistoryDataReq(
                         deviceIds = listOf(deviceId.toString()),
@@ -463,7 +458,7 @@ class DeviceViewModel(
                         curPage = _pagingState.value.pageIndex,
                         pageSize = 20
                     )
-                ), context
+                )
             )
             val newList = response?.list ?: emptyList()
             val totalCount = response?.total ?: 0

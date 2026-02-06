@@ -11,7 +11,6 @@ import com.amap.api.maps.CameraUpdateFactory
 import com.amap.api.maps.model.LatLng
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
-import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.PoleMapPointReq
 import com.unilumin.smartapp.client.data.PoleMapPointRes
 import com.unilumin.smartapp.client.data.SiteInfo
@@ -113,9 +112,8 @@ class SiteViewModel(
                     projectRoadId = _selectedRoadId.value?.toLongOrNull()
                 )
 
-                val response = UniCallbackService<List<PoleMapPointRes>>().parseDataNewSuspend(
-                    siteService.getSiteAggPoint(req),
-                    context
+                val response = UniCallbackService.parseDataNewSuspend(
+                    siteService.getSiteAggPoint(req)
                 )
 
                 val resultList = response ?: emptyList()
@@ -177,7 +175,7 @@ class SiteViewModel(
             tagCondition = "or",
             keyword = keyword
         )
-        val result = UniCallbackService<PageResponse<SiteInfo>>().parseDataNewSuspend(rawResponse, context)
+        val result = UniCallbackService.parseDataNewSuspend(rawResponse)
         if (page == 1) _totalCount.value = result?.total ?: 0
         return result?.list ?: emptyList()
     }
@@ -210,7 +208,7 @@ class SiteViewModel(
                     tagCondition = "or",
                     keyword = keyword
                 )
-                val result = UniCallbackService<PageResponse<SiteInfo>>().parseDataNewSuspend(rawResponse, context)
+                val result = UniCallbackService.parseDataNewSuspend(rawResponse)
 
                 val targetSite = result?.list?.firstOrNull()
 
@@ -231,8 +229,8 @@ class SiteViewModel(
     private fun getRoadList() {
         viewModelScope.launch {
             try {
-                val result = UniCallbackService<List<SiteRoadInfo>>().parseDataNewSuspend(
-                    siteService.getRoadList(), context
+                val result = UniCallbackService.parseDataNewSuspend(
+                    siteService.getRoadList()
                 )
                 _siteRoadInfo.value = result
             } catch (e: Exception) { e.printStackTrace() }

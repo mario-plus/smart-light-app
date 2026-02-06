@@ -7,7 +7,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
-import com.unilumin.smartapp.client.data.MinioUrl
 import com.unilumin.smartapp.client.data.ProjectInfo
 import com.unilumin.smartapp.client.data.ResponseData
 import com.unilumin.smartapp.client.data.SystemInfo
@@ -61,8 +60,8 @@ class ProfileViewModel(
     fun fetchProjects() {
         viewModelScope.launch {
             try {
-                val list = UniCallbackService<List<ProjectInfo>>().parseDataSuspend(
-                    projectService.getProjects(), context
+                val list = UniCallbackService.parseDataSuspend(
+                    projectService.getProjects()
                 )
                 if (list != null && list.isNotEmpty()) {
                     _projectList.value = list
@@ -110,17 +109,15 @@ class ProfileViewModel(
     fun fetchUserInfo() {
         launchWithLoading {
             try {
-                val user = UniCallbackService<UserInfo>().parseDataSuspend(
-                    userService.getUserInfo(),
-                    context
+                val user = UniCallbackService.parseDataSuspend(
+                    userService.getUserInfo()
                 )
                 if (user != null) {
                     _userInfo.value = user
                 }
                 if (user?.avatar != null) {
-                    var parseDataSuspend = UniCallbackService<MinioUrl>().parseDataSuspend(
-                        userService.getUserAvatarPath(user.avatar.toString()),
-                        context
+                    var parseDataSuspend = UniCallbackService.parseDataSuspend(
+                        userService.getUserAvatarPath(user.avatar.toString())
                     )
                     _userAvatarUrl.value = parseDataSuspend?.url
                 }
@@ -138,9 +135,8 @@ class ProfileViewModel(
         sp.edit { putLong(KEY_CURRENT_PROJECT_ID, project.id) }
 
         launchWithLoading {
-            UniCallbackService<String>().parseDataSuspend(
-                projectService.switchProject(project.id),
-                context
+            UniCallbackService.parseDataSuspend(
+                projectService.switchProject(project.id)
             )
 
         }
@@ -151,7 +147,7 @@ class ProfileViewModel(
             try {
                 val call: Call<ResponseData<SystemInfo?>?>? = systemService.getSystemInfo()
                 var parseDataSuspend =
-                    UniCallbackService<SystemInfo>().parseDataSuspend(call, context)
+                    UniCallbackService.parseDataSuspend(call)
                 if (parseDataSuspend != null) {
                     _systemInfo.value = parseDataSuspend
                 }

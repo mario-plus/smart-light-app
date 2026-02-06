@@ -59,8 +59,6 @@ import com.unilumin.smartapp.auth.TokenManagerFactory
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.data.LoginRequest
-import com.unilumin.smartapp.client.data.LoginResponse
-import com.unilumin.smartapp.client.data.RsaPublicKeyRes
 import com.unilumin.smartapp.client.service.AuthService
 import com.unilumin.smartapp.ui.theme.Blue50
 import com.unilumin.smartapp.ui.theme.Blue600
@@ -330,15 +328,13 @@ suspend fun doLogin(
     loginRequest: LoginRequest
 ) {
     val authService: AuthService = retrofitClient.getService(AuthService::class.java)
-    val publicKeyRes = UniCallbackService<RsaPublicKeyRes>().parseDataSuspend(
-        authService.getPublicKey(),
-        context
+    val publicKeyRes = UniCallbackService.parseDataSuspend(
+        authService.getPublicKey()
     )
     val rsaPublicKey = publicKeyRes?.rsaPublicKey
     val encryptPass = EncryptUtil().encryptPass(loginRequest.password.toString(), rsaPublicKey)
-    val loginRes = UniCallbackService<LoginResponse>().parseDataSuspend(
-        authService.login(LoginRequest(loginRequest.username, encryptPass)),
-        context
+    val loginRes = UniCallbackService.parseDataSuspend(
+        authService.login(LoginRequest(loginRequest.username, encryptPass))
     )
     val instance = TokenManagerFactory.getInstance(context)
     instance.setAccessToken(loginRes?.token.toString())
