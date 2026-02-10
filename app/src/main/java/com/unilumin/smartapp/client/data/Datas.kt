@@ -41,7 +41,7 @@ data class IotDevice(
     var id: Long,
     var deviceName: String? = null,
     var serialNum: String? = null,
-    var productId: String? = null,
+    var productId: Long? = null,
     var productName: String? = null,
     //会话状态 1-在线，0-离线
     var state: Int?,
@@ -50,7 +50,7 @@ data class IotDevice(
     //工作状态: 1告警 0正常
     var alarmType: Int? = null,
     //遥测实时信息
-    var telemetryList: List<DeviceModelData>
+    var telemetryList: List<EnvTelBO>
 )
 
 data class LoopInfo(
@@ -220,8 +220,13 @@ data class WebRTCResponse(
     val code: Int, val id: String, val sdp: String, val type: String
 )
 
+data class EnvReq(
+    val deviceId: Long,
+    val productId: Long?
+)
+
 data class EnvDataReq(
-    val ids: List<Long>
+    val envRealData: List<EnvReq>
 )
 
 //设备详情
@@ -868,4 +873,12 @@ data class IotProductDetail(
     var specialPrice: BigDecimal? = null,
     var state: Int? = null,
     var isDeletable: Int? = null
+)
+
+data class EnvTelBO(
+    val key: String,
+    val value: String,
+    val name: String,
+    val unit: String,
+    val description: String
 )

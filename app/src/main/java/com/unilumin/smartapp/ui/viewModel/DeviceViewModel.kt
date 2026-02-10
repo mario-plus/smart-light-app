@@ -1,9 +1,7 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import android.content.Context
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,6 +15,8 @@ import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
+import com.unilumin.smartapp.client.data.EnvDataReq
+import com.unilumin.smartapp.client.data.EnvReq
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
@@ -26,9 +26,6 @@ import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -40,7 +37,6 @@ import java.time.format.DateTimeFormatter
 class DeviceViewModel(
     retrofitClient: RetrofitClient, application: Application
 ) : AndroidViewModel(application) {
-    val context = getApplication<Application>()
 
     private val deviceService = retrofitClient.getService(DeviceService::class.java)
     private val _totalCount = MutableStateFlow<Int>(0)
@@ -77,13 +73,6 @@ class DeviceViewModel(
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
-
-
-    /**
-     * 产品遥测信息
-     * */
-    private val _productTel = MutableStateFlow<Map<Long, List<DeviceModelData>>>(emptyMap())
-
 
     private val _propertiesList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     private val _devicePropertiesDataList = MutableStateFlow<List<DeviceModelData>>(emptyList())
@@ -130,26 +119,18 @@ class DeviceViewModel(
                 config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
                 pagingSourceFactory = {
                     GenericPagingSource { page, pageSize ->
-                        getDeviceList(
+                        getIotDevices(
                             state = state,
                             productType = productType.toLong(),
                             searchQuery = keywords,
                             page = page,
-                            pageSize = pageSize,
-                            context = context
+                            pageSize = pageSize
                         )
                     }
                 }).flow
         }.cachedIn(viewModelScope)
 
-    /**
-     * 环境传感器数据，实现过程
-     * 加载设备列表数据
-     * 加载产品物模型，获取遥测数据
-     * 获取实时遥测数据，直接显示，对于传感器，遥测数据，基本就是实时监控数据
-     * 这种方式，新增的产品的，不用修改代码就能兼容
-     * 下拉加载分页数据
-     * */
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val envDevicePagingFlow =
         combine(state, productType, searchQuery) { state, productType, keywords ->
@@ -159,53 +140,19 @@ class DeviceViewModel(
                 config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
                 pagingSourceFactory = {
                     GenericPagingSource { page, pageSize ->
-                        var deviceList = getDeviceList(
+                        var deviceList = getEnvDevices(
                             state = state,
                             productType = productType.toLong(),
                             searchQuery = keywords,
                             page = page,
-                            pageSize = pageSize,
-                            context = context
+                            pageSize = pageSize
                         )
-                        coroutineScope {
-                            deviceList.map { device ->
-                                async {
-                                    fillRealTimeData(device)
-                                }
-                            }.awaitAll()
-                        }
+
                         deviceList
                     }
                 }).flow
         }.cachedIn(viewModelScope)
 
-    /**
-     * 填充设备实时信息
-     * */
-    suspend fun fillRealTimeData(device: IotDevice) {
-        val productId = device.productId?.toLong() ?: return
-        val baseTelList = _productTel.value[productId]
-        val sourceTemplateKeys = baseTelList?.mapNotNull { it.key }
-        if (!sourceTemplateKeys.isNullOrEmpty()) {
-            val deviceId = device.id
-            try {
-                val realTimeDataMap =
-                    UniCallbackService.parseDataNewSuspend(
-                        deviceService.getDeviceRealTimeData(
-                            DeviceRealTimeDataReq(deviceId, sourceTemplateKeys)
-                        )
-                    )
-                val realTimeValues = realTimeDataMap?.get(deviceId.toString())
-                val updatedList = baseTelList.map { modelData ->
-                    val newValue = realTimeValues?.get(modelData.key)
-                    modelData.copy(value = newValue)
-                }
-                device.telemetryList = updatedList
-            } catch (e: Exception) {
-                Log.e("Paging", "Fetch real-time data failed for ${device.id}", e)
-            }
-        }
-    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val offlineDeviceList = combine(chartType, primaryClass) { timeType, primaryClass ->
@@ -227,36 +174,66 @@ class DeviceViewModel(
     ): List<OfflineDevice> {
         val tType = timeType.takeIf { it != 0 }
         val pClass = primaryClass.takeIf { it != 0 }
-        val parseDataNewSuspend =
-            UniCallbackService.parseDataNewSuspend(
-                deviceService.offlineDeviceList(curPage, pageSize, tType, pClass)
-            )
+        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+            deviceService.offlineDeviceList(curPage, pageSize, tType, pClass)
+        )
         _totalCount.value = parseDataNewSuspend?.total!!
         return parseDataNewSuspend.list
     }
 
-    suspend fun getDeviceList(
+//    suspend fun getDeviceList(
+//        state: Int,
+//        productType: Long,
+//        searchQuery: String,
+//        page: Int,
+//        pageSize: Int,
+//    ): List<IotDevice> {
+//        return getIotDevices(
+//            state, productType, searchQuery, page, pageSize
+//        )
+//    }
+
+    /**
+     * 获取环境传感器设备列表+实时数据
+     * */
+    suspend fun getEnvDevices(
         state: Int,
         productType: Long,
         searchQuery: String,
         page: Int,
         pageSize: Int,
-        context: Context
     ): List<IotDevice> {
-        return getIotDevices(
-            state, productType, deviceService, searchQuery, page, pageSize, context
+        // 1. 处理状态参数
+        val s = state.takeIf { it != -1 }
+        // 2. 获取设备基础列表
+        val deviceResponse = UniCallbackService.parseDataNewSuspend(
+            deviceService.getDeviceList(searchQuery, page, pageSize, productType, s)
+        ) ?: return emptyList()
+        val deviceList = deviceResponse.list ?: return emptyList()
+        _totalCount.value = deviceResponse.total ?: 0
+        if (deviceList.isEmpty()) return emptyList()
+        val envReqList = deviceList.map {
+            EnvReq(deviceId = it.id, productId = it.productId)
+        }
+        val envDataReq = EnvDataReq(envReqList)
+        val envDataResponse = UniCallbackService.parseDataNewSuspend(
+            deviceService.getEnvDataList(envDataReq)
         )
-    }
+        envDataResponse?.let { dataMap ->
+            deviceList.forEach { device ->
+                device.telemetryList = dataMap[device.id] ?: emptyList()
+            }
+        }
 
+        return deviceList
+    }
 
     suspend fun getIotDevices(
         state: Int,
         productType: Long,
-        deviceService: DeviceService,
         searchQuery: String,
         page: Int,
         pageSize: Int,
-        context: Context
     ): List<IotDevice> {
         val s = state.takeIf { it != -1 }
         val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
@@ -266,43 +243,6 @@ class DeviceViewModel(
         )
         _totalCount.value = parseDataNewSuspend?.total!!
         return parseDataNewSuspend.list
-    }
-
-
-    /**
-     * 产品遥测
-     * */
-    /**
-     * 支持多类型初始化产品遥测数据
-     * @param productTypeIds 产品类型 ID 列表
-     * @return 聚合后的 Map<产品ID, 遥测数据列表>
-     */
-    suspend fun getProductTels(productTypeIds: List<Int>): Map<Long/**productId*/, List<DeviceModelData>> {
-        return coroutineScope {
-            val deferredResults = productTypeIds.map { typeId ->
-                async {
-                    UniCallbackService.parseDataNewSuspend(
-                        deviceService.getProductList(typeId)
-                    )
-                }
-            }
-            val allProducts = deferredResults.awaitAll()
-                .filterNotNull()
-                .flatten()
-            allProducts.mapNotNull { product ->
-                val productId = product.id ?: return@mapNotNull null
-                val deviceModelList = product.metadata?.let { metadataStr ->
-                    try {
-                        val jsonObject = JsonParser().parse(metadataStr).asJsonObject
-                        getDeviceModelData(jsonObject, "telemetry")
-                    } catch (e: Exception) {
-                        null
-                    }
-                } ?: emptyList()
-
-                productId to deviceModelList
-            }.toMap()
-        }
     }
 
     fun launchWithLoading(consumer: suspend () -> Unit) {
@@ -321,10 +261,9 @@ class DeviceViewModel(
     fun deviceStatusAnalysis() {
         launchWithLoading {
             try {
-                var parseDataNewSuspend =
-                    UniCallbackService.parseDataNewSuspend(
-                        deviceService.deviceStatusAnalysis()
-                    )
+                var parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+                    deviceService.deviceStatusAnalysis()
+                )
                 _deviceStatusAnalysis.value = parseDataNewSuspend
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -365,12 +304,11 @@ class DeviceViewModel(
                 _propertiesList.value
             }
             try {
-                val result =
-                    UniCallbackService.parseDataNewSuspend(
-                        deviceService.getDeviceRealTimeData(
-                            DeviceRealTimeDataReq(deviceId, sourceTemplate.map { it.key })
-                        )
+                val result = UniCallbackService.parseDataNewSuspend(
+                    deviceService.getDeviceRealTimeData(
+                        DeviceRealTimeDataReq(deviceId, sourceTemplate.map { it.key })
                     )
+                )
                 val realDataMap = result?.get(deviceId.toString()) ?: emptyMap()
                 val updatedList = sourceTemplate.map { templateItem ->
                     val newValue = realDataMap[templateItem.key] ?: ""

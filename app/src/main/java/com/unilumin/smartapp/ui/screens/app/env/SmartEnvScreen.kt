@@ -83,7 +83,7 @@ fun SmartEnvScreen(
     val totalCount by deviceViewModel.totalCount.collectAsState()
 
 
-    LaunchedEffect (Unit) {
+    LaunchedEffect(Unit) {
         deviceViewModel.updateFilter("7")
     }
 
@@ -200,7 +200,7 @@ fun DeviceEnvItem(device: IotDevice) {
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val telemetryList = device.telemetryList ?: emptyList()
+                    val telemetryList = device.telemetryList
                     telemetryList.forEachIndexed { index, data ->
                         // 数据项内容
                         Column(
@@ -210,12 +210,10 @@ fun DeviceEnvItem(device: IotDevice) {
                             Text(text = data.name, fontSize = 12.sp, color = Color(0xFF999999))
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "${data.value ?: "--"}${data.unit}",
+                                text = "${data.value}  ${data.unit}",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (data.key == "switch" || data.key == "brightness") Color(
-                                    0xFF3B7CFF
-                                ) else Color(0xFF333333)
+                                color = Color(0xFF333333)
                             )
                         }
 

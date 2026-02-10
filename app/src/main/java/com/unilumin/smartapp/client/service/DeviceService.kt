@@ -7,6 +7,7 @@ import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
 import com.unilumin.smartapp.client.data.EnvData
 import com.unilumin.smartapp.client.data.EnvDataReq
+import com.unilumin.smartapp.client.data.EnvTelBO
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
@@ -41,7 +42,7 @@ interface DeviceService {
     fun getEnvData(@Query("id") id: Long): Call<NewResponseData<EnvData?>?>?
 
     @POST(RequestPathKey.KEY_ENV_DATA_LIST)
-    fun getEnvDataList(@Body req: EnvDataReq): Call<NewResponseData<Map<Long, EnvData>?>?>?
+    fun getEnvDataList(@Body req: EnvDataReq): Call<NewResponseData<Map<Long, List<EnvTelBO>>?>?>?
 
 
     //获取iot设备列表
