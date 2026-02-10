@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,11 +48,15 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.statusOptions
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.DeviceStatus
+import com.unilumin.smartapp.ui.components.DeviceStatusRow
 import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchHeader
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 import com.unilumin.smartapp.ui.viewModel.SystemViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun SmartEnvScreen(
@@ -125,6 +128,13 @@ fun SmartEnvScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeviceEnvItem(device: IotDevice) {
+
+    val maxTs = device.telemetryList.maxOfOrNull { it.ts }
+    val updateTimeStr = if (maxTs != null && maxTs > 0) {
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(maxTs))
+    } else {
+        ""
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -135,8 +145,7 @@ fun DeviceEnvItem(device: IotDevice) {
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
@@ -144,8 +153,7 @@ fun DeviceEnvItem(device: IotDevice) {
                         .background(
                             color = if (device.state == 1) Color(0xFFE8EFFF) else Color(0xFFF5F5F5),
                             shape = RoundedCornerShape(14.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+                        ), contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Lightbulb,
@@ -154,9 +162,7 @@ fun DeviceEnvItem(device: IotDevice) {
                         modifier = Modifier.size(26.dp)
                     )
                 }
-
                 Spacer(modifier = Modifier.width(12.dp))
-
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = device.deviceName ?: "未知设备",
@@ -182,7 +188,16 @@ fun DeviceEnvItem(device: IotDevice) {
                 DeviceStatus(device.state)
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+
+            if (updateTimeStr.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "最近更新时间: $updateTimeStr",
+                    fontSize = 11.sp,
+                    color = Color(0xFF999999)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             val dataList = device.telemetryList
             if (dataList.isNotEmpty()) {
@@ -206,32 +221,20 @@ fun DeviceEnvItem(device: IotDevice) {
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 1.dp)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 3. 底部：业务状态指示
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                StatusIndicator(label = "可用状态", status = "启用", isNormal = true)
-                StatusIndicator(
-                    label = "工作状态",
-                    status = if (device.state == 1) "正常" else "离线",
-                    isNormal = device.state == 1
-                )
-            }
+            DeviceStatusRow(
+                isDisable = device.deviceState == 0,
+                hasAlarm = device.alarmType == 1,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
 
 @Composable
 fun EnvSensorCard(
-    label: String,
-    value: String,
-    unit: String?, // 【关键修复】改为可空类型 String?
+    label: String, value: String, unit: String?, // 【关键修复】改为可空类型 String?
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -248,14 +251,11 @@ fun EnvSensorCard(
             overflow = TextOverflow.Ellipsis
         )
         Row(
-            verticalAlignment = Alignment.Bottom,
-            modifier = Modifier.padding(top = 4.dp)
+            verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)
         ) {
             Text(
                 text = value ?: "--", // 防止 value 也为 null
-                fontSize = 19.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color(0xFF3B7CFF)
+                fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF3B7CFF)
             )
             // 【关键修复】只有当 unit 不为空且不为空白字符时才显示
             if (!unit.isNullOrBlank()) {
@@ -267,25 +267,5 @@ fun EnvSensorCard(
                 )
             }
         }
-    }
-}
-
-@Composable
-fun StatusIndicator(label: String, status: String, isNormal: Boolean) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text = "$label: ", fontSize = 12.sp, color = Color(0xFF999999))
-        Icon(
-            imageVector = Icons.Default.CheckCircle,
-            contentDescription = null,
-            tint = if (isNormal) Color(0xFF00C091) else Color(0xFFFF4D4F),
-            modifier = Modifier.size(13.dp)
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = status,
-            fontSize = 12.sp,
-            color = if (isNormal) Color(0xFF00C091) else Color(0xFFFF4D4F),
-            fontWeight = FontWeight.Bold
-        )
     }
 }

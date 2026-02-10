@@ -880,5 +880,6 @@ data class EnvTelBO(
     val value: String,
     val name: String,
     val unit: String?,
-    val description: String
+    val description: String,
+    val ts:Long
 )
