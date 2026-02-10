@@ -879,6 +879,6 @@ data class EnvTelBO(
     val key: String,
     val value: String,
     val name: String,
-    val unit: String,
+    val unit: String?,
     val description: String
 )

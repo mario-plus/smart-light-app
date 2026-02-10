@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,10 +22,9 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -53,12 +55,10 @@ import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartEnvScreen(
     retrofitClient: RetrofitClient, onBack: () -> Unit
 ) {
-
     val context = LocalContext.current
     val application = context.applicationContext as Application
 
@@ -68,7 +68,6 @@ fun SmartEnvScreen(
         }
     })
 
-
     val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return SystemViewModel(retrofitClient, application) as T
@@ -76,12 +75,10 @@ fun SmartEnvScreen(
     })
 
     val envProductTypeList by systemViewModel.envProductTypeList.collectAsState()
-
     val envDevicePagingFlow = deviceViewModel.envDevicePagingFlow.collectAsLazyPagingItems()
     val deviceState by deviceViewModel.state.collectAsState()
     val searchQuery by deviceViewModel.searchQuery.collectAsState()
     val totalCount by deviceViewModel.totalCount.collectAsState()
-
 
     LaunchedEffect(Unit) {
         deviceViewModel.updateFilter("7")
@@ -110,13 +107,14 @@ fun SmartEnvScreen(
                 searchTitle = "",
                 onStatusChanged = { deviceViewModel.updateState(it) },
                 onSearchChanged = { deviceViewModel.updateSearch(it) })
+
             PagingList(
                 totalCount = totalCount,
                 lazyPagingItems = envDevicePagingFlow,
                 itemKey = { it.id },
                 modifier = Modifier.weight(1f),
                 emptyMessage = "暂无设备",
-                contentPadding = PaddingValues(16.dp)
+                contentPadding = PaddingValues(bottom = 16.dp)
             ) { device ->
                 DeviceEnvItem(device)
             }
@@ -124,10 +122,7 @@ fun SmartEnvScreen(
     }
 }
 
-/**
- * 优化后的设备环境监控卡片
- * 参考图片 实现
- */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeviceEnvItem(device: IotDevice) {
     Card(
@@ -135,135 +130,162 @@ fun DeviceEnvItem(device: IotDevice) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // 1. 顶部栏：图标 + 设备基本信息 + 状态标签
+        Column(modifier = Modifier.padding(20.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // 左侧蓝色灯泡图标背景
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .background(Color(0xFFE8EFFF), RoundedCornerShape(12.dp)),
+                        .background(
+                            color = if (device.state == 1) Color(0xFFE8EFFF) else Color(0xFFF5F5F5),
+                            shape = RoundedCornerShape(14.dp)
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Lightbulb,
                         contentDescription = null,
-                        tint = Color(0xFF3B7CFF),
-                        modifier = Modifier.size(24.dp)
+                        tint = if (device.state == 1) Color(0xFF3B7CFF) else Color(0xFF999999),
+                        modifier = Modifier.size(26.dp)
                     )
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // 中间设备详细文字信息
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = device.deviceName.toString(),
-                        fontSize = 18.sp,
+                        text = device.deviceName ?: "未知设备",
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF333333)
+                        color = Color(0xFF1F1F1F),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "SN: ${device.serialNum}",
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         color = Color(0xFF999999),
-                        modifier = Modifier.padding(vertical = 2.dp)
+                        modifier = Modifier.padding(top = 2.dp)
                     )
                     Text(
-                        text = device.productName.toString(),
-                        fontSize = 13.sp,
+                        text = " ${device.productName}",
+                        fontSize = 12.sp,
                         color = Color(0xFF999999),
-                        lineHeight = 16.sp
+                        modifier = Modifier.padding(top = 2.dp)
                     )
                 }
-                // 右侧状态角标
                 DeviceStatus(device.state)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
-            // 2. 中间实时数据面板：横向排列 + 浅灰色背景
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFFF8F9FB),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            val dataList = device.telemetryList
+            if (dataList.isNotEmpty()) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    maxItemsInEachRow = 3,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val telemetryList = device.telemetryList
-                    telemetryList.forEachIndexed { index, data ->
-                        // 数据项内容
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(text = data.name, fontSize = 12.sp, color = Color(0xFF999999))
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "${data.value}  ${data.unit}",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF333333)
-                            )
-                        }
-
-                        // 项之间的垂直分割线
-                        if (index < telemetryList.size - 1) {
-                            Box(
-                                modifier = Modifier
-                                    .width(1.dp)
-                                    .height(20.dp)
-                                    .background(Color(0xFFE0E0E0))
-                            )
-                        }
+                    dataList.forEach { data ->
+                        EnvSensorCard(
+                            label = data.name,
+                            value = data.value,
+                            unit = data.unit,
+                            modifier = Modifier.weight(1f, fill = true)
+                        )
+                    }
+                    val fillCount = 3 - (dataList.size % 3)
+                    if (fillCount < 3) {
+                        repeat(fillCount) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
 
+            Spacer(modifier = Modifier.height(18.dp))
+            HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 1.dp)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. 底部状态栏：可用状态 + 工作状态
+            // 3. 底部：业务状态指示
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 StatusIndicator(label = "可用状态", status = "启用", isNormal = true)
-                StatusIndicator(label = "工作状态", status = "正常", isNormal = true)
+                StatusIndicator(
+                    label = "工作状态",
+                    status = if (device.state == 1) "正常" else "离线",
+                    isNormal = device.state == 1
+                )
             }
         }
     }
 }
 
+@Composable
+fun EnvSensorCard(
+    label: String,
+    value: String,
+    unit: String?, // 【关键修复】改为可空类型 String?
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .background(Color(0xFFF8F9FB), RoundedCornerShape(12.dp))
+            .padding(vertical = 12.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = Color(0xFF7A7A7A),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.padding(top = 4.dp)
+        ) {
+            Text(
+                text = value ?: "--", // 防止 value 也为 null
+                fontSize = 19.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF3B7CFF)
+            )
+            // 【关键修复】只有当 unit 不为空且不为空白字符时才显示
+            if (!unit.isNullOrBlank()) {
+                Text(
+                    text = unit,
+                    fontSize = 10.sp,
+                    color = Color(0xFF3B7CFF),
+                    modifier = Modifier.padding(start = 2.dp, bottom = 3.dp)
+                )
+            }
+        }
+    }
+}
 
-/**
- * 底部带勾选图标的状态指示器
- */
 @Composable
 fun StatusIndicator(label: String, status: String, isNormal: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text = "$label: ", fontSize = 13.sp, color = Color(0xFF999999))
+        Text(text = "$label: ", fontSize = 12.sp, color = Color(0xFF999999))
         Icon(
             imageVector = Icons.Default.CheckCircle,
             contentDescription = null,
             tint = if (isNormal) Color(0xFF00C091) else Color(0xFFFF4D4F),
-            modifier = Modifier.size(14.dp)
+            modifier = Modifier.size(13.dp)
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = status,
-            fontSize = 13.sp,
+            fontSize = 12.sp,
             color = if (isNormal) Color(0xFF00C091) else Color(0xFFFF4D4F),
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Bold
         )
     }
 }
