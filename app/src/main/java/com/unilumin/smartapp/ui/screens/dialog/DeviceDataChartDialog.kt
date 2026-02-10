@@ -48,7 +48,7 @@ fun ChartDataDialog(
     Dialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
-    ){
+    ) {
 
         Surface(
             shape = RoundedCornerShape(24.dp),
@@ -60,7 +60,7 @@ fun ChartDataDialog(
             tonalElevation = 8.dp
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                HeaderSection("数据分析详情",onDismiss)
+                HeaderSection(selectedDeviceModelData?.name + "-历史图表数据", onDismiss)
                 if (selectedDeviceModelData != null) {
                     InfoRibbon(selectedDeviceModelData)
                 }

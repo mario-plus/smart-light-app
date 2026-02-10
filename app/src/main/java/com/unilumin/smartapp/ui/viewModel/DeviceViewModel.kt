@@ -101,6 +101,9 @@ class DeviceViewModel(
 
     private val _chartDataList = MutableStateFlow<List<SequenceTsl>>(emptyList())
     val chartDataList = _chartDataList.asStateFlow()
+    fun clearChartData() {
+        _chartDataList.value = emptyList()
+    }
 
     private val _deviceConfigList = MutableStateFlow<Map<String, String>>(emptyMap())
     val deviceConfigList = _deviceConfigList.asStateFlow()
@@ -181,18 +184,6 @@ class DeviceViewModel(
         return parseDataNewSuspend.list
     }
 
-//    suspend fun getDeviceList(
-//        state: Int,
-//        productType: Long,
-//        searchQuery: String,
-//        page: Int,
-//        pageSize: Int,
-//    ): List<IotDevice> {
-//        return getIotDevices(
-//            state, productType, searchQuery, page, pageSize
-//        )
-//    }
-
     /**
      * 获取环境传感器设备列表+实时数据
      * */
@@ -272,7 +263,7 @@ class DeviceViewModel(
     }
 
     fun loadChartData(
-        deviceId: Long, startTime: String, endTime: String, currentData: DeviceModelData
+        deviceId: Long, startTime: String, endTime: String, key: String, type: Int
     ) {
         launchWithLoading {
             try {
@@ -281,8 +272,8 @@ class DeviceViewModel(
                 val response = UniCallbackService.parseDataNewSuspend(
                     deviceService.getSequenceTsl(
                         deviceId = deviceId,
-                        id = currentData.key,
-                        type = 1,
+                        id = key,
+                        type = type,
                         startTime = startFormatted,
                         endTime = endFormatted,
                         isAggregation = false

@@ -149,8 +149,7 @@ fun DeviceDetailScreen(
 
                 Column(modifier = Modifier.background(CardWhite)) {
                     CommonTopAppBar(
-                        title = "设备 [${iotDevice.deviceName}] 详情",
-                        onBack = { onBack() })
+                        title = "设备 [${iotDevice.deviceName}] 详情", onBack = { onBack() })
                     Spacer(modifier = Modifier.height(8.dp))
                     // 4. 替换为 LazyRow 实现的滑动 Chip Tabs
                     LazyRow(
@@ -346,11 +345,11 @@ fun DeviceDetailScreen(
     }
 
     if (showChartDialog && selectedDeviceModelData != null) {
-        ChartDataDialog(selectedDeviceModelData = selectedDeviceModelData, onDismiss = {
+        ChartDataDialog( selectedDeviceModelData = selectedDeviceModelData, onDismiss = {
             showChartDialog = false
         }, limitDays = 14, chartDataList, onLoadData = { start, end ->
             deviceViewModel.loadChartData(
-                iotDevice.id, start, end, selectedDeviceModelData!!
+                iotDevice.id, start, end, selectedDeviceModelData!!.key, 1
             )
         })
     }

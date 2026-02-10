@@ -1,7 +1,10 @@
 package com.unilumin.smartapp.ui.screens.app.env
 
 import android.app.Application
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -29,6 +33,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,12 +53,15 @@ import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_ENV
 import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.client.constant.DeviceConstant.statusOptions
+import com.unilumin.smartapp.client.data.DeviceModelData
+import com.unilumin.smartapp.client.data.EnvTelBO
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.DeviceStatusRow
 import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchHeader
+import com.unilumin.smartapp.ui.screens.dialog.ChartDataDialog
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 import com.unilumin.smartapp.ui.viewModel.SystemViewModel
@@ -59,17 +70,34 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 fun SmartEnvScreen(
     retrofitClient: RetrofitClient, onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
 
+
     val deviceViewModel: DeviceViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return DeviceViewModel(retrofitClient, application) as T
         }
     })
+
+
+    //服务
+    val chartDataList by deviceViewModel.chartDataList.collectAsState()
+
+    //卡片-图片数据
+    var showChartDialog by remember { mutableStateOf(false) }
+
+
+    var selectDeviceId by remember { mutableLongStateOf(0L) }
+
+    //选中的卡片信息
+    var selectedDeviceModelData by remember { mutableStateOf<DeviceModelData?>(null) }
+
 
     val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -119,22 +147,55 @@ fun SmartEnvScreen(
                 emptyMessage = "暂无设备",
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) { device ->
-                DeviceEnvItem(device)
+                DeviceEnvItem(
+                    device = device, onCardClick = { envData, deviceId ->
+                        if ("long" == envData.type || "double" == envData.type) {
+                            showChartDialog = true
+                            selectDeviceId = deviceId
+                            selectedDeviceModelData = DeviceModelData(
+                                key = envData.key,
+                                name = envData.name,
+                                value = envData.value,
+                                keyDes = envData.description,
+                                unit = envData.unit,
+                                type = envData.type
+                            )
+                        }
+                    })
             }
         }
+    }
+    if (showChartDialog && selectedDeviceModelData != null) {
+        ChartDataDialog(
+            selectedDeviceModelData = selectedDeviceModelData,
+            onDismiss = {
+                showChartDialog = false
+                deviceViewModel.clearChartData()
+            },
+            limitDays = 14,
+            chartDataList,
+            onLoadData = { start, end ->
+                deviceViewModel.loadChartData(
+                    selectDeviceId, start, end, selectedDeviceModelData!!.key, 2
+                )
+            })
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun DeviceEnvItem(device: IotDevice) {
-
-    val maxTs = device.telemetryList.maxOfOrNull { it.ts }
+fun DeviceEnvItem(
+    device: IotDevice, onCardClick: (EnvTelBO, Long) -> Unit
+) {
+    val dataList = device.telemetryList
+    val maxTs = dataList.maxOfOrNull { it.ts }
     val updateTimeStr = if (maxTs != null && maxTs > 0) {
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(maxTs))
     } else {
         ""
     }
+
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -144,6 +205,7 @@ fun DeviceEnvItem(device: IotDevice) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
+            // 1. 顶部设备信息
             Row(
                 modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
             ) {
@@ -179,7 +241,7 @@ fun DeviceEnvItem(device: IotDevice) {
                         modifier = Modifier.padding(top = 2.dp)
                     )
                     Text(
-                        text = " ${device.productName}",
+                        text = device.productName ?: "",
                         fontSize = 12.sp,
                         color = Color(0xFF999999),
                         modifier = Modifier.padding(top = 2.dp)
@@ -188,7 +250,7 @@ fun DeviceEnvItem(device: IotDevice) {
                 DeviceStatus(device.state)
             }
 
-
+            // 2. 更新时间显示
             if (updateTimeStr.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
@@ -196,11 +258,11 @@ fun DeviceEnvItem(device: IotDevice) {
                     fontSize = 11.sp,
                     color = Color(0xFF999999)
                 )
-                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            val dataList = device.telemetryList
+            // 3. 实时数据网格 (FlowRow)
             if (dataList.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     maxItemsInEachRow = 3,
@@ -212,6 +274,7 @@ fun DeviceEnvItem(device: IotDevice) {
                             label = data.name,
                             value = data.value,
                             unit = data.unit,
+                            onClick = { onCardClick(data, device.id) },
                             modifier = Modifier.weight(1f, fill = true)
                         )
                     }
@@ -221,8 +284,11 @@ fun DeviceEnvItem(device: IotDevice) {
                     }
                 }
             }
+
             Spacer(modifier = Modifier.height(12.dp))
             HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 1.dp)
+
+            // 4. 底部状态行
             DeviceStatusRow(
                 isDisable = device.deviceState == 0,
                 hasAlarm = device.alarmType == 1,
@@ -234,12 +300,13 @@ fun DeviceEnvItem(device: IotDevice) {
 
 @Composable
 fun EnvSensorCard(
-    label: String, value: String, unit: String?, // 【关键修复】改为可空类型 String?
+    label: String, value: String, unit: String?, onClick: () -> Unit, // 【新增】增加点击回调
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .background(Color(0xFFF8F9FB), RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick) // 【新增】给数据卡片增加点击事件
             .padding(vertical = 12.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -254,10 +321,11 @@ fun EnvSensorCard(
             verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)
         ) {
             Text(
-                text = value ?: "--", // 防止 value 也为 null
-                fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF3B7CFF)
+                text = value ?: "--",
+                fontSize = 19.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF3B7CFF)
             )
-            // 【关键修复】只有当 unit 不为空且不为空白字符时才显示
             if (!unit.isNullOrBlank()) {
                 Text(
                     text = unit,
