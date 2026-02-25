@@ -60,15 +60,12 @@ import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.HighlightOff
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Dashboard
@@ -87,7 +84,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -97,7 +93,6 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -109,8 +104,6 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -132,7 +125,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
@@ -183,10 +175,7 @@ import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.ui.theme.AccentBlue
 import com.unilumin.smartapp.ui.theme.AlarmBg
 import com.unilumin.smartapp.ui.theme.AlarmRed
-import com.unilumin.smartapp.ui.theme.Amber50
-import com.unilumin.smartapp.ui.theme.Amber500
 import com.unilumin.smartapp.ui.theme.BackgroundGray
-import com.unilumin.smartapp.ui.theme.BgLightGray
 import com.unilumin.smartapp.ui.theme.Blue50
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.BluePrimary
@@ -194,8 +183,6 @@ import com.unilumin.smartapp.ui.theme.CardBorder
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.DividerColor
-import com.unilumin.smartapp.ui.theme.Emerald50
-import com.unilumin.smartapp.ui.theme.Emerald600
 import com.unilumin.smartapp.ui.theme.Gray100
 import com.unilumin.smartapp.ui.theme.Gray200
 import com.unilumin.smartapp.ui.theme.Gray400
@@ -211,8 +198,6 @@ import com.unilumin.smartapp.ui.theme.Orange50
 import com.unilumin.smartapp.ui.theme.Orange500
 import com.unilumin.smartapp.ui.theme.PlaceholderColor
 import com.unilumin.smartapp.ui.theme.PrimaryBlue
-import com.unilumin.smartapp.ui.theme.Red50
-import com.unilumin.smartapp.ui.theme.Red500
 import com.unilumin.smartapp.ui.theme.RedStatus
 import com.unilumin.smartapp.ui.theme.SafeBg
 import com.unilumin.smartapp.ui.theme.SafeGreen
@@ -252,32 +237,6 @@ fun AppCard(
         border = BorderStroke(1.dp, Gray100)
     ) {
         Column(modifier = Modifier.padding(16.dp), content = content)
-    }
-}
-
-@Composable
-fun StatusBadge(status: String) {
-    val (bgColor, textColor, label) = when (status) {
-        "online" -> Triple(Emerald50, Emerald600, "在线")
-        "offline" -> Triple(Gray100, Gray500, "离线")
-        "high" -> Triple(Red50, Red500, "严重")
-        "medium" -> Triple(Amber50, Amber500, "警告")
-        "low" -> Triple(Blue50, Blue600, "提示")
-        else -> Triple(Gray100, Gray500, status)
-    }
-
-    Surface(
-        color = bgColor,
-        shape = RoundedCornerShape(4.dp),
-        modifier = Modifier.border(0.5.dp, textColor.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-    ) {
-        Text(
-            text = label,
-            color = textColor,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-        )
     }
 }
 
@@ -434,30 +393,6 @@ fun EmptyDataView(message: String) {
     }
 }
 
-@Composable
-fun InfoColumn(label: String, value: String, isHighlight: Boolean = false) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, fontSize = 10.sp, color = Gray400, fontWeight = FontWeight.Medium)
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            value,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (isHighlight && value != "0%") Amber500 else Gray900
-        )
-    }
-}
-
-@Composable
-fun VerticalDivider() {
-    Box(
-        modifier = Modifier
-            .width(1.dp)
-            .height(24.dp)
-            .background(Gray200)
-    )
-}
-
 /**
  * 设备状态(按钮:在线/离线)
  * */
@@ -592,177 +527,6 @@ fun ProfileMenuItem(
                 Icons.Rounded.ChevronRight, null, tint = Gray200, modifier = Modifier.size(22.dp)
             )
         }
-    }
-}
-
-//拖动条
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun BrightnessControlCard(
-    title: String,
-    initValue: Int,
-    onValueChange: (Int) -> Unit,
-    onValueChangeFinished: (Int) -> Unit
-) {
-    // 外层容器：使用 Surface 自带的阴影和圆角，代码更简洁
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(2.dp, RoundedCornerShape(16.dp), spotColor = Color.Black.copy(alpha = 0.1f)),
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White,
-        border = BorderStroke(1.dp, Color(0xFFF2F2F2)) // 极淡的边框增加质感
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp), // 垂直方向压扁一点，更像一个列表项
-            verticalAlignment = Alignment.CenterVertically, // 关键：垂直居中
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // --- 1. 左侧标题区域 ---
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(end = 12.dp) // 给滑块留点呼吸空间
-            ) {
-                // 装饰性小竖条
-                Box(
-                    modifier = Modifier
-                        .size(4.dp, 14.dp)
-                        .background(ControlBlue, RoundedCornerShape(2.dp))
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = title, fontSize = 14.sp, // 稍微改小一点，显得精致
-                    color = Color(0xFF333333), fontWeight = FontWeight.Bold
-                )
-            }
-
-            // --- 2. 中间滑块区域 (自适应宽度) ---
-            // 使用 weight(1f) 让它填满标题和数值中间的所有空间
-            Slider(
-                value = initValue.toFloat(), onValueChange = { newValue ->
-                onValueChange(newValue.toInt())
-            }, onValueChangeFinished = {
-                onValueChangeFinished(initValue)
-            }, valueRange = 0f..100f, colors = SliderDefaults.colors(
-                thumbColor = Color.White,
-                activeTrackColor = ControlBlue,
-                inactiveTrackColor = BgLightGray.copy(alpha = 0.8f) // 轨道稍微深一点点
-            ), modifier = Modifier
-                    .weight(1f) // 关键：占据剩余空间
-                .height(24.dp), // 限制滑块组件的高度，防止默认的触摸区域撑太高
-                thumb = {
-                    // 自定义小滑块，比之前那个版本要做得更小一点，适配单行
-                    Surface(
-                        modifier = Modifier
-                            .size(20.dp) // 缩小尺寸 (之前是 28dp)
-                            .shadow(2.dp, CircleShape),
-                        shape = CircleShape,
-                        color = Color.White,
-                        border = BorderStroke(0.5.dp, Color(0xFFEEEEEE))
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(ControlBlue, CircleShape)
-                            )
-                        }
-                    }
-                })
-
-            // --- 3. 右侧数值区域 ---
-            // 使用 Box 给定最小宽度，防止数字 9 -> 10 时宽度变化导致滑块抖动
-            Box(
-                modifier = Modifier
-                    .width(46.dp) // 给定一个固定宽度，足以容纳 "100%"
-                    .padding(start = 8.dp), contentAlignment = Alignment.CenterEnd // 文字靠右对齐
-            ) {
-                Text(
-                    text = "${initValue}%",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.ExtraBold, // 数字加粗
-                    color = ControlBlue,
-                    style = TextStyle(fontFeatureSettings = "tnum") // 可选：等宽数字特性
-                )
-            }
-        }
-    }
-}
-
-
-/**
- * @param canClick 远程控制是否可以点击
- * @param onHistoryClick 历史数据事件
- * @param onRemoteControlClick 远程控制事件
- * */
-@Composable
-fun RemoteControlButtonGroup(
-    canClick: Boolean,
-    showRemoteCtlBtn: Boolean,
-    onRemoteControlClick: () -> Unit,
-    onHistoryClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // 历史数据
-        ControlButton(
-            text = "设备详情",
-            icon = Icons.Default.History,
-            canClick = true,
-            onClick = onHistoryClick,
-            modifier = Modifier.weight(1f),
-            activeColor = Color(0xFF6750A4)
-        )
-        if (showRemoteCtlBtn) {
-            ControlButton(
-                text = "远程控制",
-                icon = Icons.Default.PowerSettingsNew,
-                canClick = canClick,
-                onClick = onRemoteControlClick,
-                modifier = Modifier.weight(1f),
-                activeColor = ControlBlue
-            )
-        }
-
-    }
-}
-
-
-@Composable
-private fun ControlButton(
-    text: String,
-    icon: ImageVector,
-    canClick: Boolean,
-    activeColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    FilledTonalButton(
-        onClick = if (canClick) onClick else ({}),
-        modifier = modifier
-            .height(56.dp)
-            .alpha(if (canClick) 1f else 0.6f),
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = if (canClick) activeColor.copy(alpha = 0.1f) else Gray50,
-            contentColor = if (canClick) activeColor else Color.DarkGray
-        ),
-        enabled = canClick
-    ) {
-        Icon(
-            imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1
-        )
     }
 }
 
@@ -1767,42 +1531,6 @@ fun UsageLinearBar(label: String, usage: Double) {
                     .fillMaxWidth(progressValue) // 根据比例占据宽度
                     .fillMaxHeight()
                     .background(progressColor, CircleShape) // 进度条圆角
-            )
-        }
-    }
-}
-
-@Composable
-private fun TotalCountHeader(totalCount: Int) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp), // 留出一点边距
-        color = Color(0xFFF5F7FA), // 非常淡的灰蓝色背景，现代化风格
-        shape = RoundedCornerShape(8.dp), // 小圆角
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center // 居中显示
-        ) {
-            Icon(
-                imageVector = Icons.Default.DataUsage, // 或者 Icons.Default.List
-                contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF757575)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = buildAnnotatedString {
-                    append("共检索到 ")
-                    withStyle(
-                        style = SpanStyle(
-                            color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold
-                        )
-                    ) {
-                        append("$totalCount")
-                    }
-                    append(" 条数据")
-                }, fontSize = 12.sp, color = Color(0xFF757575)
             )
         }
     }

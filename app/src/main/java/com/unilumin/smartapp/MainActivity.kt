@@ -1,8 +1,6 @@
 package com.unilumin.smartapp
 
 
-
-
 import SystemConfigScreen
 import SystemInfoScreen
 import android.os.Build
@@ -62,6 +60,7 @@ import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
+import com.unilumin.smartapp.util.JsonUtils
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -133,7 +132,7 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                             DevicesScreen(
                                 retrofitClient = retrofitClient,
                                 onDetailClick = { lightDevice ->
-                                    val deviceJson = Gson().toJson(lightDevice)
+                                    val deviceJson = JsonUtils.gson.toJson(lightDevice)
                                     val encodedJson = URLEncoder.encode(deviceJson, "UTF-8")
                                     navController.navigate("deviceDetail/$encodedJson")
                                 },
