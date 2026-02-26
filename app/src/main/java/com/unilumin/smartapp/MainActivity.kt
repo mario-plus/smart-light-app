@@ -46,7 +46,7 @@ import com.unilumin.smartapp.ui.screens.app.env.SmartEnvScreen
 import com.unilumin.smartapp.ui.screens.app.lamp.LampGroupMemberContent
 import com.unilumin.smartapp.ui.screens.app.lamp.SmartLampScreen
 import com.unilumin.smartapp.ui.screens.app.monitor.SmartMonitorScreen
-import com.unilumin.smartapp.ui.screens.app.playBox.SmartPlayBoxScreen
+import com.unilumin.smartapp.ui.screens.app.playBox.SmartLedScreen
 import com.unilumin.smartapp.ui.screens.dashboard.DashboardScreen
 import com.unilumin.smartapp.ui.screens.dashboard.DeviceAlarmScreen
 import com.unilumin.smartapp.ui.screens.device.DeviceDetailScreen
@@ -60,6 +60,7 @@ import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
+import com.unilumin.smartapp.ui.viewModel.ScreenViewModel
 import com.unilumin.smartapp.util.JsonUtils
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -102,6 +103,7 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
         key(sessionKey) {
             var cachedProfileViewModel by remember { mutableStateOf<ProfileViewModel?>(null) }
             var cachedLampViewModel by remember { mutableStateOf<LampViewModel?>(null) }
+            var cacheScreenViewModel by remember { mutableStateOf<ScreenViewModel?>(null) }
             val navController = rememberNavController()
             if (!isLoggedIn) {
                 LoginScreen(
@@ -190,8 +192,13 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
 
                         //智慧屏幕
                         composable("smartPlayBoxScreen") { e ->
-                            SmartPlayBoxScreen(
-                                retrofitClient, onBack = { navController.popBackStack() })
+                            SmartLedScreen(
+                                retrofitClient,
+                                onBack = { navController.popBackStack() },
+                                toNew = { e ->
+                                    cacheScreenViewModel = e
+                                   // navController.navigate("groupMemberScreen")
+                                })
                         }
 
 
