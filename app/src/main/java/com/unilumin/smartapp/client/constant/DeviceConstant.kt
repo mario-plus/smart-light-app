@@ -73,6 +73,29 @@ object DeviceConstant {
     )
 
 
+    //播放盒管理
+    const val SMART_LED_DEV_MANAGE = "ledDevManage"
+    //素材管理
+    const val SMART_LED_FILE_MANAGE = "ledFileManage"
+    //播放表管理
+    const val SMART_LED_SCHEDULE_MANAGE = "ledScheduleManage"
+    //分组管理
+    const val SMART_LED_GROUP_MANAGE = "ledGroupManage"
+    //控制方案
+    const val SMART_LED_CTL_SCHEDULE = "ledCtlSchedule"
+    //播放方案
+    const val SMART_LED_PLAY_SCHEDULE = "ledPlaySchedule"
+
+    val SMART_LED_FUNC_LIST = listOf<SystemConfig>(
+        SystemConfig(SMART_LED_DEV_MANAGE, "播放盒管理", getIconForName(SMART_LED_DEV_MANAGE), true),
+        SystemConfig(SMART_LED_FILE_MANAGE, "素材管理", getIconForName(SMART_LED_FILE_MANAGE), true),
+        SystemConfig(SMART_LED_SCHEDULE_MANAGE, "播放表管理", getIconForName(SMART_LED_SCHEDULE_MANAGE), true),
+        SystemConfig(SMART_LED_GROUP_MANAGE, "分组管理", getIconForName(SMART_LED_GROUP_MANAGE), true),
+        SystemConfig(SMART_LED_CTL_SCHEDULE, "控制方案", getIconForName(SMART_LED_CTL_SCHEDULE), true),
+        SystemConfig(SMART_LED_PLAY_SCHEDULE, "播放方案", getIconForName(SMART_LED_PLAY_SCHEDULE), true),
+        )
+
+
     //传感器
     val ENV_PRODUCT_TYPE_LIST = listOf<SystemConfig>(
         SystemConfig("7", "环境传感器", Icons.Outlined.Thermostat, true),

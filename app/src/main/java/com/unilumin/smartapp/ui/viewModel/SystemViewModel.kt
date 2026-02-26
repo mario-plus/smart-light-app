@@ -8,6 +8,7 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.DEVICE_PRODUCT_TYPE_
 import com.unilumin.smartapp.client.constant.DeviceConstant.ENV_PRODUCT_TYPE_LIST
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_APP_LIST
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_FUNC_LIST
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_FUNC_LIST
 import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.mock.SystemConfigManager
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,85 +17,71 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SystemViewModel(
-    val retrofitClient: RetrofitClient,application: Application
+    val retrofitClient: RetrofitClient, application: Application
 ) : AndroidViewModel(application) {
 
     val context = getApplication<Application>()
 
     var configStore = SystemConfigManager(context)
 
-
-    // 暴露给 UI 的状态流：使用 stateIn 保持热流，确保跨页面感知
-    val productTypes: StateFlow<List<SystemConfig>> = configStore.productTypesFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = DEVICE_PRODUCT_TYPE_LIST
-        )
+    /***********************************************************************************************************************************************/
+    val productTypes: StateFlow<List<SystemConfig>> = configStore.productTypesFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = DEVICE_PRODUCT_TYPE_LIST
+    )
 
     // 切换选中状态
     fun toggleProductType(id: String, isSelected: Boolean) {
         viewModelScope.launch {
-            // 基于当前流中的最新值进行修改
             val currentList = productTypes.value.map {
                 if (it.id == id) it.copy(isSelected = isSelected) else it
             }
-            // 写入 DataStore，这会触发 productTypesFlow 发射新值，从而自动更新 UI
             configStore.saveProductTypes(currentList)
         }
     }
 
-    // 暴露给 UI 的状态流：使用 stateIn 保持热流，确保跨页面感知
-    val smartApps: StateFlow<List<SystemConfig>> = configStore.smartAppsFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = SMART_APP_LIST
-        )
+    /***********************************************************************************************************************************************/
+    val smartApps: StateFlow<List<SystemConfig>> = configStore.smartAppsFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SMART_APP_LIST
+    )
 
     // 切换选中状态
     fun toggleSmartApps(id: String, isSelected: Boolean) {
         viewModelScope.launch {
-            // 基于当前流中的最新值进行修改
             val currentList = smartApps.value.map {
                 if (it.id == id) it.copy(isSelected = isSelected) else it
             }
-            // 写入 DataStore，这会触发 productTypesFlow 发射新值，从而自动更新 UI
             configStore.saveSmartApps(currentList)
         }
     }
 
 
-    // 暴露给 UI 的状态流：使用 stateIn 保持热流，确保跨页面感知
-    val lampFunctions: StateFlow<List<SystemConfig>> = configStore.lampFunctionsFlow
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = SMART_LAMP_FUNC_LIST
-        )
-
-    // 切换选中状态
+    /***********************************************************************************************************************************************/
+    val lampFunctions: StateFlow<List<SystemConfig>> = configStore.lampFunctionsFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SMART_LAMP_FUNC_LIST
+    )
     fun toggleLampFunctions(id: String, isSelected: Boolean) {
         viewModelScope.launch {
-            // 基于当前流中的最新值进行修改
             val currentList = lampFunctions.value.map {
                 if (it.id == id) it.copy(isSelected = isSelected) else it
             }
-            // 写入 DataStore，这会触发 productTypesFlow 发射新值，从而自动更新 UI
             configStore.saveLampFunctions(currentList)
         }
     }
 
 
-    // 暴露给 UI 的状态流：使用 stateIn 保持热流，确保跨页面感知
-    val envProductTypeList: StateFlow<List<SystemConfig>> = configStore.envProductTypeListFlow
-        .stateIn(
+    /***********************************************************************************************************************************************/
+    val envProductTypeList: StateFlow<List<SystemConfig>> =
+        configStore.envProductTypeListFlow.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = ENV_PRODUCT_TYPE_LIST
         )
-
-    // 切换选中状态
     fun toggleEnvProductTypeList(id: String, isSelected: Boolean) {
         viewModelScope.launch {
             val currentList = envProductTypeList.value.map {
@@ -103,6 +90,23 @@ class SystemViewModel(
             configStore.saveEnvProductTypeIds(currentList)
         }
     }
+
+
+    /***********************************************************************************************************************************************/
+    val ledFunctions: StateFlow<List<SystemConfig>> = configStore.ledFunctionsFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SMART_LED_FUNC_LIST
+    )
+    fun toggleLedFunctions(id: String, isSelected: Boolean) {
+        viewModelScope.launch {
+            val currentList = ledFunctions.value.map {
+                if (it.id == id) it.copy(isSelected = isSelected) else it
+            }
+            configStore.saveLedFunctions(currentList)
+        }
+    }
+
 
 
 }

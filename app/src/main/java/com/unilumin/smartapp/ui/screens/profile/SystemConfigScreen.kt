@@ -67,11 +67,13 @@ fun SystemConfigScreen(
     val smartApps by systemViewModel.smartApps.collectAsState()
     val lampFunctions by systemViewModel.lampFunctions.collectAsState()
     val envProductTypeList by systemViewModel.envProductTypeList.collectAsState()
+    val ledFunctions by systemViewModel.ledFunctions.collectAsState()
 
     var isDeviceListExpanded by remember { mutableStateOf(false) }
     var isSmartAppExpanded by remember { mutableStateOf(false) }
     var isLampFunctionExpanded by remember { mutableStateOf(false) }
     var isEnvProductTypeExpanded by remember { mutableStateOf(false) }
+    var isLedFunctionExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -90,7 +92,7 @@ fun SystemConfigScreen(
             item {
                 ConfigExpandableCard(
                     title = "设备类型配置",
-                    subtitle = "设备列表显示的设备类型",
+                    subtitle = "设备列表---设备类型配置",
                     isExpanded = isDeviceListExpanded,
                     onExpandClick = { isDeviceListExpanded = !isDeviceListExpanded })
             }
@@ -106,7 +108,7 @@ fun SystemConfigScreen(
             item {
                 ConfigExpandableCard(
                     title = "智慧应用配置",
-                    subtitle = "设备列表智慧应用项",
+                    subtitle = "设备列表--智慧应用项",
                     isExpanded = isSmartAppExpanded,
                     onExpandClick = { isSmartAppExpanded = !isSmartAppExpanded })
             }
@@ -122,7 +124,7 @@ fun SystemConfigScreen(
             item {
                 ConfigExpandableCard(
                     title = "智慧路灯功能配置",
-                    subtitle = "设备列表智慧应用功能模块配置",
+                    subtitle = "设备列表--智慧应用--功能模块配置",
                     isExpanded = isLampFunctionExpanded,
                     onExpandClick = { isLampFunctionExpanded = !isLampFunctionExpanded })
             }
@@ -139,7 +141,7 @@ fun SystemConfigScreen(
             item {
                 ConfigExpandableCard(
                     title = "智能感知产品类型配置",
-                    subtitle = "设备列表智能感知产品类型配置",
+                    subtitle = "设备列表--智能感知--产品类型配置",
                     isExpanded = isEnvProductTypeExpanded,
                     onExpandClick = { isEnvProductTypeExpanded = !isEnvProductTypeExpanded })
             }
@@ -148,6 +150,24 @@ fun SystemConfigScreen(
                     DeviceTypeSwitchItem(
                         systemConfig = systemConfig, onCheckedChange = { isChecked ->
                             systemViewModel.toggleEnvProductTypeList(systemConfig.id, isChecked)
+                        })
+                }
+            }
+
+
+            // ================== 第五部分：智慧屏幕功能配置 ==================
+            item {
+                ConfigExpandableCard(
+                    title = "智慧屏幕功能配置",
+                    subtitle = "设备列表--智慧屏幕--功能模块配置",
+                    isExpanded = isLedFunctionExpanded,
+                    onExpandClick = { isLedFunctionExpanded = !isLedFunctionExpanded })
+            }
+            if (isLedFunctionExpanded) {
+                items(ledFunctions, key = { it.id }) { systemConfig ->
+                    DeviceTypeSwitchItem(
+                        systemConfig = systemConfig, onCheckedChange = { isChecked ->
+                            systemViewModel.toggleLedFunctions(systemConfig.id, isChecked)
                         })
                 }
             }

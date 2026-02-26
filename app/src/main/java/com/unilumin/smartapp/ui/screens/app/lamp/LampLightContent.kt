@@ -61,7 +61,6 @@ fun LampLightContent(
         lampViewModel.updateState(-1)
     }
     var selectedLamp by remember { mutableStateOf<LampLightInfo?>(null) }
-
     // 分页数据
     val lampLightFlow = lampViewModel.lampLightFlow.collectAsLazyPagingItems()
     val model = lampViewModel.lampModel.collectAsState()
