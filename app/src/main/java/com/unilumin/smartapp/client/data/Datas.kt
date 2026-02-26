@@ -957,3 +957,46 @@ data class LngLatData(
     //纬度 （前端没有设值，后端查数据库杆的经纬度）
     val lat: String
 )
+
+data class LedPageBO(
+    // 设备id
+    val id: Long,
+    // 设备名称
+    val deviceName: String? = null,
+    // 设备序列号
+    val serialNum: String? = null,
+    // 产品id
+    val productId: Long? = null,
+    // 产品名称
+    val productName: String? = null,
+    // 产品名称
+    val name: String? = null,
+    // 网络状态，1-在线，0-离线
+    val state: Int? = null,
+    // 工作状态: 1告警 0正常
+    val alarmType: Int? = null,
+    // 多功能杆id
+    val poleId: Long? = null,
+    // 多功能杆名称
+    val poleName: String? = null,
+    // 创建时间
+    val createTime: String? = null,
+    // 子设备数量
+    val childDevNum: Int? = null,
+    // 亮度
+    val brightness: String? = null,
+    // 状态：1-唤醒，0-休眠
+    val powerStatus: String? = null,
+    // 音量
+    val volume: String? = null,
+    // 当前正在播放的节目
+    val playingProgramName: String? = null,
+    // 节目分辨率
+    val widthHeighProgram: String? = null,
+    // 最新截图
+    val screenshot: String? = null,
+    // 自动亮度调节
+    val autoBrightness: Boolean? = null,
+    // 编排类别 0LED播放盒 1媒体播放盒
+    val arrangeType: Int? = null
+)

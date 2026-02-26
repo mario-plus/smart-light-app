@@ -1,5 +1,6 @@
 package com.unilumin.smartapp.ui.screens.app.lamp
 
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -162,7 +163,9 @@ fun LampLightCard(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = item.productName ?: "--",
-                            style = TextStyle(fontSize = 13.sp, color = Color(0xFF999999))
+                            style = TextStyle(fontSize = 13.sp, color = Color(0xFF999999)),
+                            maxLines = 1,
+                            modifier = Modifier.basicMarquee()
                         )
                     }
                 }

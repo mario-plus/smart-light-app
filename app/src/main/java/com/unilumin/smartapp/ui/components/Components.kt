@@ -1966,7 +1966,7 @@ fun DeviceStatusRow(
         )
 
         // 工作状态 - 靠最右
-        StatusItem(label = "工作状态:", text = if (hasAlarm) "异常" else "正常", isError = hasAlarm)
+        StatusItem(label = "工作状态:", text = if (hasAlarm) "告警" else "正常", isError = hasAlarm)
     }
 }
 

@@ -5,7 +5,6 @@ import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
-import com.unilumin.smartapp.client.data.EnvData
 import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.EnvTelBO
 import com.unilumin.smartapp.client.data.HistoryData
@@ -27,23 +26,8 @@ import retrofit2.http.Query
 
 interface DeviceService {
 
-
-    @GET(RequestPathKey.KEY_LED_LIST)
-    fun getLedList(
-        @Query("keyword") keyword: String,
-        @Query("curPage") curPage: Int,
-        @Query("pageSize") pageSize: Int,
-        @Query("productTypeId") productTypeId: Int,
-        @Query("subSystemType") subSystemType: Int
-    ): Call<NewResponseData<PageResponse<IotDevice>?>?>?
-
-
-    @GET(RequestPathKey.KEY_ENV_DATA)
-    fun getEnvData(@Query("id") id: Long): Call<NewResponseData<EnvData?>?>?
-
     @POST(RequestPathKey.KEY_ENV_DATA_LIST)
     fun getEnvDataList(@Body req: EnvDataReq): Call<NewResponseData<Map<Long, List<EnvTelBO>>?>?>?
-
 
     //获取iot设备列表
     @GET(RequestPathKey.KEY_GET_DEVICE)
