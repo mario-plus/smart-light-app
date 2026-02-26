@@ -919,13 +919,41 @@ data class TimeCondition(
 )
 
 data class DayData(
-
     //对应时间类型：3连续时间区间的开始时间
     val startTime: String,
     //对应时间类型：3连续时间区间的结束时间
     val endTime: String
 )
 
+//时间策略
 data class TimeStrategy(
     val id: Long, val require: TimeCondition, val action: StrategyAction
+)
+
+//经纬度策略
+data class LngLatStrategy(
+    val id: Long, val require: LngLatCondition, val action: StrategyAction
+)
+
+//经纬度条件
+data class LngLatCondition(
+    val syncLngLat: Int, val riseDown: RiseDown, val lngLatData: LngLatData
+)
+
+data class RiseDown(
+    //类型（日出：1 ，日落：2）
+    val riseType: Integer,
+    //日出偏移（正数表示延后，负数表示提前
+    val sunrise: Integer,
+    //日落偏移（正数表示延后，负数表示提前）
+    val sundown: Integer
+)
+
+data class LngLatData(
+    //是否同步经纬度(0否，1是)
+    val isLngLat: Integer,
+    //经度 （前端没有设值，后端查数据库杆的经纬度）
+    val lng: String,
+    //纬度 （前端没有设值，后端查数据库杆的经纬度）
+    val lat: String
 )

@@ -42,12 +42,14 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.constant.DeviceConstant.jobOrStrategyStatusOptions
 import com.unilumin.smartapp.client.constant.DeviceConstant.syncStrategyOptions
 import com.unilumin.smartapp.client.data.LampStrategyInfo
+import com.unilumin.smartapp.client.data.LngLatStrategy
 import com.unilumin.smartapp.client.data.TimeStrategy
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.ModernStateSelector
 import com.unilumin.smartapp.ui.theme.BluePrimary
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import com.unilumin.smartapp.util.JsonUtils
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +87,7 @@ fun LampStrategyContent(
     }
 }
 
+//回路策略
 fun formatTimeStrategy(contents: List<Any>?): List<TimeStrategy> {
     if (contents.isNullOrEmpty()) return emptyList()
     return contents.mapNotNull { item ->
@@ -100,7 +103,6 @@ fun formatTimeStrategy(contents: List<Any>?): List<TimeStrategy> {
                 }
 
                 is TimeStrategy -> item
-
                 else -> null
             }
         } catch (e: Exception) {
@@ -110,10 +112,32 @@ fun formatTimeStrategy(contents: List<Any>?): List<TimeStrategy> {
     }
 }
 
-/**
- * 优化后的策略卡片
- * 风格：现代化、紧凑、信息层级分明
- */
+//经纬度策略
+fun formatLngLatStrategy(contents: List<Any>?): List<LngLatStrategy> {
+    if (contents.isNullOrEmpty()) return emptyList()
+    return contents.mapNotNull { item ->
+        try {
+            when (item) {
+                is String -> if (item.isNotBlank()) JsonUtils.fromJson(
+                    item,
+                    LngLatStrategy::class.java
+                ) else null
+
+                is Map<*, *> -> {
+                    val jsonString = JsonUtils.gson.toJson(item)
+                    JsonUtils.fromJson(jsonString, LngLatStrategy::class.java)
+                }
+
+                is LngLatStrategy -> item
+                else -> null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+}
+
 @Composable
 fun LampStrategyCard(
     item: LampStrategyInfo,
@@ -185,6 +209,74 @@ fun LampStrategyCard(
 }
 
 @Composable
+private fun LngLatStrategyItem(strategy: LngLatStrategy) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White, RoundedCornerShape(8.dp))
+            .padding(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BadgeTag(text = "条件", color = Color(0xFFE3F2FD), textColor = Color(0xFF1976D2))
+            Spacer(modifier = Modifier.width(8.dp))
+            val riseDown = strategy.require.riseDown
+            val isSunrise = riseDown.riseType?.toInt() == 1
+            val eventName = if (isSunrise) "日出" else "日落"
+            val offset = if (isSunrise) {
+                riseDown.sunrise.toInt() ?: 0
+            } else {
+                riseDown.sundown?.toInt() ?: 0
+            }
+            val offsetText = when {
+                offset > 0 -> "延后 $offset 分钟"
+                offset < 0 -> "提前 ${abs(offset)} 分钟"
+                else -> "准时"
+            }
+            Text(
+                text = "$eventName $offsetText",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF333333)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        // --- 2. 执行动作 ---
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BadgeTag(text = "动作", color = Color(0xFFF1F8E9), textColor = Color(0xFF388E3C))
+            Spacer(modifier = Modifier.width(8.dp))
+            val actionType = strategy.action.actionType
+            val actionValue = strategy.action.actionValue
+            val actionDesc = when (actionType) {
+                2 -> if (actionValue == 1) "开启" else "关闭"
+                else -> "执行动作: $actionValue"
+            }
+            Text(
+                text = actionDesc,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF666666)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+//        // --- 3. 辅助信息 (经纬度来源提示) ---
+//        Row(verticalAlignment = Alignment.CenterVertically) {
+//            Icon(
+//                imageVector = Icons.Outlined.Info,
+//                contentDescription = null,
+//                modifier = Modifier.size(14.dp),
+//                tint = Color(0xFF999999)
+//            )
+//            Spacer(modifier = Modifier.width(4.dp))
+//            val isCustomLngLat = strategy.require.lngLatData.isLngLat?.toInt() == 1
+//            Text(
+//                text = if (isCustomLngLat) "使用自定义经纬度计算" else "根据设备所在经纬度自动计算",
+//                style = MaterialTheme.typography.labelSmall,
+//                color = Color(0xFF999999)
+//            )
+//        }
+    }
+}
+
+@Composable
 fun StrategyIcon(strategyClass: Int?) {
     val isEarth = strategyClass == 1
     val icon = if (isEarth) Icons.Outlined.Public else Icons.Outlined.Schedule
@@ -248,7 +340,9 @@ fun StrategyDataPanel(item: LampStrategyInfo) {
                     color = Color(0xFF333333)
                 )
             }
+
             if (item.strategyClass == 2) {
+                //时间策略
                 val strategies = remember(item.contents) {
                     formatTimeStrategy(item.contents)
                 }
@@ -260,41 +354,46 @@ fun StrategyDataPanel(item: LampStrategyInfo) {
                             TimeStrategyItem(strategy)
                         }
                     }
-                } else {
-                    Text(
-                        text = "暂无策略数据",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(start = 24.dp)
-                    )
                 }
-            }
-            if (!item.groups.isNullOrEmpty()) {
-                HorizontalDivider(
-                    color = Color.LightGray.copy(alpha = 0.4f),
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "👥 策略成员(${item.groups!!.size})",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF333333)
-                        )
-                    }
-
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            } else if (item.strategyClass == 1) {
+                //经纬度策略
+                val strategies = remember(item.contents) {
+                    formatLngLatStrategy(item.contents)
+                }
+                if (strategies.isNotEmpty()) {
+                    Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        item.groups?.forEach { group ->
-                            GroupTag(name = group.name ?: "未知分组")
+                        strategies.forEach { strategy ->
+                            LngLatStrategyItem(strategy)
                         }
+                    }
+                }
+            }
+            HorizontalDivider(
+                color = Color.LightGray.copy(alpha = 0.4f),
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "👥 策略成员(${item.groups!!.size})",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF333333)
+                    )
+                }
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item.groups?.forEach { group ->
+                        GroupTag(name = group.name ?: "未知分组")
                     }
                 }
             }
