@@ -75,25 +75,55 @@ object DeviceConstant {
 
     //播放盒管理
     const val SMART_LED_DEV_MANAGE = "ledDevManage"
-    //素材管理
-    const val SMART_LED_FILE_MANAGE = "ledFileManage"
+
     //播放表管理
     const val SMART_LED_SCHEDULE_MANAGE = "ledScheduleManage"
+
     //分组管理
     const val SMART_LED_GROUP_MANAGE = "ledGroupManage"
+
     //控制方案
     const val SMART_LED_CTL_SCHEDULE = "ledCtlSchedule"
+
     //播放方案
     const val SMART_LED_PLAY_SCHEDULE = "ledPlaySchedule"
 
     val SMART_LED_FUNC_LIST = listOf<SystemConfig>(
-        SystemConfig(SMART_LED_DEV_MANAGE, "播放盒管理", getIconForName(SMART_LED_DEV_MANAGE), true),
-        SystemConfig(SMART_LED_FILE_MANAGE, "素材管理", getIconForName(SMART_LED_FILE_MANAGE), true),
-        SystemConfig(SMART_LED_SCHEDULE_MANAGE, "播放表管理", getIconForName(SMART_LED_SCHEDULE_MANAGE), true),
-        SystemConfig(SMART_LED_GROUP_MANAGE, "分组管理", getIconForName(SMART_LED_GROUP_MANAGE), true),
-        SystemConfig(SMART_LED_CTL_SCHEDULE, "控制方案", getIconForName(SMART_LED_CTL_SCHEDULE), true),
-        SystemConfig(SMART_LED_PLAY_SCHEDULE, "播放方案", getIconForName(SMART_LED_PLAY_SCHEDULE), true),
-        )
+        SystemConfig(
+            SMART_LED_DEV_MANAGE,
+            "播放盒管理",
+            getIconForName(SMART_LED_DEV_MANAGE),
+            true
+        ),
+
+        SystemConfig(
+            SMART_LED_SCHEDULE_MANAGE,
+            "播放表管理",
+            getIconForName(SMART_LED_SCHEDULE_MANAGE),
+            true
+        ),
+
+        SystemConfig(
+            SMART_LED_GROUP_MANAGE,
+            "分组管理",
+            getIconForName(SMART_LED_GROUP_MANAGE),
+            true
+        ),
+
+        SystemConfig(
+            SMART_LED_CTL_SCHEDULE,
+            "控制方案",
+            getIconForName(SMART_LED_CTL_SCHEDULE),
+            true
+        ),
+
+        SystemConfig(
+            SMART_LED_PLAY_SCHEDULE,
+            "播放方案",
+            getIconForName(SMART_LED_PLAY_SCHEDULE),
+            true
+        ),
+    )
 
 
     //传感器
@@ -198,6 +228,8 @@ object DeviceConstant {
     )
 
     val statusOptions = listOf(-1 to "全部", 1 to "在线", 0 to "离线")
+
+    val ledProgramStatusOptions = listOf(-1 to "全部", 0 to "待审核", 1 to "已审核", 2 to "待提交")
 
     val lampModelOptions = listOf(-1 to "全部", 1 to "自动模式", 0 to "手动模式")
 

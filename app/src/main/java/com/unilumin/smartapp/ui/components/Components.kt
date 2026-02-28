@@ -2120,15 +2120,14 @@ fun ReferenceStyleDropdownMenu(
  * */
 @Composable
 fun SearchHeader(
-    currentStatus: Int,
     searchQuery: String,
     searchTitle: String,
-    statusOptions: List<Pair<Int, String>> = DeviceConstant.statusOptions,
-    onStatusChanged: (Int) -> Unit,
-    onSearchChanged: (String) -> Unit
+    onSearchChanged: (String) -> Unit,
+    statusOptions: List<Pair<Int, String>>? = null,
+    currentStatus: Int = -1,
+    onStatusChanged: (Int) -> Unit = {}
 ) {
     var statusExpanded by remember { mutableStateOf(false) }
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -2143,62 +2142,62 @@ fun SearchHeader(
             shadowElevation = 3.dp
         ) {
             Row(
-                modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // 左侧：状态筛选下拉
-                Box(
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .fillMaxHeight()
-                        .clickable { statusExpanded = true }
-                        .padding(start = 16.dp, end = 8.dp),
-                    contentAlignment = Alignment.CenterStart) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // ✅ 修改点1：使用传入的 statusOptions 查找当前显示的文本
-                        Text(
-                            text = statusOptions.find { it.first == currentStatus }?.second ?: "",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF333333)
-                        )
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = null,
-                            tint = Color(0xFF666666),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = statusExpanded,
-                        onDismissRequest = { statusExpanded = false },
-                        modifier = Modifier.background(Color.White)
+                if (!statusOptions.isNullOrEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .fillMaxHeight()
+                            .clickable { statusExpanded = true }
+                            .padding(start = 16.dp, end = 8.dp),
+                        contentAlignment = Alignment.CenterStart
                     ) {
-                        statusOptions.forEach { (value, label) ->
-                            DropdownMenuItem(text = {
-                                Text(
-                                    text = label,
-                                    color = if (value == currentStatus) BluePrimary else Color(
-                                        0xFF333333
-                                    ),
-                                    fontWeight = if (value == currentStatus) FontWeight.Bold else FontWeight.Normal
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = statusOptions.find { it.first == currentStatus }?.second ?: "",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF333333)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = null,
+                                tint = Color(0xFF666666),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = statusExpanded,
+                            onDismissRequest = { statusExpanded = false },
+                            modifier = Modifier.background(Color.White)
+                        ) {
+                            statusOptions.forEach { (value, label) ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = label,
+                                            color = if (value == currentStatus) Color.Blue else BluePrimary,
+                                            fontWeight = if (value == currentStatus) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    },
+                                    onClick = {
+                                        onStatusChanged(value)
+                                        statusExpanded = false
+                                    }
                                 )
-                            }, onClick = {
-                                onStatusChanged(value)
-                                statusExpanded = false
-                            })
+                            }
                         }
                     }
+                    VerticalDivider(
+                        modifier = Modifier
+                            .height(24.dp)
+                            .width(1.dp),
+                        color = DividerColor
+                    )
                 }
-
-                // 中间：分割线
-                VerticalDivider(
-                    modifier = Modifier
-                        .height(24.dp)
-                        .width(1.dp), color = DividerColor
-                )
-
-                // 右侧：搜索框
                 Row(
                     modifier = Modifier
                         .weight(1f)
@@ -2216,7 +2215,9 @@ fun SearchHeader(
                     Box(contentAlignment = Alignment.CenterStart) {
                         if (searchQuery.isEmpty()) {
                             Text(
-                                text = searchTitle, color = PlaceholderColor, fontSize = 14.sp
+                                text = searchTitle,
+                                color = PlaceholderColor,
+                                fontSize = 14.sp
                             )
                         }
                         BasicTextField(
@@ -2224,7 +2225,7 @@ fun SearchHeader(
                             onValueChange = onSearchChanged,
                             textStyle = TextStyle(fontSize = 14.sp, color = Color.Black),
                             singleLine = true,
-                            cursorBrush = SolidColor(BluePrimary),
+                            cursorBrush = SolidColor( BluePrimary),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -2233,7 +2234,6 @@ fun SearchHeader(
         }
     }
 }
-
 
 /**
  * 智慧路灯分页数据页面组件
@@ -2581,6 +2581,3 @@ fun <Int> ModernStateSelector(
         }
     }
 }
-
-
-

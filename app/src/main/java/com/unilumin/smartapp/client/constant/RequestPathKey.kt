@@ -22,7 +22,32 @@ object RequestPathKey {
 
     const val KEY_SCENE: String = "$SMART_LED/bn/area_scene_list"
     const val KEY_SCENE_CTRL: String = "$SMART_LED/exhibition/model/central_control"
+
+
+    //播放盒列表
     const val KEY_LED_LIST: String = "$SMART_LED/uni-led/led_page_list"
+
+    //素材列表
+    //const val KEY_FILE_LIST: String = "$SMART_LED/ledmaterial/info/list"
+    //播放表列表
+    const val KEY_PROGRAM_LIST: String = "$SMART_LED/uni-led/led_program_list"
+    //播放盒分组管理
+    const val KEY_LED_GROUP_LIST: String = "$SMART_LED/uni-led/device_group_list"
+    //控制方案
+    const val KEY_LED_PLAN_LIST: String = "$SMART_LED/uni-led/led_schedule_list"
+
+
+
+
+
+
+
+
+
+
+
+
+
     const val KEY_GET_USER: String = "$CAS/uc/user/profile/get"
 
     const val KEY_GET_PUBLIC_KEY: String = "$CAS/uc/rsa/get_public_key"
@@ -92,6 +117,7 @@ object RequestPathKey {
 
     //告警列表
     const val KEY_GET_DEVICE_ALARM_LIST: String = "$IOT_HUB_MANAGER/device_alarm_manage_list"
+
     //产品详情
     const val KEY_GET_PRODUCT_LIST: String = "$IOT_HUB_MANAGER/iot_product_list"
 

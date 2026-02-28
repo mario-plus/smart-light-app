@@ -20,7 +20,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unilumin.smartapp.client.RetrofitClient
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_CTL_SCHEDULE
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_DEV_MANAGE
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_GROUP_MANAGE
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_PLAY_SCHEDULE
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_SCHEDULE_MANAGE
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_PLAY_BOX
 import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
@@ -35,8 +39,7 @@ import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartLedScreen(
-    retrofitClient: RetrofitClient,
-    onBack: () -> Unit,
+    retrofitClient: RetrofitClient, onBack: () -> Unit,
     /**跳转至新页面*/
     toNew: (ScreenViewModel) -> Unit
 ) {
@@ -87,7 +90,32 @@ fun SmartLedScreen(
         ) {
             when (effectiveId) {
                 SMART_LED_DEV_MANAGE -> {
+                    screenViewModel.updateState(-1)
+                    screenViewModel.updateSearch("")
                     SmartLedDevManage(screenViewModel)
+                }
+                // //播放表管理
+                SMART_LED_SCHEDULE_MANAGE -> {
+                    screenViewModel.updateCheckState(-1)
+                    screenViewModel.updateSearch("")
+                    SmartLedProgramManage(screenViewModel)
+                }
+                //分组管理
+                SMART_LED_GROUP_MANAGE -> {
+                    screenViewModel.updateSearch("")
+                    SmartLedGroupManage(screenViewModel)
+                }
+                //控制方案
+                SMART_LED_CTL_SCHEDULE -> {
+                    screenViewModel.updateSearch("")
+                    screenViewModel.updateType(1)
+                    SmartLedCtlPlanManage(screenViewModel)
+                }
+                //播放方案
+                SMART_LED_PLAY_SCHEDULE -> {
+                    screenViewModel.updateSearch("")
+                    screenViewModel.updateType(2)
+                    SmartLedPlayPlanManage(screenViewModel)
                 }
                 else -> {
                     EmptyDataView("未开发的功能")

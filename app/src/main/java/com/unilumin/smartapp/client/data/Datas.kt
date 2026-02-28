@@ -1000,3 +1000,119 @@ data class LedPageBO(
     // 编排类别 0LED播放盒 1媒体播放盒
     val arrangeType: Int? = null
 )
+
+data class LedProgramRequest(
+    val keyword: String,
+    val curPage: Int,
+    val pageSize: Int,
+    val reviewStatus: List<Int>? = null,//审核状态：0-待审核，1-审核通过，2-审核不通过,3-待提交
+    val arrangeType: Int = 0,//编排类别 0LED播放盒 1媒体播放盒
+    val subSystemType: Int = 3
+)
+
+data class LedProgramRes(
+    val id: Long,
+    val name: String?,
+    val width: Int?,
+    val height: Int?,
+    val createTime: String?,
+    val updateTime: String?,
+    val createBy: String?,
+    val createByName: String?,
+    //审核状态：0待审核，1审核通过，2审核不通过
+    val reviewStatus: Int?,
+    //节目内容
+    val json: String?,
+    val reviewBy: String?,
+    val reviewUser: String?,
+    val reviewTime: String?,
+    val remark: String?,
+    val arrangeType: Int?,
+    //收纳状态:0收纳中1收纳成功2收纳失败
+    val storageStatus: Int?,
+    //白名单状态：0未加入1加入
+    val whiteStatus: Int?,
+    //白名单任务状态：-1未执行0执行中1成功2失败
+    val whiteTaskStatus: Int?
+)
+
+data class LedDevGroupRes(
+    val id: Long,
+    //分组名称
+    val name: String?,
+    //产品类型
+    val primaryClass: Int?,
+    //产品类型名称
+    val primaryClassName: String?,
+    //
+    val updateTime: String?,
+    //分组状态：0，正常 1.不可用
+    val groupState: Int?,
+    val gatewayName: String?,
+    val gatewayId: String?,
+    //0 软件分组，1硬件分组
+    val type: Int?,
+    val hardwareGroupId: String?,
+    val createName: String?,
+    val createTime: String?,
+    val isModify: Int?,
+    val strategyId: String?,
+    val productId: String?,
+    val productName: String?,
+    //产品型号
+    val productMode: String?,
+    //产品型号备注
+    val productDesc: String?,
+    //编排类别 0LED播放盒 1媒体播放盒
+    val arrangeType: Int?,
+    val remark: String?,
+    val brightSensorId: String?,
+    //分组开关状态
+    val onOff: Int?,
+    //分组亮度
+    val bright: Int?,
+    //分组色温
+    val colorTemperature: Int?,
+    val exist: Int?,
+    val commandParams: Any?
+)
+
+data class LedPlanBO(
+    val id: Long,
+    val name: String?,
+    val startDate: String?,
+    val endDate: String?,
+    //周限值，中间用英文逗号分隔，7个值，分别表示星期一到星期天：1执行 0不执行
+    val weekValue: String?,
+    val createTime: String?,
+    val updateTime: String?,
+    //类型：1.指令(控制) 2.节目(播放)
+    val type: Int?,
+    //执行时间，HH:mm:ss
+    val commandExecuteTime: String?,
+    //指令类型:1.休眠 2.唤醒 3.重启 4.亮度(0-100)"
+    val commandType: Int?,
+    //指令值
+    val commandValue: String?,
+    //节目开始时间 格式18:00:00
+    val programStartTime: String?,
+    //节目结束时间 格式22:00:00
+    val programEndTime: String?,
+    //节目播放类型 100插播 200轮播
+    val programPlayType: Int?,
+    //节目优先级 0~100，同一个终端时，多个优先级必须不一样
+    val programSort: Int?,
+    val programId: String?,
+    //节目名称
+    val programName: String?,
+    //是否有时间，0否1是
+    val isTime: Int?,
+    //是否有日期，0否1是
+    val isDate: Int?,
+    //是否有星期，0否1是
+    val isWeek: Int?,
+    //是否已发布，0否1是
+    val isPublish: Int?,
+    //同步状态，0 未同步，1 已同步
+    val asyncStatus: Int?
+)

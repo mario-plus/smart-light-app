@@ -38,7 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.constant.DeviceConstant.statusOptions
 import com.unilumin.smartapp.client.data.LedPageBO
@@ -63,20 +62,14 @@ fun SmartLedDevManage(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-                .zIndex(1f)
-        ) {
-            SearchHeader(
-                statusOptions = statusOptions,
-                currentStatus = deviceState,
-                searchQuery = searchQuery,
-                searchTitle = "搜索设备名称或序列码",
-                onStatusChanged = { screenViewModel.updateState(it) },
-                onSearchChanged = { screenViewModel.updateSearch(it) })
-        }
+        SearchHeader(
+            statusOptions = statusOptions,
+            currentStatus = deviceState,
+            searchQuery = searchQuery,
+            searchTitle = "搜索设备名称或序列码",
+            onStatusChanged = { screenViewModel.updateState(it) },
+            onSearchChanged = { screenViewModel.updateSearch(it) })
+
         PagingList(
             totalCount = totalCount,
             lazyPagingItems = envDevicePagingFlow,
@@ -84,7 +77,7 @@ fun SmartLedDevManage(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 6.dp),
-            emptyMessage = "暂无设备",
+            emptyMessage = "暂无播放盒设备",
             contentPadding = PaddingValues(bottom = 16.dp)
         ) { ledInfo ->
             LedPlayBoxCard(
