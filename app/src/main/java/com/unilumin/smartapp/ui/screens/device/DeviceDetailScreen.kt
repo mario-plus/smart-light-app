@@ -204,7 +204,8 @@ fun DeviceDetailScreen(
                                                 DetailCard(title = "设备配置信息") {
                                                     deviceConfigList.forEach { (key, value) ->
                                                         DetailRow(
-                                                            key, value
+                                                            label = key ?: "未知",
+                                                            value = value ?: "--"
                                                         )
                                                     }
                                                 }
@@ -345,7 +346,7 @@ fun DeviceDetailScreen(
     }
 
     if (showChartDialog && selectedDeviceModelData != null) {
-        ChartDataDialog( selectedDeviceModelData = selectedDeviceModelData, onDismiss = {
+        ChartDataDialog(selectedDeviceModelData = selectedDeviceModelData, onDismiss = {
             showChartDialog = false
         }, limitDays = 14, chartDataList, onLoadData = { start, end ->
             deviceViewModel.loadChartData(

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -70,30 +71,8 @@ fun DeviceCardItem(
                 iconTint = iconTint,
                 onClick = { onDetailClick(iotDevice) }
             )
+            // 动态内容区域 (比如设备特有的控制面板)
             content()
-
-
-//            when (type) {
-//                DeviceType.LAMP -> LampFeatureContent(
-//                    deviceViewModel,
-//                    lightDevice,
-//                    onDetailClick
-//                )
-//
-//                DeviceType.LOOP -> LoopFeatureContent(
-//                    deviceViewModel,
-//                    lightDevice,
-//                    onDetailClick
-//                )
-//
-//                DeviceType.PLAY_BOX -> PlayboxFeatureContent(
-//                    deviceViewModel,
-//                    lightDevice,
-//                    onDetailClick
-//                )
-//
-//                DeviceType.ENV -> EnvFeatureContent(deviceViewModel, lightDevice, onDetailClick)
-//            }
         }
     }
 }
@@ -106,85 +85,97 @@ fun DeviceHeader(
     iconTint: Color,
     onClick: () -> Unit = {}
 ) {
-    // 1. 外层改为 Column，以便竖向排列“基本信息”和“状态行”
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp, horizontal = 12.dp) // 增加 padding 提升卡片质感
     ) {
-        // --- 第一部分：顶部主要信息 (图标 + 文字 + 在线标签) ---
+        // --- 第一部分：上半区核心信息 (图标 + 文字 + 状态标签) ---
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top // 顶部对齐，防止文字多时图标被拉伸
+            verticalAlignment = Alignment.CenterVertically // 整体垂直居中，视觉更平衡
         ) {
-            // 1.1 设备图标
+            // 1.1 设备图标 (带柔和背景)
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(14.dp), // 稍微减小圆角，更显精致
                 color = iconBg,
                 modifier = Modifier.size(52.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        painter = rememberVectorPainter(getIconFromId(productType)), // 假设 getIconFromId 返回 ImageVector
+                        painter = rememberVectorPainter(getIconFromId(productType)),
                         contentDescription = null,
                         tint = iconTint,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.width(14.dp))
 
-            // 1.2 中间文本信息
+            // 1.2 中间文本与右上角标签
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp) // 紧凑排列
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = iotDevice.deviceName ?: "未知设备",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1F2937),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                // 第一行：设备名称 和 在线状态标签
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = iotDevice.deviceName ?: "未知设备",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1F2937),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    DeviceStatus(iotDevice.state)
+                }
+
+                // 第二行：SN码
                 Text(
                     text = "SN: ${iotDevice.serialNum ?: "--"}",
                     fontSize = 12.sp,
                     color = Color(0xFF9CA3AF),
                     maxLines = 1
                 )
+
+                // 第三行：产品类型
                 Text(
-                    text = iotDevice.productName ?: "--",
-                    fontSize = 11.sp,
+                    text = "产品:${iotDevice.productName ?: "--"}",
+                    fontSize = 12.sp,
                     color = Color(0xFF9CA3AF),
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
                 )
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // 1.3 右上角：在线/离线 状态
-            DeviceStatus(iotDevice.state)
         }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // --- 分割线：强化上下分层结构 ---
+        HorizontalDivider(
+            color = Color(0xFFF3F4F6),
+            thickness = 1.dp
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // --- 第二部分：底部状态行 (单独一行) ---
-        // 关键优化：使用 padding(start) 让这一行与上方的“文本”对齐，而不是与图标对齐
-        // 计算方式：图标大小(52dp) + 间距(14dp) = 66dp
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 66.dp)
+        // --- 第二部分：下半区状态行 (横跨全宽，填补图标下方的空白) ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             DeviceStatusRow(
                 isDisable = iotDevice.deviceState == 0,
                 hasAlarm = iotDevice.alarmType == 1,
-                modifier = Modifier.fillMaxWidth() // 让内部的状态两端对齐
+                modifier = Modifier.fillMaxWidth() // 让状态均匀分布或左对齐铺开
             )
         }
     }
