@@ -143,13 +143,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -164,7 +162,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
-import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.constant.DeviceConstant
 import com.unilumin.smartapp.client.data.DeviceModelData
@@ -211,6 +208,7 @@ import com.unilumin.smartapp.ui.theme.TextSub
 import com.unilumin.smartapp.ui.theme.TextTitle
 import com.unilumin.smartapp.ui.theme.White
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
+import com.unilumin.smartapp.util.JsonUtils.parseJsonToKeyValue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -220,7 +218,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import java.util.regex.Pattern
 import kotlin.math.roundToInt
 
 
@@ -813,18 +810,16 @@ fun DateRangePickerModern(
 /**
  * 历史数据卡片
  * */
+/**
+ * 历史数据卡片
+ */
 @Composable
 fun HistoryDataCard(data: HistoryData) {
     var isExpanded by remember { mutableStateOf(false) }
     val isLongContent = isJsonValid(data.value)
-    val displayValue = remember(data.value) {
-        if (isLongContent) {
-            getFormattedJsonAnnotatedString(data.value)
-        } else {
-            AnnotatedString(data.value)
-        }
+    val keyValuePairs = remember(data.value) {
+        if (isLongContent) parseJsonToKeyValue(data.value) else emptyList()
     }
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -835,7 +830,6 @@ fun HistoryDataCard(data: HistoryData) {
         border = BorderStroke(0.5.dp, Color(0xFFE5E5EA))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // 1. 时间轴头部
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
@@ -844,16 +838,13 @@ fun HistoryDataCard(data: HistoryData) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = data.eventTs, style = TextStyle(fontSize = 12.sp, color = TextSecondary)
+                    text = data.eventTs,
+                    style = TextStyle(fontSize = 12.sp, color = TextSecondary)
                 )
             }
-
             Spacer(modifier = Modifier.height(10.dp))
-
-            // 2. 标题区域：使用 buildAnnotatedString 实现大小字拼接
             Text(
                 text = buildAnnotatedString {
-                    // 主标题：名称
                     withStyle(
                         style = SpanStyle(
                             fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary
@@ -861,91 +852,73 @@ fun HistoryDataCard(data: HistoryData) {
                     ) {
                         append(data.name)
                     }
-                    // 副标题：Key (小字)
                     withStyle(
                         style = SpanStyle(
-                            fontSize = 12.sp, // 较小的字号
-                            fontWeight = FontWeight.Normal, // 较细的字重
-                            color = TextSecondary // 较淡的颜色
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = TextSecondary
                         )
                     ) {
                         append(" [${data.key}]")
                     }
-                })
-
+                }
+            )
             Spacer(modifier = Modifier.height(12.dp))
-
-            // 3. 内容区域
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .animateContentSize()
-                    .clickable(enabled = isLongContent) { isExpanded = !isExpanded },
+                    .clickable(enabled = isLongContent && keyValuePairs.isNotEmpty()) {
+                        isExpanded = !isExpanded
+                    },
                 color = Color(0xFFF9F9FB),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        text = displayValue,
-                        style = TextStyle(
-                            fontFamily = if (isLongContent) FontFamily.Monospace else FontFamily.Default,
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            color = Color(0xFF3A3A3C)
-                        ),
-                        maxLines = if (isExpanded) Int.MAX_VALUE else 3,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    if (isLongContent) {
+                    if (isLongContent && keyValuePairs.isNotEmpty()) {
+                        val displayPairs = if (isExpanded) keyValuePairs else keyValuePairs.take(3)
+                        displayPairs.forEachIndexed { index, pair ->
+                            InfoLabelValue(pair.first, pair.second)
+                            if (index < displayPairs.size - 1) {
+                                Divider(
+                                    color = Color(0xFFEFEFEF),
+                                    thickness = 0.5.dp,
+                                    modifier = Modifier.padding(vertical = 6.dp)
+                                )
+                            }
+                        }
+                        if (keyValuePairs.size > 3) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (isExpanded) "收起详情" else "共 ${keyValuePairs.size} 项，点击展开",
+                                    style = TextStyle(
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = AccentBlue
+                                    )
+                                )
+                            }
+                        }
+                    } else {
                         Text(
-                            text = if (isExpanded) "收起详情" else "点击展开详情",
-                            modifier = Modifier.padding(top = 8.dp),
+                            text = data.value,
                             style = TextStyle(
-                                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentBlue
-                            )
+                                fontSize = 14.sp,
+                                lineHeight = 20.sp,
+                                color = Color(0xFF3A3A3C)
+                            ),
+                            maxLines = if (isExpanded) Int.MAX_VALUE else 3,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
             }
         }
-    }
-}
-
-
-/**
- * 将 JSON 字符串转换为带高亮的 AnnotatedString
- */
-fun getFormattedJsonAnnotatedString(
-    json: String?, keyColor: Color = Color(0xFFD32F2F)
-): AnnotatedString {
-    val prettyJson = formatJson(json) // 假设你的 formatJson 也是普通函数
-    return buildAnnotatedString {
-        val pattern = Pattern.compile("\"(.*)\"\\s*:")
-        val matcher = pattern.matcher(prettyJson)
-        var lastIndex = 0
-        while (matcher.find()) {
-            append(prettyJson.substring(lastIndex, matcher.start()))
-            withStyle(style = SpanStyle(color = keyColor, fontWeight = FontWeight.Bold)) {
-                append(matcher.group())
-            }
-            lastIndex = matcher.end()
-        }
-        append(prettyJson.substring(lastIndex))
-    }
-}
-
-//格式化json
-fun formatJson(json: String?): String {
-    if (json.isNullOrBlank()) return "--"
-    return try {
-        val jsonElement = JsonParser().parse(json)
-        val gson = GsonBuilder().setPrettyPrinting() // 核心：设置美化打印（带缩进）
-            .disableHtmlEscaping() // 防止特殊字符被转义
-            .create()
-        gson.toJson(jsonElement)
-    } catch (e: Exception) {
-        json
     }
 }
 
@@ -1321,7 +1294,6 @@ fun HistoryDataListView(
                     items(historyDataList) { data ->
                         HistoryDataCard(data)
                     }
-
                     if (hasMore) {
                         item {
                             LaunchedEffect(historyDataList.size) {
