@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
+import com.unilumin.smartapp.client.data.LedCtlPlanDetail
 import com.unilumin.smartapp.client.data.LedDevGroupRes
 import com.unilumin.smartapp.client.data.LedPageBO
 import com.unilumin.smartapp.client.data.LedPlanBO
@@ -62,6 +63,14 @@ interface ScreenService {
         @Query("subSystemType") subSystemType: Int? = 3
     ): Call<NewResponseData<PageResponse<LedPlanBO>?>?>?
 
+
+    /**
+     * 控制方案详情
+     * */
+    @GET(RequestPathKey.KEY_LED_CTL_PLAN_DETAIL)
+    fun getLedCtlPlanDetail(
+        @Query("id") id: Long, @Query("subSystemType") subSystemType: Int? = 3
+    ): Call<NewResponseData<List<LedCtlPlanDetail>?>?>?
 
 //    /**
 //     *  素材用于制作节目，过于复杂，建议在web端制作，所以就没必要

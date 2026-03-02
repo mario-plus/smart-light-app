@@ -1114,5 +1114,27 @@ data class LedPlanBO(
     //是否已发布，0否1是
     val isPublish: Int?,
     //同步状态，0 未同步，1 已同步
-    val asyncStatus: Int?
+    val asyncStatus: Int?,
+    //控制方案--执行计划
+    var ctlPlanDetails: List<LedCtlPlanDetail>? = null
+)
+
+data class LedCtlPlanDetail(
+    val id: Long? = null,
+    //方案id
+    val scheduleId: Long? = null,
+    //指令类型:2.亮屏 3.重启 4.亮度(0-100)
+    val commandType: Int? = null,
+    //执行时间
+    val time: String? = null,
+    //指令值
+    val commandValue: Int? = null,
+    //开始时间：格式2020-10-22
+    val startTime: String? = null,
+    //结束时间：格式2020-10-22
+    val endTime: String? = null,
+    //创建时间
+    val createTime: String? = null,
+    //更新时间
+    val updateTime: String? = null
 )

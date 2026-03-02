@@ -16,6 +16,9 @@ import com.unilumin.smartapp.client.data.LedProgramRes
 import com.unilumin.smartapp.client.service.ScreenService
 import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -215,7 +218,7 @@ class ScreenViewModel(
         page: Int,
         pageSize: Int,
     ): List<LedPlanBO> {
-        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+        val pageData = UniCallbackService.parseDataNewSuspend(
             screenService.getLedPlans(
                 keyword = searchQuery,
                 pageSize = pageSize,
@@ -223,7 +226,20 @@ class ScreenViewModel(
                 type = planType
             )
         )
-        _totalCount.value = parseDataNewSuspend?.total!!
-        return parseDataNewSuspend.list
+        val planList = pageData?.list ?: emptyList()
+        _totalCount.value = pageData?.total ?: 0
+        if (planType == 1 && planList.isNotEmpty()) {
+            coroutineScope {
+                planList.map { plan ->
+                    async {
+                        val detailData = UniCallbackService.parseDataNewSuspend(
+                            screenService.getLedCtlPlanDetail(plan.id)
+                        )
+                        plan.ctlPlanDetails = detailData
+                    }
+                }.awaitAll()
+            }
+        }
+        return planList
     }
 }

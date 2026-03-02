@@ -2650,3 +2650,5 @@ private fun WeekDayChip(day: String) {
         )
     }
 }
+
+data class Tuple4<A, B, C, D>(val v1: A, val v2: B, val v3: C, val v4: D)

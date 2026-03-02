@@ -33,8 +33,10 @@ object RequestPathKey {
     const val KEY_PROGRAM_LIST: String = "$SMART_LED/uni-led/led_program_list"
     //播放盒分组管理
     const val KEY_LED_GROUP_LIST: String = "$SMART_LED/uni-led/device_group_list"
-    //控制方案
+    //播放方案
     const val KEY_LED_PLAN_LIST: String = "$SMART_LED/uni-led/led_schedule_list"
+    //控制方案详情
+    const val KEY_LED_CTL_PLAN_DETAIL: String = "$SMART_LED/uni-led/led_schedule_detail"
 
 
 
