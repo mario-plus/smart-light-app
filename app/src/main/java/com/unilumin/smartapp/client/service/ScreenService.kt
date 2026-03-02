@@ -9,6 +9,7 @@ import com.unilumin.smartapp.client.data.LedProgramRequest
 import com.unilumin.smartapp.client.data.LedProgramRes
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.PageResponse
+import com.unilumin.smartapp.client.data.PlayBoxDeviceBO
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -50,6 +51,16 @@ interface ScreenService {
         @Query("primaryClass") primaryClass: Int? = 5,
         @Query("subSystemType") subSystemType: Int? = 3
     ): Call<NewResponseData<PageResponse<LedDevGroupRes>?>?>?
+
+    /**
+     * 播放盒分组成员
+     * */
+    @GET(RequestPathKey.KEY_LED_GROUP_MEMBER)
+    fun getLedGroupMember(
+        @Query("groupId") groupId: Long,
+        @Query("subSystemType") subSystemType: Int? = 3
+    ): Call<NewResponseData<List<PlayBoxDeviceBO>?>?>?
+
 
     /**
      * 方案列表

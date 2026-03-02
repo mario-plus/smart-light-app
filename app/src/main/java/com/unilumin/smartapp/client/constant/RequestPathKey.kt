@@ -31,23 +31,18 @@ object RequestPathKey {
     //const val KEY_FILE_LIST: String = "$SMART_LED/ledmaterial/info/list"
     //播放表列表
     const val KEY_PROGRAM_LIST: String = "$SMART_LED/uni-led/led_program_list"
+
     //播放盒分组管理
     const val KEY_LED_GROUP_LIST: String = "$SMART_LED/uni-led/device_group_list"
+
+    //分组成员
+    const val KEY_LED_GROUP_MEMBER: String = "$SMART_LED/uni-led/device_list_by_group_id"
+
     //播放方案
     const val KEY_LED_PLAN_LIST: String = "$SMART_LED/uni-led/led_schedule_list"
+
     //控制方案详情
     const val KEY_LED_CTL_PLAN_DETAIL: String = "$SMART_LED/uni-led/led_schedule_detail"
-
-
-
-
-
-
-
-
-
-
-
 
 
     const val KEY_GET_USER: String = "$CAS/uc/user/profile/get"

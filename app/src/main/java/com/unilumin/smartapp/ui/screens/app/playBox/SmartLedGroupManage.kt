@@ -3,6 +3,8 @@ package com.unilumin.smartapp.ui.screens.app.playBox
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,13 +12,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Devices
+import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,19 +31,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.data.LedDevGroupRes
+import com.unilumin.smartapp.client.data.PlayBoxDeviceBO
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.InfoRowItem
 import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchHeader
-import com.unilumin.smartapp.ui.theme.Gray100
-import com.unilumin.smartapp.ui.theme.Gray500
-import com.unilumin.smartapp.ui.theme.Green50
-import com.unilumin.smartapp.ui.theme.Green500
 import com.unilumin.smartapp.ui.viewModel.ScreenViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -93,6 +97,7 @@ fun LedGroupCard(ledGroup: LedDevGroupRes) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
+            // --- 头部：标题与状态 ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -111,12 +116,14 @@ fun LedGroupCard(ledGroup: LedDevGroupRes) {
                 )
                 DeviceStatus(
                     ledGroup.groupState, mapOf(
-                        0 to Triple(Green50, Green500, "正常"),
-                        1 to Triple(Gray100, Gray500, "异常")
+                        0 to Triple(Color(0xFFE8F5E9), Color(0xFF388E3C), "正常"), // 假设 Green50, Green500 对应色值
+                        1 to Triple(Color(0xFFF5F5F5), Color(0xFF9E9E9E), "异常")  // 假设 Gray100, Gray500 对应色值
                     )
                 )
             }
+
             Spacer(modifier = Modifier.height(16.dp))
+
             // --- 主体信息区块：浅色底纹包裹详情 ---
             Surface(
                 shape = RoundedCornerShape(12.dp),
@@ -128,16 +135,15 @@ fun LedGroupCard(ledGroup: LedDevGroupRes) {
                         .fillMaxWidth()
                         .padding(12.dp)
                 ) {
-                    // 所属产品：优先取 productName，为空则取 primaryClassName
+                    // 所属产品
                     InfoRowItem(
                         icon = Icons.Rounded.Devices,
                         label = "产品",
-                        value = ledGroup.productName.toString()
+                        value = ledGroup.productName ?: ledGroup.primaryClassName ?: "-"
                     )
 
-                    // 将创建者和创建时间组合显示，视觉更紧凑
-                    val creatorInfo =
-                        "${ledGroup.createName ?: "-"}  ·  ${ledGroup.createTime ?: "-"}"
+                    // 将创建者和创建时间组合显示
+                    val creatorInfo = "${ledGroup.createName ?: "-"}  ·  ${ledGroup.createTime ?: "-"}"
                     InfoRowItem(
                         icon = Icons.Rounded.AccountCircle,
                         label = "创建",
@@ -145,6 +151,86 @@ fun LedGroupCard(ledGroup: LedDevGroupRes) {
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- 分组成员区块 (新加入的设备展示区) ---
+            GroupDevsSection(devs = ledGroup.groupDevs)
         }
+    }
+}
+
+/**
+ * 分组成员展示区
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun GroupDevsSection(devs: List<PlayBoxDeviceBO>?) {
+    val safeDevs = devs ?: emptyList()
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Rounded.Dns,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "分组成员 (${safeDevs.size})",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
+            )
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        if (safeDevs.isNotEmpty()) {
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 22.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val maxDisplayCount = 6
+                val displayDevs = safeDevs.take(maxDisplayCount)
+                displayDevs.forEach { dev ->
+                    DeviceChip(name = dev.name ?: "未知设备", isMoreCounter = false)
+                }
+                if (safeDevs.size > maxDisplayCount) {
+                    val remainCount = safeDevs.size - maxDisplayCount
+                    DeviceChip(name = "+$remainCount", isMoreCounter = true)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 单个设备微型标签
+ */
+@Composable
+private fun DeviceChip(name: String, isMoreCounter: Boolean) {
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        // 如果是 "+X" 的计数标签，使用强调色；普通设备使用浅灰色
+        color = if (isMoreCounter)
+            MaterialTheme.colorScheme.primaryContainer
+        else
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+    ) {
+        Text(
+            text = name,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = if (isMoreCounter) FontWeight.Bold else FontWeight.Medium
+            ),
+            // 文字颜色也做相应的深浅区分
+            color = if (isMoreCounter)
+                MaterialTheme.colorScheme.onPrimaryContainer
+            else
+                MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }

@@ -1074,7 +1074,8 @@ data class LedDevGroupRes(
     //分组色温
     val colorTemperature: Int?,
     val exist: Int?,
-    val commandParams: Any?
+    val commandParams: Any?,
+    var groupDevs: List<PlayBoxDeviceBO>? = null
 )
 
 data class LedPlanBO(
@@ -1137,4 +1138,21 @@ data class LedCtlPlanDetail(
     val createTime: String? = null,
     //更新时间
     val updateTime: String? = null
+)
+
+//分组成员
+data class PlayBoxDeviceBO(
+    val id: Long,
+    val name: String? = null,
+    val uuid: String? = null,
+    val longitude: String? = null,
+    val latitude: String? = null,
+    val primaryClass: String? = null,
+    val primaryClassName: String? = null,
+    val assetId: String? = null,
+    val assetName: String? = null,
+    val serialNum: String? = null,
+    val description: String? = null,
+    val workMode: String? = null,
+    val boundLightGateway: String? = null // 同上
 )

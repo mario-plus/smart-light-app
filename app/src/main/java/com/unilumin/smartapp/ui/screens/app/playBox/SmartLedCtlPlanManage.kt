@@ -181,17 +181,16 @@ private fun CtlPlanDetailsSection(details: List<LedCtlPlanDetail>?) {
  */
 @Composable
 private fun CtlPlanDetailItem(detail: LedCtlPlanDetail) {
-    // 根据 commandType 获取对应的 UI 配置
     val (icon, tintColor, typeName, timeDesc) = when (detail.commandType) {
         2 -> { // 唤醒
             val time = "${detail.startTime ?: "--"} ~ ${detail.endTime ?: "--"}"
             Tuple4(Icons.Rounded.WbSunny, Color(0xFF388E3C), "唤醒", time)
         }
         3 -> { // 重启
-            Tuple4(Icons.Rounded.Refresh, Color(0xFFF57C00), "设备重启", detail.time ?: "--")
+            Tuple4(Icons.Rounded.Refresh, Color(0xFFF57C00), "重启", detail.time ?: "--")
         }
         4 -> { // 亮度
-            Tuple4(Icons.Rounded.Brightness6, Color(0xFF7B1FA2), "亮度调节", detail.time ?: "--")
+            Tuple4(Icons.Rounded.Brightness6, Color(0xFF7B1FA2), "亮度", detail.time ?: "--")
         }
         else -> { // 未知或休眠等其他类型
             Tuple4(

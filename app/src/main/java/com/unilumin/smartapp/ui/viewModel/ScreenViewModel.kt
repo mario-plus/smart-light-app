@@ -208,8 +208,21 @@ class ScreenViewModel(
                 curPage = page
             )
         )
-        _totalCount.value = parseDataNewSuspend?.total!!
-        return parseDataNewSuspend.list
+        val groupList = parseDataNewSuspend?.list ?: emptyList()
+        _totalCount.value = parseDataNewSuspend?.total ?: 0
+        if (groupList.isNotEmpty()) {
+            coroutineScope {
+                groupList.map { group ->
+                    async {
+                        val detailData = UniCallbackService.parseDataNewSuspend(
+                            screenService.getLedGroupMember(group.id)
+                        )
+                        group.groupDevs = detailData
+                    }
+                }.awaitAll()
+            }
+        }
+          return groupList
     }
 
     suspend fun getLedPlans(
