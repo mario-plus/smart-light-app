@@ -80,6 +80,7 @@ import androidx.compose.material.icons.rounded.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.rounded.List
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.Warning
@@ -323,11 +324,11 @@ fun BottomNavBar(navController: NavController) {
             val isSelected = currentRoute == route
             NavigationBarItem(
                 icon = {
-                Icon(
-                    imageVector = if (isSelected) info.second else info.third,
-                    contentDescription = info.first
-                )
-            },
+                    Icon(
+                        imageVector = if (isSelected) info.second else info.third,
+                        contentDescription = info.first
+                    )
+                },
                 label = { Text(info.first, fontSize = 10.sp) },
                 selected = isSelected,
                 onClick = {
@@ -2156,7 +2157,8 @@ fun SearchHeader(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = statusOptions.find { it.first == currentStatus }?.second ?: "",
+                                text = statusOptions.find { it.first == currentStatus }?.second
+                                    ?: "",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF333333)
@@ -2225,7 +2227,7 @@ fun SearchHeader(
                             onValueChange = onSearchChanged,
                             textStyle = TextStyle(fontSize = 14.sp, color = Color.Black),
                             singleLine = true,
-                            cursorBrush = SolidColor( BluePrimary),
+                            cursorBrush = SolidColor(BluePrimary),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -2529,7 +2531,6 @@ private fun <K> toggleSelection(
 
 @Composable
 fun <Int> ModernStateSelector(
-    // 使用 Pair：first 是显示文本，second 是实际值
     options: List<Pair<Int, String>>,
     selectedValue: Int,
     onValueChange: (Int) -> Unit,
@@ -2579,5 +2580,73 @@ fun <Int> ModernStateSelector(
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun WeekStrategySection(weekValue: String?) {
+    val weekDays = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
+    val values = weekValue?.split(",") ?: emptyList()
+    val activeDays = weekDays.filterIndexed { index, _ ->
+        values.getOrNull(index)?.trim() == "1"
+    }
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Rounded.Refresh,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "周期策略",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        if (activeDays.isEmpty()) {
+            Text(
+                text = "暂无执行计划",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(start = 24.dp)
+            )
+        } else {
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                activeDays.forEach { day ->
+                    WeekDayChip(day)
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun WeekDayChip(day: String) {
+    Surface(
+        modifier = Modifier.shadow(
+            elevation = 2.dp,
+            shape = RoundedCornerShape(6.dp),
+            ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+        ),
+        shape = RoundedCornerShape(6.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+    ) {
+        Text(
+            text = day,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
     }
 }
