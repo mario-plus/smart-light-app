@@ -396,18 +396,13 @@ fun EmptyDataView(message: String) {
  * */
 @Composable
 fun DeviceStatus(
-    status: Int?,
-    statusMapping: Map<Int, Triple<Color, Color, String>> = mapOf(
-        1 to Triple(Green50, Green500, "在线"),
-        0 to Triple(Gray100, Gray500, "离线")
-    ),
-    defaultStatus: Triple<Color, Color, String> = Triple(Orange50, Orange500, "未知")
+    status: Int?, statusMapping: Map<Int, Triple<Color, Color, String>> = mapOf(
+        1 to Triple(Green50, Green500, "在线"), 0 to Triple(Gray100, Gray500, "离线")
+    ), defaultStatus: Triple<Color, Color, String> = Triple(Orange50, Orange500, "未知")
 ) {
     val (bgColor, fgColor, text) = statusMapping[status] ?: defaultStatus
     Surface(
-        color = bgColor,
-        shape = RoundedCornerShape(percent = 50),
-        modifier = Modifier.height(24.dp)
+        color = bgColor, shape = RoundedCornerShape(percent = 50), modifier = Modifier.height(24.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp),
@@ -598,29 +593,23 @@ fun DetailRow(label: String, value: String) {
 
 @Composable
 fun DeviceRealDataCardModern(
-    data: DeviceModelData,
-    onHistoryClick: () -> Unit,
-    onAnalysisClick: () -> Unit,
-    modifier: Modifier = Modifier
+    data: DeviceModelData, onAnalysisClick: () -> Unit, modifier: Modifier = Modifier
 ) {
-    // 采用图片中的拟物化配色
     val cardBg = Color(0xFFF2EFE9)       // 暖白色背景
     val headerBg = Color(0xFFC2D1D9)     // 顶部标题栏淡蓝灰色
-    val bottomBarBg = Color(0xFFC2D1D9)  // 底部操作栏淡蓝灰色
-    val dividerColor = Color(0xFF9BAAB5) // 深一点的蓝灰分割线
     val primaryText = Color(0xFF2D3436)  // 深灰色文字
     val secondaryText = Color(0xFF4A5568) // 辅助文字
-
     Surface(
         modifier = modifier
-            .padding(4.dp) // 【关键】减少外部间距，确保3列布局不拥挤
-            .height(120.dp), // 减小高度以适配3列布局
-        shape = RoundedCornerShape(12.dp), color = cardBg,
-        // 使用 physical elevation 配合浅色边框模拟厚度
-        shadowElevation = 3.dp, border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.8f))
+            .padding(4.dp)
+            .height(120.dp)
+            .clickable(onClick = onAnalysisClick),
+        shape = RoundedCornerShape(12.dp),
+        color = cardBg,
+        shadowElevation = 3.dp,
+        border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.8f))
     ) {
         Column {
-            // --- 顶部标题栏 ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -634,8 +623,6 @@ fun DeviceRealDataCardModern(
                     ), maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
             }
-
-            // --- 中间数据区 ---
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -645,8 +632,7 @@ fun DeviceRealDataCardModern(
                     Text(
                         text = (if (data.value.isNullOrBlank()) "--" else data.value).toString(),
                         style = TextStyle(
-                            fontSize = 22.sp, // 适配小卡片的字号
-                            fontWeight = FontWeight.Black, color = primaryText
+                            fontSize = 22.sp, fontWeight = FontWeight.Black, color = primaryText
                         )
                     )
                     if (!data.unit.isNullOrBlank()) {
@@ -658,53 +644,7 @@ fun DeviceRealDataCardModern(
                     }
                 }
             }
-
-            // --- 底部操作栏 ---
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(32.dp)
-                    .background(bottomBarBg),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ActionButton("列表", onHistoryClick, Modifier.weight(1f), secondaryText)
-                Box(
-                    modifier = Modifier
-                        .width(0.5.dp)
-                        .height(12.dp)
-                        .background(dividerColor)
-                )
-                val isChartEnabled = data.type == "long" || data.type == "double"
-                ActionButton(
-                    text = "图表",
-                    onClick = onAnalysisClick,
-                    modifier = Modifier.weight(1f),
-                    color = secondaryText,
-                    enabled = isChartEnabled
-                )
-
-            }
         }
-    }
-}
-
-@Composable
-private fun ActionButton(
-    text: String, onClick: () -> Unit, modifier: Modifier, color: Color, enabled: Boolean = true
-) {
-    Box(
-        modifier = modifier
-            .fillMaxHeight()
-            .clickable(enabled = enabled) { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text, style = TextStyle(
-                fontSize = 10.sp,
-                color = if (enabled) color else color.copy(alpha = 0.3f),
-                fontWeight = FontWeight.Bold
-            )
-        )
     }
 }
 
@@ -838,8 +778,7 @@ fun HistoryDataCard(data: HistoryData) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = data.eventTs,
-                    style = TextStyle(fontSize = 12.sp, color = TextSecondary)
+                    text = data.eventTs, style = TextStyle(fontSize = 12.sp, color = TextSecondary)
                 )
             }
             Spacer(modifier = Modifier.height(10.dp))
@@ -854,15 +793,12 @@ fun HistoryDataCard(data: HistoryData) {
                     }
                     withStyle(
                         style = SpanStyle(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = TextSecondary
+                            fontSize = 12.sp, fontWeight = FontWeight.Normal, color = TextSecondary
                         )
                     ) {
                         append(" [${data.key}]")
                     }
-                }
-            )
+                })
             Spacer(modifier = Modifier.height(12.dp))
             Surface(
                 modifier = Modifier
@@ -870,9 +806,7 @@ fun HistoryDataCard(data: HistoryData) {
                     .animateContentSize()
                     .clickable(enabled = isLongContent && keyValuePairs.isNotEmpty()) {
                         isExpanded = !isExpanded
-                    },
-                color = Color(0xFFF9F9FB),
-                shape = RoundedCornerShape(8.dp)
+                    }, color = Color(0xFFF9F9FB), shape = RoundedCornerShape(8.dp)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     if (isLongContent && keyValuePairs.isNotEmpty()) {
@@ -908,9 +842,7 @@ fun HistoryDataCard(data: HistoryData) {
                         Text(
                             text = data.value,
                             style = TextStyle(
-                                fontSize = 14.sp,
-                                lineHeight = 20.sp,
-                                color = Color(0xFF3A3A3C)
+                                fontSize = 14.sp, lineHeight = 20.sp, color = Color(0xFF3A3A3C)
                             ),
                             maxLines = if (isExpanded) Int.MAX_VALUE else 3,
                             overflow = TextOverflow.Ellipsis
@@ -1103,17 +1035,25 @@ fun formatTs(ts: Long, pattern: String = "yyyy-MM-dd HH:mm"): String {
         val instant = Instant.ofEpochMilli(ts)
         val formatter = DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
         instant.atZone(ZoneId.systemDefault()).format(formatter)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         ""
     }
 }
 
 /**
- * 设备历史数据图表分析
+ * @param isLoading 数据加载中
+ * @param showChart 针对数字类型的历史数据，可以展示图标显示信息
+ * @param limitDays 时间选择限制天数
+ * @param startDate 开始时间
+ * @param endDate 结束时间
+ * @param data 历史数据
+ * @param onRangeSelected 时间更改触发动作
  * */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ChartDataView(
+fun HistoryDataView(
+    isLoading: Boolean,
+    showChart: Boolean,
     limitDays: Int,
     startDate: String,
     endDate: String,
@@ -1140,18 +1080,31 @@ fun ChartDataView(
                 onRangeSelected = onRangeSelected
             )
         }
-
-        item {
-            if (chartData.isEmpty()) {
-                EmptyDataView("暂无数据")
-            } else {
-                ChartCard(chartData)
-                Spacer(modifier = Modifier.height(16.dp))
-                TableHeader()
+        if (isLoading) {
+            item {
+                Box(
+                    modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
-        }
-        itemsIndexed(tableData) { index, item ->
-            TableRow(item, isLast = index == tableData.size - 1)
+        } else {
+            if (chartData.isEmpty()) {
+                item { EmptyDataView("该时间区间无历史数据") }
+            } else {
+                if (showChart) {
+                    item {
+                        ChartCard(chartData)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+                item {
+                    TableHeader()
+                }
+                itemsIndexed(tableData) { index, item ->
+                    TableRow(item, isLast = index == tableData.size - 1)
+                }
+            }
         }
     }
 }
@@ -1406,9 +1359,7 @@ fun InfoRibbon(data: DeviceModelData) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeviceDataGrid(
-    dataList: List<DeviceModelData>,
-    onHistoryClick: (DeviceModelData) -> Unit,
-    onAnalysisClick: (DeviceModelData) -> Unit
+    dataList: List<DeviceModelData>, onAnalysisClick: (DeviceModelData) -> Unit
 ) {
     if (dataList.isEmpty()) return
     FlowRow(
@@ -1426,9 +1377,7 @@ fun DeviceDataGrid(
                     .fillMaxHeight()
             ) {
                 DeviceRealDataCardModern(
-                    data = data,
-                    onHistoryClick = { onHistoryClick(data) },
-                    onAnalysisClick = { onAnalysisClick(data) })
+                    data = data, onAnalysisClick = { onAnalysisClick(data) })
             }
         }
         val itemFillCount = (3 - (dataList.size % 3)) % 3
@@ -1445,7 +1394,6 @@ fun DeviceDataGrid(
 @Composable
 fun LoadingContent(isLoading: Boolean, content: @Composable () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
-
         if (isLoading) {
             Box(
                 modifier = Modifier
@@ -1965,21 +1913,15 @@ private fun StatusItem(label: String, text: String, isError: Boolean) {
 
 @Composable
 fun CommonTopAppBar(
-    title: String,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-    height: Dp = 56.dp, // 调整为标准高度
-    menuItems: List<SystemConfig> = emptyList(),
-    onMenuItemClick: (SystemConfig) -> Unit = {}
+    title: String, onBack: () -> Unit, modifier: Modifier = Modifier, height: Dp = 56.dp, // 调整为标准高度
+    menuItems: List<SystemConfig> = emptyList(), onMenuItemClick: (SystemConfig) -> Unit = {}
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     val textMain = Color(0xFF1D1B20) // 更加深邃的 M3 文本色
 
     // 使用简单的纯色背景，通过阴影或底部细线区分，比渐变更高级
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = Color.White,
-        shadowElevation = 2.dp // 柔和的阴影
+        modifier = modifier.fillMaxWidth(), color = Color.White, shadowElevation = 2.dp // 柔和的阴影
     ) {
         Box(
             modifier = Modifier
@@ -1990,14 +1932,11 @@ fun CommonTopAppBar(
         ) {
             // === 左侧：返回按钮 (增加点击区域感) ===
             IconButton(
-                onClick = onBack,
-                modifier = Modifier.align(Alignment.CenterStart)
+                onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack, // 使用自动镜像图标适配 RTL
-                    contentDescription = "Back",
-                    tint = textMain,
-                    modifier = Modifier.size(24.dp)
+                    contentDescription = "Back", tint = textMain, modifier = Modifier.size(24.dp)
                 )
             }
 
@@ -2005,10 +1944,8 @@ fun CommonTopAppBar(
             Text(
                 text = title,
                 style = TextStyle(
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold, // SemiBold 比 Bold 更具现代感
-                    color = textMain,
-                    letterSpacing = 0.2.sp
+                    fontSize = 18.sp, fontWeight = FontWeight.SemiBold, // SemiBold 比 Bold 更具现代感
+                    color = textMain, letterSpacing = 0.2.sp
                 ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -2115,8 +2052,7 @@ fun SearchHeader(
             shadowElevation = 3.dp
         ) {
             Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically
             ) {
                 if (!statusOptions.isNullOrEmpty()) {
                     Box(
@@ -2125,8 +2061,7 @@ fun SearchHeader(
                             .fillMaxHeight()
                             .clickable { statusExpanded = true }
                             .padding(start = 16.dp, end = 8.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
+                        contentAlignment = Alignment.CenterStart) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = statusOptions.find { it.first == currentStatus }?.second
@@ -2149,27 +2084,23 @@ fun SearchHeader(
                             modifier = Modifier.background(Color.White)
                         ) {
                             statusOptions.forEach { (value, label) ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            text = label,
-                                            color = if (value == currentStatus) Color.Blue else BluePrimary,
-                                            fontWeight = if (value == currentStatus) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    },
-                                    onClick = {
-                                        onStatusChanged(value)
-                                        statusExpanded = false
-                                    }
-                                )
+                                DropdownMenuItem(text = {
+                                    Text(
+                                        text = label,
+                                        color = if (value == currentStatus) Color.Blue else BluePrimary,
+                                        fontWeight = if (value == currentStatus) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }, onClick = {
+                                    onStatusChanged(value)
+                                    statusExpanded = false
+                                })
                             }
                         }
                     }
                     VerticalDivider(
                         modifier = Modifier
                             .height(24.dp)
-                            .width(1.dp),
-                        color = DividerColor
+                            .width(1.dp), color = DividerColor
                     )
                 }
                 Row(
@@ -2189,9 +2120,7 @@ fun SearchHeader(
                     Box(contentAlignment = Alignment.CenterStart) {
                         if (searchQuery.isEmpty()) {
                             Text(
-                                text = searchTitle,
-                                color = PlaceholderColor,
-                                fontSize = 14.sp
+                                text = searchTitle, color = PlaceholderColor, fontSize = 14.sp
                             )
                         }
                         BasicTextField(

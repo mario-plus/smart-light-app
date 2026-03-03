@@ -84,7 +84,8 @@ fun SmartEnvScreen(
             return DeviceViewModel(retrofitClient, application) as T
         }
     })
-
+    // 观察 ViewModel 状态
+    val isLoading by deviceViewModel.isLoading.collectAsState()
 
     //服务
     val chartDataList by deviceViewModel.chartDataList.collectAsState()
@@ -174,6 +175,7 @@ fun SmartEnvScreen(
             },
             limitDays = 14,
             chartDataList,
+            isLoading = isLoading,
             onLoadData = { start, end ->
                 deviceViewModel.loadChartData(
                     selectDeviceId, start, end, selectedDeviceModelData!!.key, 2

@@ -55,7 +55,6 @@ import com.unilumin.smartapp.ui.components.FilterChip
 import com.unilumin.smartapp.ui.components.HistoryDataListView
 import com.unilumin.smartapp.ui.components.LoadingContent
 import com.unilumin.smartapp.ui.screens.dialog.ChartDataDialog
-import com.unilumin.smartapp.ui.screens.dialog.DeviceHistoryDialog
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
@@ -82,11 +81,8 @@ fun DeviceDetailScreen(
     // 状态管理
     var selectedLabel by remember { mutableStateOf(DETAIL) }
 
-    //卡片-历史数据弹窗
-    var listDataDialog by remember { mutableStateOf(false) }
-    //选中的卡片信息
+    //卡片-遥测，属性历史数据
     var selectedDeviceModelData by remember { mutableStateOf<DeviceModelData?>(null) }
-    //卡片-图片数据
     var showChartDialog by remember { mutableStateOf(false) }
 
     //记录时间区间
@@ -95,9 +91,6 @@ fun DeviceDetailScreen(
     val currentStart = currentRange.first
     val currentEnd = currentRange.second
 
-    /**
-     * 数据观察
-     * */
     //服务
     val chartDataList by deviceViewModel.chartDataList.collectAsState()
     //基础信息
@@ -146,12 +139,10 @@ fun DeviceDetailScreen(
     Scaffold(
         topBar = {
             Surface(shadowElevation = 3.dp) {
-
                 Column(modifier = Modifier.background(CardWhite)) {
                     CommonTopAppBar(
                         title = "设备 [${iotDevice.deviceName}] 详情", onBack = { onBack() })
                     Spacer(modifier = Modifier.height(8.dp))
-                    // 4. 替换为 LazyRow 实现的滑动 Chip Tabs
                     LazyRow(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -187,7 +178,6 @@ fun DeviceDetailScreen(
                             ) {
                                 when (selectedLabel) {
                                     DETAIL -> {
-
                                         if (baseInfoList.isNotEmpty()) {
                                             item {
                                                 DetailCard(title = "基础信息") {
@@ -235,46 +225,25 @@ fun DeviceDetailScreen(
                                             }
                                         }
                                     }
-
-                                    PROPERTY -> {
-                                        if (devicePropertiesDataList.isNotEmpty()) {
-                                            item {
-                                                DeviceDataGrid(
-                                                    dataList = devicePropertiesDataList,
-                                                    onHistoryClick = { data ->
-                                                        listDataDialog = true
-                                                        selectedDeviceModelData = data.copy()
-                                                    },
-                                                    onAnalysisClick = { data ->
-                                                        showChartDialog = true
-                                                        selectedDeviceModelData = data.copy()
-                                                    })
-                                            }
+                                    PROPERTY, TELEMETRY -> {
+                                        val (dataList, emptyText) = if (selectedLabel == PROPERTY) {
+                                            devicePropertiesDataList to "暂无属性数据"
                                         } else {
-                                            item {
-                                                EmptyDataView("暂无属性数据")
-                                            }
-
+                                            deviceTelemetryDataList to "暂无遥测数据"
                                         }
-                                    }
-
-                                    TELEMETRY -> {
-                                        if (deviceTelemetryDataList.isNotEmpty()) {
+                                        if (dataList.isNotEmpty()) {
                                             item {
                                                 DeviceDataGrid(
-                                                    dataList = deviceTelemetryDataList,
-                                                    onHistoryClick = { data ->
-                                                        listDataDialog = true
-                                                        selectedDeviceModelData = data.copy()
-                                                    },
+                                                    dataList = dataList,
                                                     onAnalysisClick = { data ->
-                                                        showChartDialog = true
+                                                        deviceViewModel.clearChartData()
                                                         selectedDeviceModelData = data.copy()
+                                                        showChartDialog = true
                                                     })
                                             }
                                         } else {
                                             item {
-                                                EmptyDataView("暂无遥测数据")
+                                                EmptyDataView(emptyText)
                                             }
                                         }
                                     }
@@ -331,24 +300,10 @@ fun DeviceDetailScreen(
             }
         }
     }
-
-    if (listDataDialog && selectedDeviceModelData != null) {
-        DeviceHistoryDialog(
-            selectedDeviceModelData = selectedDeviceModelData,
-            historyDataList = historyDataList,
-            hasMore = pagingState.hasMore,
-            onLoadData = { start, end, refresh, keys ->
-                deviceViewModel.loadHistoryData(iotDevice.id, start, end, refresh, keys)
-            },
-            onDismiss = {
-                listDataDialog = false
-            })
-    }
-
     if (showChartDialog && selectedDeviceModelData != null) {
         ChartDataDialog(selectedDeviceModelData = selectedDeviceModelData, onDismiss = {
             showChartDialog = false
-        }, limitDays = 14, chartDataList, onLoadData = { start, end ->
+        }, limitDays = 14, chartDataList, isLoading = isLoading, onLoadData = { start, end ->
             deviceViewModel.loadChartData(
                 iotDevice.id, start, end, selectedDeviceModelData!!.key, 1
             )
