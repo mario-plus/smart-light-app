@@ -99,7 +99,7 @@ fun LampGroupContent(
                 showDialog = false
             },
             onClick = { a, b ->
-                lampViewModel.lampCtl(currentGroup.value?.id ?: 0L, a, b)
+                lampViewModel.groupCtl(currentGroup.value?.id ?: 0L, a, b)
                 lampViewModel.updateCurrentGroupInfo(null)
                 showDialog = false
             }

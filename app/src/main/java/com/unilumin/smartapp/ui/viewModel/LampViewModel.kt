@@ -265,15 +265,14 @@ class LampViewModel(
         level: Int,
         confirm: Int,
     ): List<DeviceAlarmInfo> {
-        val parseDataNewSuspend =
-            UniCallbackService.parseDataNewSuspend(
-                roadService.deviceAlarmList(
+        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+            roadService.deviceAlarmList(
                 curPage = curPage,
                 pageSize = pageSize,
                 keyword = searchQuery,
                 level = level.takeIf { it != FILTER_NONE },
                 isConfirm = confirm.takeIf { it != FILTER_NONE })
-            )
+        )
         return processPageResponse(parseDataNewSuspend, _totalCount)
     }
 
@@ -284,17 +283,16 @@ class LampViewModel(
         state: Int,
         workModel: Int,
     ): List<LampLightInfo> {
-        val parseDataNewSuspend =
-            UniCallbackService.parseDataNewSuspend(
-                roadService.getLightCtlList(
-                    RequestParam(
-                        keyword = searchQuery,
-                        curPage = curPage,
-                        pageSize = pageSize,
-                        state = state.takeIf { it != FILTER_NONE },
-                        workMode = workModel.takeIf { it != FILTER_NONE })
-                )
+        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+            roadService.getLightCtlList(
+                RequestParam(
+                    keyword = searchQuery,
+                    curPage = curPage,
+                    pageSize = pageSize,
+                    state = state.takeIf { it != FILTER_NONE },
+                    workMode = workModel.takeIf { it != FILTER_NONE })
             )
+        )
         return processPageResponse(parseDataNewSuspend, _totalCount)
     }
 
@@ -360,17 +358,16 @@ class LampViewModel(
         taskState: Int,
         syncState: Int,
     ): List<LampStrategyInfo> {
-        val parseDataNewSuspend =
-            UniCallbackService.parseDataNewSuspend(
-                roadService.getStrategyList(
-                    StrategyRequestParam(
-                        keyword = searchQuery,
-                        curPage = curPage,
-                        pageSize = pageSize,
-                        taskState = taskState.takeIf { it != FILTER_NONE },
-                        syncState = syncState.takeIf { it != FILTER_NONE })
-                )
+        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+            roadService.getStrategyList(
+                StrategyRequestParam(
+                    keyword = searchQuery,
+                    curPage = curPage,
+                    pageSize = pageSize,
+                    taskState = taskState.takeIf { it != FILTER_NONE },
+                    syncState = syncState.takeIf { it != FILTER_NONE })
             )
+        )
         return processPageResponse(parseDataNewSuspend, _totalCount)
     }
 
@@ -413,18 +410,17 @@ class LampViewModel(
     ): List<LampJobInfo> {
 
         val s = state.takeIf { it != FILTER_NONE }
-        val parseDataNewSuspend =
-            UniCallbackService.parseDataNewSuspend(
-                roadService.getJobList(
-                    JobRequestParam(
-                        businessTypes = sceneIds,
-                        keyword = searchQuery,
-                        curPage = curPage,
-                        pageSize = pageSize,
-                        status = s
-                    )
+        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+            roadService.getJobList(
+                JobRequestParam(
+                    businessTypes = sceneIds,
+                    keyword = searchQuery,
+                    curPage = curPage,
+                    pageSize = pageSize,
+                    status = s
                 )
             )
+        )
         return processPageResponse(parseDataNewSuspend, _totalCount)
     }
 
@@ -444,6 +440,7 @@ class LampViewModel(
                 Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 e.printStackTrace()
+                Toast.makeText(context, "操作失败:" + e.message, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -463,6 +460,7 @@ class LampViewModel(
                 Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 e.printStackTrace()
+                Toast.makeText(context, "操作失败:" + e.message, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -475,10 +473,11 @@ class LampViewModel(
                 val call: Call<NewResponseData<String?>?>? = roadService.loopCtl(
                     LoopCtlReq(listOf(id), numList, onOff)
                 )
-                UniCallbackService.parseDataNewSuspend(call )
+                UniCallbackService.parseDataNewSuspend(call)
                 Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 e.printStackTrace()
+                Toast.makeText(context, "操作失败:" + e.message, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -502,8 +501,7 @@ class LampViewModel(
             try {
                 val call: Call<NewResponseData<List<JobSceneElement>?>?>? =
                     roadService.getJobSceneList()
-                val parseDataNewSuspend =
-                    UniCallbackService.parseDataNewSuspend(call)
+                val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(call)
                 _sceneOptions.value = buildList {
                     parseDataNewSuspend?.forEach { e ->
                         e.list.forEach { k ->

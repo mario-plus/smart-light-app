@@ -95,7 +95,7 @@ fun LampLightContent(
                 selectedLamp = null
             },
             onClick = { a, b ->
-                lampViewModel.groupCtl(lamp.id, a, b)
+                lampViewModel.lampCtl(lamp.id, a, b)
                 selectedLamp = null
             }
         )
