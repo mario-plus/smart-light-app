@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.ui.screens.login
 
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -68,6 +67,7 @@ import com.unilumin.smartapp.ui.theme.Gray400
 import com.unilumin.smartapp.ui.theme.Gray500
 import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.util.EncryptUtil
+import com.unilumin.smartapp.util.ToastUtil
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -228,7 +228,7 @@ fun LoginScreen(retrofitClient: RetrofitClient, onLogin: () -> Unit) {
                     Button(
                         onClick = {
                             if (!isAgreed) {
-                                Toast.makeText(context, "请先阅读并勾选同意《用户协议》与《隐私政策》", Toast.LENGTH_SHORT).show()
+                                ToastUtil.showError(context,"请先阅读并勾选同意《用户协议》与《隐私政策》")
                                 return@Button
                             }
                             isLoading = true

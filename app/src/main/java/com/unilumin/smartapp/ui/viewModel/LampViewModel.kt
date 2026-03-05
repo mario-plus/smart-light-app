@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -36,6 +35,7 @@ import com.unilumin.smartapp.client.data.RequestParam
 import com.unilumin.smartapp.client.data.StrategyRequestParam
 import com.unilumin.smartapp.client.service.RoadService
 import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
+import com.unilumin.smartapp.util.ToastUtil
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -427,41 +427,31 @@ class LampViewModel(
     //设备控制按钮
     fun lampCtl(deviceId: Long, cmdType: Int, cmdValue: Int) {
         launchWithLoading {
-            try {
-                val call: Call<NewResponseData<String?>?>? = roadService.lampCtl(
-                    LampCtlReq(
-                        cmdType = cmdType,
-                        cmdValue = cmdValue,
-                        ids = listOf(deviceId),
-                        subSystemType = 1
-                    )
+            val call: Call<NewResponseData<String?>?>? = roadService.lampCtl(
+                LampCtlReq(
+                    cmdType = cmdType,
+                    cmdValue = cmdValue,
+                    ids = listOf(deviceId),
+                    subSystemType = 1
                 )
-                UniCallbackService.parseDataNewSuspend(call)
-                Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, "操作失败:" + e.message, Toast.LENGTH_SHORT).show()
-            }
+            )
+            UniCallbackService.parseDataNewSuspend(call)
+            ToastUtil.showSuccess(context,"操作成功")
         }
     }
 
     fun groupCtl(groupId: Long, cmdType: Int, cmdValue: Int) {
         launchWithLoading {
-            try {
-                val call: Call<NewResponseData<String?>?>? = roadService.groupCtl(
-                    LampCtlReq(
-                        cmdType = cmdType,
-                        cmdValue = cmdValue,
-                        ids = listOf(groupId),
-                        subSystemType = 1
-                    )
+            val call: Call<NewResponseData<String?>?>? = roadService.groupCtl(
+                LampCtlReq(
+                    cmdType = cmdType,
+                    cmdValue = cmdValue,
+                    ids = listOf(groupId),
+                    subSystemType = 1
                 )
-                UniCallbackService.parseDataNewSuspend(call)
-                Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, "操作失败:" + e.message, Toast.LENGTH_SHORT).show()
-            }
+            )
+            UniCallbackService.parseDataNewSuspend(call)
+            ToastUtil.showSuccess(context,"操作成功")
         }
     }
 
@@ -469,16 +459,11 @@ class LampViewModel(
     //设备控制按钮
     fun loopCtl(id: Long, numList: List<Int>, onOff: Int) {
         launchWithLoading {
-            try {
-                val call: Call<NewResponseData<String?>?>? = roadService.loopCtl(
-                    LoopCtlReq(listOf(id), numList, onOff)
-                )
-                UniCallbackService.parseDataNewSuspend(call)
-                Toast.makeText(context, "操作成功", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, "操作失败:" + e.message, Toast.LENGTH_SHORT).show()
-            }
+            val call: Call<NewResponseData<String?>?>? = roadService.loopCtl(
+                LoopCtlReq(listOf(id), numList, onOff)
+            )
+            UniCallbackService.parseDataNewSuspend(call)
+            ToastUtil.showSuccess(context,"操作成功")
         }
     }
 
@@ -490,6 +475,7 @@ class LampViewModel(
                 consumer()
             } catch (e: Exception) {
                 e.printStackTrace()
+                ToastUtil.showError(context, "操作失败: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
@@ -498,20 +484,17 @@ class LampViewModel(
 
     fun getJobScene() {
         launchWithLoading {
-            try {
-                val call: Call<NewResponseData<List<JobSceneElement>?>?>? =
-                    roadService.getJobSceneList()
-                val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(call)
-                _sceneOptions.value = buildList {
-                    parseDataNewSuspend?.forEach { e ->
-                        e.list.forEach { k ->
-                            add(k.key to "${k.typeName}-${k.value}")
-                        }
+            val call: Call<NewResponseData<List<JobSceneElement>?>?>? =
+                roadService.getJobSceneList()
+            val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(call)
+            _sceneOptions.value = buildList {
+                parseDataNewSuspend?.forEach { e ->
+                    e.list.forEach { k ->
+                        add(k.key to "${k.typeName}-${k.value}")
                     }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
+
         }
     }
 

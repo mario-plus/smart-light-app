@@ -7,7 +7,6 @@ import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.view.View
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -82,6 +81,7 @@ import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.CameraViewModel
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
+import com.unilumin.smartapp.util.ToastUtil
 import org.webrtc.RendererCommon
 import org.webrtc.SurfaceViewRenderer
 
@@ -166,7 +166,7 @@ fun SmartMonitorScreen(
                             if (device.state == 1) {
                                 cameraViewModel.switchListPlayer(device.id, forceReconnect = true)
                             } else {
-                                Toast.makeText(context, "设备已离线", Toast.LENGTH_SHORT).show()
+                                ToastUtil.showError(context, "设备已离线")
                             }
                         },
                         onFullscreenClick = {
@@ -198,7 +198,6 @@ fun SmartMonitorScreen(
                     },
                     onPtzControl = { direction ->
                         // 实际控制逻辑
-                        Toast.makeText(context, "云台: $direction", Toast.LENGTH_SHORT).show()
                     }
                 )
             }

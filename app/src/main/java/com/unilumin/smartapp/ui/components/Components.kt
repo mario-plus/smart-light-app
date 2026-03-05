@@ -217,6 +217,7 @@ import com.unilumin.smartapp.ui.theme.TextTitle
 import com.unilumin.smartapp.ui.theme.White
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import com.unilumin.smartapp.util.JsonUtils.parseJsonToKeyValue
+import com.unilumin.smartapp.util.ToastUtil
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -761,9 +762,7 @@ fun DateRangePickerModern(
                 if (start != null && end != null) {
                     val diffDays = (end - start) / (24 * 60 * 60 * 1000)
                     if (diffDays > limitDays) {
-                        Toast.makeText(
-                            context, "选择范围不能超过${limitDays}天", Toast.LENGTH_SHORT
-                        ).show()
+                        ToastUtil.showError(context, "日期范围不能超过${limitDays}天")
                     } else {
                         onRangeSelected(sdf.format(Date(start)), sdf.format(Date(end)))
                         showPicker = false
