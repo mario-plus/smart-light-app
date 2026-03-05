@@ -22,8 +22,10 @@ import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PagingState
+import com.unilumin.smartapp.client.data.RealTimeDataTs
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.service.DeviceService
+import com.unilumin.smartapp.ui.components.formatTs
 import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -287,6 +289,7 @@ class DeviceViewModel(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun getDeviceRealData(deviceId: Long, isTelemetry: Boolean) {
         launchWithLoading {
             val sourceTemplate = if (isTelemetry) {
@@ -300,10 +303,14 @@ class DeviceViewModel(
                         DeviceRealTimeDataReq(deviceId, sourceTemplate.map { it.key })
                     )
                 )
-                val realDataMap = result?.get(deviceId.toString()) ?: emptyMap()
+                val realTimeDataTs: List<RealTimeDataTs>? = result?.get(deviceId.toString())
                 val updatedList = sourceTemplate.map { templateItem ->
-                    val newValue = realDataMap[templateItem.key] ?: ""
-                    templateItem.copy(value = newValue.toString())
+                    val matchingData = realTimeDataTs?.find { it.key == templateItem.key }
+                    val newValue = matchingData?.value ?: ""
+                    val updateTimeStr = matchingData?.ts?.let {
+                        formatTs(matchingData.ts, "yyyy-MM-dd HH:mm:ss")
+                    } ?: ""
+                    templateItem.copy(value = newValue.toString(), updateTime = updateTimeStr)
                 }
                 if (isTelemetry) {
                     _deviceTelemetryDataList.value = updatedList

@@ -94,3 +94,11 @@ val IconTintBlue = Color(0xFF2F78FF)
 val PanelBg = Color(0xFFF7F8FA) // 中间灰色面板背景
 val StatusGreen = Color(0xFF52C41A)
 val StatusGray = Color(0xFFBFBFBF)
+
+
+val PrimaryText = Color(0xFF111827)
+val SecondaryText = Color(0xFF6B7280)
+val TertiaryText = Color(0xFF9CA3AF)
+val HeaderBg = Color(0xFFF7F9FC)
+val Divider = Color(0xFFF3F4F6)
+val Border = Color(0xFFE5E7EB)

@@ -291,7 +291,9 @@ data class DeviceModelData(
     //单位
     val unit: String? = null,
     //类型(String,Long,double,float)
-    val type: String
+    val type: String,
+
+    var updateTime: String? = null
 )
 
 data class SequenceTsl(
@@ -1155,4 +1157,10 @@ data class PlayBoxDeviceBO(
     val description: String? = null,
     val workMode: String? = null,
     val boundLightGateway: String? = null // 同上
+)
+
+data class RealTimeDataTs(
+    val key: String,
+    val value: String,
+    val ts: Long
 )

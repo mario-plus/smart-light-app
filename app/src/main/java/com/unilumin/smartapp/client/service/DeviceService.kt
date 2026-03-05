@@ -14,6 +14,7 @@ import com.unilumin.smartapp.client.data.IotProductDetail
 import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PageResponse
+import com.unilumin.smartapp.client.data.RealTimeDataTs
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.data.WebRTCResponse
 import retrofit2.Call
@@ -62,7 +63,7 @@ interface DeviceService {
     fun getDeviceConfig(@Query("deviceId") deviceId: Long): Call<NewResponseData<List<DeviceConfig>?>?>?
 
     @POST(RequestPathKey.KEY_GET_DEVICE_REAL_DATA)
-    fun getDeviceRealTimeData(@Body req: DeviceRealTimeDataReq): Call<NewResponseData<Map<String, Map<String, String>>?>?>?
+    fun getDeviceRealTimeData(@Body req: DeviceRealTimeDataReq): Call<NewResponseData<Map<String, List<RealTimeDataTs>>?>?>?
 
     @POST(RequestPathKey.KEY_GET_DEVICE_HISTORY_DATA)
     fun getDeviceHistoryData(@Body req: HistoryDataReq): Call<NewResponseData<PageResponse<HistoryData>?>?>?

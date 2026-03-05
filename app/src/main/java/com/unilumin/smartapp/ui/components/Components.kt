@@ -19,6 +19,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
@@ -68,6 +69,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.LocationOn
@@ -148,6 +150,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -170,6 +173,7 @@ import com.unilumin.smartapp.client.data.LoopInfo
 import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.data.SystemConfig
+import com.unilumin.smartapp.ui.screens.dashboard.InfoRowItem
 import com.unilumin.smartapp.ui.theme.AccentBlue
 import com.unilumin.smartapp.ui.theme.AlarmBg
 import com.unilumin.smartapp.ui.theme.AlarmRed
@@ -177,6 +181,7 @@ import com.unilumin.smartapp.ui.theme.BackgroundGray
 import com.unilumin.smartapp.ui.theme.Blue50
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.BluePrimary
+import com.unilumin.smartapp.ui.theme.Border
 import com.unilumin.smartapp.ui.theme.CardBorder
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.ControlBlue
@@ -190,16 +195,19 @@ import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.Green50
 import com.unilumin.smartapp.ui.theme.Green500
 import com.unilumin.smartapp.ui.theme.GreenStatus
+import com.unilumin.smartapp.ui.theme.HeaderBg
 import com.unilumin.smartapp.ui.theme.LineColor
 import com.unilumin.smartapp.ui.theme.OfflineGray
 import com.unilumin.smartapp.ui.theme.Orange50
 import com.unilumin.smartapp.ui.theme.Orange500
 import com.unilumin.smartapp.ui.theme.PlaceholderColor
 import com.unilumin.smartapp.ui.theme.PrimaryBlue
+import com.unilumin.smartapp.ui.theme.PrimaryText
 import com.unilumin.smartapp.ui.theme.RedStatus
 import com.unilumin.smartapp.ui.theme.SafeBg
 import com.unilumin.smartapp.ui.theme.SafeGreen
 import com.unilumin.smartapp.ui.theme.SearchBarBg
+import com.unilumin.smartapp.ui.theme.SecondaryText
 import com.unilumin.smartapp.ui.theme.TextDark
 import com.unilumin.smartapp.ui.theme.TextGray
 import com.unilumin.smartapp.ui.theme.TextPrimary
@@ -590,59 +598,87 @@ fun DetailRow(label: String, value: String) {
     }
 }
 
-
 @Composable
 fun DeviceRealDataCardModern(
     data: DeviceModelData, onAnalysisClick: () -> Unit, modifier: Modifier = Modifier
 ) {
-    val cardBg = Color(0xFFF2EFE9)       // 暖白色背景
-    val headerBg = Color(0xFFC2D1D9)     // 顶部标题栏淡蓝灰色
-    val primaryText = Color(0xFF2D3436)  // 深灰色文字
-    val secondaryText = Color(0xFF4A5568) // 辅助文字
     Surface(
         modifier = modifier
-            .padding(4.dp)
-            .height(120.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onAnalysisClick),
-        shape = RoundedCornerShape(12.dp),
-        color = cardBg,
-        shadowElevation = 3.dp,
-        border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.8f))
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        shadowElevation = 1.dp,
+        border = BorderStroke(1.dp, Border)
     ) {
         Column {
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(28.dp)
-                    .background(headerBg)
-                    .padding(horizontal = 8.dp), contentAlignment = Alignment.CenterStart
+                    .background(HeaderBg)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = data.name, style = TextStyle(
-                        fontSize = 11.sp, color = secondaryText, fontWeight = FontWeight.Bold
-                    ), maxLines = 1, overflow = TextOverflow.Ellipsis
+                    text = data.name,
+                    style = TextStyle(
+                        fontSize = 15.sp, color = PrimaryText, fontWeight = FontWeight.Bold
+                    ),
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-            }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(), contentAlignment = Alignment.Center
-            ) {
-                Row(verticalAlignment = Alignment.Bottom) {
+                if (data.keyDes.isNotBlank()) {
                     Text(
-                        text = (if (data.value.isNullOrBlank()) "--" else data.value).toString(),
+                        text = data.keyDes, style = TextStyle(
+                            fontSize = 12.sp,
+                            color = SecondaryText,
+                            fontFamily = FontFamily.Monospace
+                        ), maxLines = 1
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = data.value?.takeIf { it.isNotBlank() } ?: "--",
                         style = TextStyle(
-                            fontSize = 22.sp, fontWeight = FontWeight.Black, color = primaryText
-                        )
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Black,
+                            color = PrimaryText,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .basicMarquee(
+                                iterations = Int.MAX_VALUE, // 无限循环
+                                animationMode = MarqueeAnimationMode.Immediately
+                            ),
+                        maxLines = 1
                     )
                     if (!data.unit.isNullOrBlank()) {
                         Text(
                             text = data.unit,
-                            modifier = Modifier.padding(start = 1.dp, bottom = 3.dp),
-                            style = TextStyle(fontSize = 9.sp, color = secondaryText)
+                            modifier = Modifier.padding(start = 4.dp, bottom = 6.dp),
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = SecondaryText
+                            )
                         )
                     }
                 }
+                InfoRowItem(
+                    icon = Icons.Outlined.AccessTime, label = "最近更新时间", value = data.updateTime?.takeIf { it.isNotBlank() } ?: "--"
+                )
             }
         }
     }
@@ -1359,34 +1395,29 @@ fun InfoRibbon(data: DeviceModelData) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeviceDataGrid(
-    dataList: List<DeviceModelData>, onAnalysisClick: (DeviceModelData) -> Unit
+    dataList: List<DeviceModelData>,
+    onAnalysisClick: (DeviceModelData) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    if (dataList.isEmpty()) return
     FlowRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        maxItemsInEachRow = 3,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        maxItemsInEachRow = 1
     ) {
         dataList.forEach { data ->
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val onClick = remember(data, onAnalysisClick) {
+                    { onAnalysisClick(data) }
+                }
                 DeviceRealDataCardModern(
-                    data = data, onAnalysisClick = { onAnalysisClick(data) })
+                    data = data, onAnalysisClick = onClick
+                )
             }
         }
-        val itemFillCount = (3 - (dataList.size % 3)) % 3
-        repeat(itemFillCount) {
-            Spacer(modifier = Modifier.weight(1f))
-        }
     }
-
 }
+
 
 /**
  * 缓冲加载

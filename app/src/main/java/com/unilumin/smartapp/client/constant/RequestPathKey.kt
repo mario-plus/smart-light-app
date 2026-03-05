@@ -98,7 +98,7 @@ object RequestPathKey {
     const val KEY_GET_DEVICE_CONFIG: String = "$IOT_HUB_MANAGER/getDeviceConfig"
 
     //设备实时数据
-    const val KEY_GET_DEVICE_REAL_DATA: String = "$IOT_HUB_MANAGER/get_real_time_data"
+    const val KEY_GET_DEVICE_REAL_DATA: String = "$IOT_HUB_MANAGER/get_real_time_data_ts"
 
     //设备历史数据
     const val KEY_GET_DEVICE_HISTORY_DATA: String = "$IOT_HUB_MANAGER/get_history_data_page"
