@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -43,17 +42,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import retrofit2.Call
 
 class LampViewModel(
     retrofitClient: RetrofitClient, application: Application
-) : AndroidViewModel(application) {
-
-    val context = getApplication<Application>()
-
-    //分页数据总数
-
+) : BaseViewModel(application) {
 
     //数据源
     private val _sceneOptions = MutableStateFlow<List<Pair<Int, String>>>(emptyList())
@@ -71,10 +64,6 @@ class LampViewModel(
 
     private val _isSwitch = MutableStateFlow(false)
     val isSwitch = _isSwitch.asStateFlow()
-
-    // --- 状态管理 ---
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading = _isLoading.asStateFlow()
 
     private val roadService = retrofitClient.getService(RoadService::class.java)
 
@@ -467,20 +456,6 @@ class LampViewModel(
         }
     }
 
-
-    fun launchWithLoading(consumer: suspend () -> Unit) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                consumer()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                ToastUtil.showError(context, "操作失败: ${e.message}")
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
 
     fun getJobScene() {
         launchWithLoading {

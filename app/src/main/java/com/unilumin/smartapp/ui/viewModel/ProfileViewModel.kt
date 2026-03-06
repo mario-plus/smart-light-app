@@ -3,8 +3,6 @@ package com.unilumin.smartapp.ui.viewModel
 import android.app.Application
 import android.content.Context
 import androidx.core.content.edit
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.data.ProjectInfo
@@ -16,14 +14,11 @@ import com.unilumin.smartapp.client.service.SystemService
 import com.unilumin.smartapp.client.service.UserService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import retrofit2.Call
 
 class ProfileViewModel(
     val retrofitClient: RetrofitClient, application: Application
-) : AndroidViewModel(application) {
-    val context = getApplication<Application>()
-
+) : BaseViewModel(application) {
     // 本地存储 Key
     private val SP_NAME = "app_config"
     private val KEY_CURRENT_PROJECT_ID = "current_project_id"
@@ -32,10 +27,6 @@ class ProfileViewModel(
     val projectService = retrofitClient.getService(ProjectService::class.java)
 
     private val systemService = retrofitClient.getService(SystemService::class.java)
-
-    // --- 状态管理 ---
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading = _isLoading.asStateFlow()
 
     //系统信息
     private val _systemInfo = MutableStateFlow(SystemInfo())
@@ -58,48 +49,45 @@ class ProfileViewModel(
     val userAvatarUrl = _userAvatarUrl.asStateFlow()
 
     fun fetchProjects() {
-        viewModelScope.launch {
-            try {
-                val list = UniCallbackService.parseDataSuspend(
-                    projectService.getProjects()
-                )
-                if (list != null && list.isNotEmpty()) {
-                    _projectList.value = list
+        launchDirect {
 
-                    // --- 核心修复逻辑 ---
-                    // 1. 获取本地存储的 ID (使用 getLong，默认值为 -1)
-                    val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-                    val savedProjectId = sp.getLong(KEY_CURRENT_PROJECT_ID, -1L)
+            val list = UniCallbackService.parseDataSuspend(
+                projectService.getProjects()
+            )
+            if (list != null && list.isNotEmpty()) {
+                _projectList.value = list
 
-                    var targetProject: ProjectInfo? = null
+                // --- 核心修复逻辑 ---
+                // 1. 获取本地存储的 ID (使用 getLong，默认值为 -1)
+                val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+                val savedProjectId = sp.getLong(KEY_CURRENT_PROJECT_ID, -1L)
 
-                    // 2. 优先级 1: 内存中已有的选中项 (防止刷新列表时突变)
-                    if (_currentProject.value != null) {
-                        targetProject = list.find { it.id == _currentProject.value!!.id }
-                    }
+                var targetProject: ProjectInfo? = null
 
-                    // 3. 优先级 2: 本地存储的 ID (判断不为 -1)
-                    if (targetProject == null && savedProjectId != -1L) {
-                        targetProject = list.find { it.id == savedProjectId }
-                    }
-
-                    // 4. 优先级 3: 列表默认第一项
-                    if (targetProject == null) {
-                        targetProject = list[0]
-                    }
-
-                    // 5. 更新状态并同步保存
-                    _currentProject.value = targetProject
-                    // 如果当前选中的 ID 与保存的 ID 不一致，则更新本地存储
-                    if (savedProjectId != targetProject.id) {
-                        sp.edit { putLong(KEY_CURRENT_PROJECT_ID, targetProject.id) }
-                    }
-                } else {
-                    _projectList.value = emptyList()
-                    _currentProject.value = null
+                // 2. 优先级 1: 内存中已有的选中项 (防止刷新列表时突变)
+                if (_currentProject.value != null) {
+                    targetProject = list.find { it.id == _currentProject.value!!.id }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+
+                // 3. 优先级 2: 本地存储的 ID (判断不为 -1)
+                if (targetProject == null && savedProjectId != -1L) {
+                    targetProject = list.find { it.id == savedProjectId }
+                }
+
+                // 4. 优先级 3: 列表默认第一项
+                if (targetProject == null) {
+                    targetProject = list[0]
+                }
+
+                // 5. 更新状态并同步保存
+                _currentProject.value = targetProject
+                // 如果当前选中的 ID 与保存的 ID 不一致，则更新本地存储
+                if (savedProjectId != targetProject.id) {
+                    sp.edit { putLong(KEY_CURRENT_PROJECT_ID, targetProject.id) }
+                }
+            } else {
+                _projectList.value = emptyList()
+                _currentProject.value = null
             }
         }
     }
@@ -153,20 +141,6 @@ class ProfileViewModel(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-            }
-        }
-    }
-
-
-    fun launchWithLoading(consumer: suspend () -> Unit) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                consumer()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                _isLoading.value = false
             }
         }
     }

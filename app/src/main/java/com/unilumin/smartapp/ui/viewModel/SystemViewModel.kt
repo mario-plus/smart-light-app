@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.DEVICE_PRODUCT_TYPE_LIST
@@ -14,13 +13,10 @@ import com.unilumin.smartapp.mock.SystemConfigManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class SystemViewModel(
     val retrofitClient: RetrofitClient, application: Application
-) : AndroidViewModel(application) {
-
-    val context = getApplication<Application>()
+) : BaseViewModel(application) {
 
     var configStore = SystemConfigManager(context)
 
@@ -33,7 +29,7 @@ class SystemViewModel(
 
     // 切换选中状态
     fun toggleProductType(id: String, isSelected: Boolean) {
-        viewModelScope.launch {
+        launchDirect {
             val currentList = productTypes.value.map {
                 if (it.id == id) it.copy(isSelected = isSelected) else it
             }
@@ -50,7 +46,7 @@ class SystemViewModel(
 
     // 切换选中状态
     fun toggleSmartApps(id: String, isSelected: Boolean) {
-        viewModelScope.launch {
+        launchDirect{
             val currentList = smartApps.value.map {
                 if (it.id == id) it.copy(isSelected = isSelected) else it
             }
@@ -65,8 +61,9 @@ class SystemViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = SMART_LAMP_FUNC_LIST
     )
+
     fun toggleLampFunctions(id: String, isSelected: Boolean) {
-        viewModelScope.launch {
+        launchDirect{
             val currentList = lampFunctions.value.map {
                 if (it.id == id) it.copy(isSelected = isSelected) else it
             }
@@ -82,8 +79,9 @@ class SystemViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = ENV_PRODUCT_TYPE_LIST
         )
+
     fun toggleEnvProductTypeList(id: String, isSelected: Boolean) {
-        viewModelScope.launch {
+        launchDirect{
             val currentList = envProductTypeList.value.map {
                 if (it.id == id) it.copy(isSelected = isSelected) else it
             }
@@ -98,15 +96,15 @@ class SystemViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = SMART_LED_FUNC_LIST
     )
+
     fun toggleLedFunctions(id: String, isSelected: Boolean) {
-        viewModelScope.launch {
+        launchDirect{
             val currentList = ledFunctions.value.map {
                 if (it.id == id) it.copy(isSelected = isSelected) else it
             }
             configStore.saveLedFunctions(currentList)
         }
     }
-
 
 
 }

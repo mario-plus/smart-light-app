@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -29,11 +28,8 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 class SiteViewModel(
-    val retrofitClient: RetrofitClient,
-    application: Application
-) : AndroidViewModel(application) {
-
-    val context = getApplication<Application>()
+    val retrofitClient: RetrofitClient, application: Application
+) : BaseViewModel(application) {
     private val siteService = retrofitClient.getService(SiteService::class.java)
 
     // ================== 1. 地图相关状态 ==================
@@ -83,9 +79,7 @@ class SiteViewModel(
 
     // ================== 核心方法：地图视口变化加载数据 ==================
     fun onMapCameraChange(
-        minLng: Double, maxLng: Double,
-        minLat: Double, maxLat: Double,
-        zoom: Float
+        minLng: Double, maxLng: Double, minLat: Double, maxLat: Double, zoom: Float
     ) {
         // 1. 防抖
         mapFetchJob?.cancel()
@@ -163,11 +157,12 @@ class SiteViewModel(
                 GenericPagingSource { page, pageSize ->
                     getSitePages(roadId, keyword, page, pageSize)
                 }
-            }
-        ).flow
+            }).flow
     }.cachedIn(viewModelScope)
 
-    private suspend fun getSitePages(roadId: String?, keyword: String, page: Int, pageSize: Int): List<SiteInfo> {
+    private suspend fun getSitePages(
+        roadId: String?, keyword: String, page: Int, pageSize: Int
+    ): List<SiteInfo> {
         val rawResponse = siteService.getSiteList(
             curPage = page,
             pageSize = pageSize,
@@ -227,13 +222,11 @@ class SiteViewModel(
     }
 
     private fun getRoadList() {
-        viewModelScope.launch {
-            try {
-                val result = UniCallbackService.parseDataNewSuspend(
-                    siteService.getRoadList()
-                )
-                _siteRoadInfo.value = result
-            } catch (e: Exception) { e.printStackTrace() }
+        launchDirect {
+            val result = UniCallbackService.parseDataNewSuspend(
+                siteService.getRoadList()
+            )
+            _siteRoadInfo.value = result
         }
     }
 }

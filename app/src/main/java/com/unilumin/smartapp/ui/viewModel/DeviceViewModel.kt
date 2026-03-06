@@ -3,7 +3,6 @@ package com.unilumin.smartapp.ui.viewModel
 import android.app.Application
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -32,13 +31,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class DeviceViewModel(
     retrofitClient: RetrofitClient, application: Application
-) : AndroidViewModel(application) {
+) : BaseViewModel(application) {
 
     private val deviceService = retrofitClient.getService(DeviceService::class.java)
     private val _totalCount = MutableStateFlow<Int>(0)
@@ -72,9 +70,6 @@ class DeviceViewModel(
 
     @RequiresApi(Build.VERSION_CODES.O)
     val timeFormat: DateTimeFormatter? = DateTimeFormatter.ofPattern("HH:mm:ss")
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading = _isLoading.asStateFlow()
 
     private val _propertiesList = MutableStateFlow<List<DeviceModelData>>(emptyList())
     private val _devicePropertiesDataList = MutableStateFlow<List<DeviceModelData>>(emptyList())
@@ -236,19 +231,6 @@ class DeviceViewModel(
         )
         _totalCount.value = parseDataNewSuspend?.total!!
         return parseDataNewSuspend.list
-    }
-
-    fun launchWithLoading(consumer: suspend () -> Unit) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                consumer()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                _isLoading.value = false
-            }
-        }
     }
 
     fun deviceStatusAnalysis() {
