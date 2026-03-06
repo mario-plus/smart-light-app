@@ -19,9 +19,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.ImageLoader
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_CTL_SCHEDULE
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_DEV_MANAGE
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_FILE_MANAGE
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_GROUP_MANAGE
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_PLAY_SCHEDULE
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_SCHEDULE_MANAGE
@@ -39,13 +41,13 @@ import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartLedScreen(
+    imageLoader: ImageLoader,
     retrofitClient: RetrofitClient, onBack: () -> Unit,
     /**跳转至新页面*/
     toNew: (ScreenViewModel) -> Unit
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
-
     val systemViewModel: SystemViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return SystemViewModel(retrofitClient, application) as T
@@ -110,6 +112,12 @@ fun SmartLedScreen(
                     screenViewModel.updateSearch("")
                     screenViewModel.updateType(1)
                     SmartLedCtlPlanManage(screenViewModel)
+                }
+                SMART_LED_FILE_MANAGE->{
+                    screenViewModel.updateSearch("")
+                    screenViewModel.updateFileStatus(-1)
+                    screenViewModel.updateFileType(-1)
+                    SmartLedFileManage(screenViewModel,imageLoader)
                 }
                 //播放方案
                 SMART_LED_PLAY_SCHEDULE -> {

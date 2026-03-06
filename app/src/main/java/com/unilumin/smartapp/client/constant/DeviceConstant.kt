@@ -85,43 +85,30 @@ object DeviceConstant {
     //控制方案
     const val SMART_LED_CTL_SCHEDULE = "ledCtlSchedule"
 
+    //素材管理
+    const val SMART_LED_FILE_MANAGE = "ledFileManage"
+
     //播放方案
     const val SMART_LED_PLAY_SCHEDULE = "ledPlaySchedule"
 
     val SMART_LED_FUNC_LIST = listOf<SystemConfig>(
         SystemConfig(
-            SMART_LED_DEV_MANAGE,
-            "播放盒管理",
-            getIconForName(SMART_LED_DEV_MANAGE),
-            true
+            SMART_LED_DEV_MANAGE, "播放盒管理", getIconForName(SMART_LED_DEV_MANAGE), true
         ),
-
         SystemConfig(
-            SMART_LED_SCHEDULE_MANAGE,
-            "播放表管理",
-            getIconForName(SMART_LED_SCHEDULE_MANAGE),
-            true
+            SMART_LED_SCHEDULE_MANAGE, "播放表管理", getIconForName(SMART_LED_SCHEDULE_MANAGE), true
         ),
-
         SystemConfig(
-            SMART_LED_GROUP_MANAGE,
-            "分组管理",
-            getIconForName(SMART_LED_GROUP_MANAGE),
-            true
+            SMART_LED_GROUP_MANAGE, "分组管理", getIconForName(SMART_LED_GROUP_MANAGE), true
         ),
-
         SystemConfig(
-            SMART_LED_CTL_SCHEDULE,
-            "控制方案",
-            getIconForName(SMART_LED_CTL_SCHEDULE),
-            true
+            SMART_LED_CTL_SCHEDULE, "控制方案", getIconForName(SMART_LED_CTL_SCHEDULE), true
         ),
-
         SystemConfig(
-            SMART_LED_PLAY_SCHEDULE,
-            "播放方案",
-            getIconForName(SMART_LED_PLAY_SCHEDULE),
-            true
+            SMART_LED_PLAY_SCHEDULE, "播放方案", getIconForName(SMART_LED_PLAY_SCHEDULE), true
+        ),
+        SystemConfig(
+            SMART_LED_FILE_MANAGE, "素材管理", getIconForName(SMART_LED_FILE_MANAGE), true
         ),
     )
 
@@ -245,6 +232,23 @@ object DeviceConstant {
 
     val groupDeviceBindOptions = listOf(-1 to "全部", 1 to "已绑定", 0 to "未绑定")
     val alarmConfirmOptions = listOf(1 to "已确认", 0 to "未确认")
+
+    val fileTypeOptions = listOf(
+        -1 to "全部",
+        1 to "视频",
+        2 to "音频",
+        3 to "图片",
+        4 to "文件",
+        5 to "文本"
+    )
+    val fileTypeOptionsTransform = mapOf(
+        1 to "video",
+        2 to "audio",
+        3 to "image",
+        4 to "document",
+        5 to "txt"
+    )
+    val fileStatusOptions = listOf(-1 to "全部", 1 to "审核中", 2 to "已通过", 3 to "未通过")
 
     //双色温单灯产品id
     val colorTempSupportedList = listOf("107", "125")

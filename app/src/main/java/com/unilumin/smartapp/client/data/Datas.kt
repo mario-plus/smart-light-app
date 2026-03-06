@@ -1164,3 +1164,101 @@ data class RealTimeDataTs(
     val value: String,
     val ts: Long
 )
+
+data class LedMaterialInfoVO(
+
+    //主键id
+    var id: Long,
+
+    //名称
+    var name: String? = null,
+
+    //1-目录 2-素材
+    var type: Int? = null,
+
+    //文件后缀，即文件格式
+    var suffix: String? = null,
+
+    //文件大小（字节）
+    var size: Long? = null,
+
+    //分辨率
+    var resolution: String? = null,
+
+    //文件相对路径
+    var relativePath: String? = null,
+
+    //视频封面路径
+    var videoCoverPath: String? = null,
+
+    //文本素材内容
+    var txtContent: String? = null,
+
+    //视频时长（单位秒）
+    var videoTime: Long? = null,
+
+    //审核人员
+    var reviewBy: String? = null,
+
+    //审核策略
+    var reviewStrategy: String? = null,
+
+    //审核状态：0-待审核，1-审核中，2-审核通过，3-审核不通过，4-申诉中
+    var reviewStatus: Int? = null,
+
+    //审核结果
+    var reviewResult: String? = null,
+
+    //审核时间
+    var reviewTime: String? = null,
+
+    //是否可以审核 0-不可以 1-可以
+    var canReview: Int? = null,
+
+    //是否可以申诉 0-不可以 1-可以
+    var canAppeal: Int? = null,
+
+    //是否可以申诉批复 0-不可以 1-可以
+    var canAppealReply: Int? = null,
+
+    //创建时间
+    var createTime: String? = null,
+
+    //创建者名称
+    var creatorName: String? = null,
+
+    //转码状态 0未转码  1转码中 2已转码
+    var transCodingStatus: Int? = null,
+
+    //审核流程日志
+    var reviewProcessLog: String? = null,
+
+    //AI审核违规详情
+    var violationDetail: String? = null,
+
+    //AI审核违规视频的截图
+    var violationImages: String? = null,
+
+    //审核流程 1-多级审核 2-AI+人工审核 3-人工审核 4-无审核
+    var reviewProcessId: Long? = null,
+)
+
+data class LedFileReq(
+    val keyword: String,
+    val curPage: Int,
+    val pageSize: Int,
+    val materialType: String? = null,//素材类型 video-视频 image-图片 txt-文本 document-文档
+    val reviewStatus: Int? = null,//审核状态 0-待审核，1-审核中，2-审核通过，3-审核不通过
+    val queryType: Int? = 1,//素材管理(只查询上传者(超级管理员不限制)上传的素材，且可以查询素材和目录)
+    val parentId: Long? = 0
+)
+
+/**
+ * 4个参数
+ * */
+data class Quadruple<out A, out B, out C, out D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D
+)

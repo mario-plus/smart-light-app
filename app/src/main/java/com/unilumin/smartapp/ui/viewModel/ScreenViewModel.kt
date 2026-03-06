@@ -1,19 +1,23 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.cachedIn
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
+import com.unilumin.smartapp.client.constant.DeviceConstant.fileTypeOptionsTransform
 import com.unilumin.smartapp.client.data.LedDevGroupRes
+import com.unilumin.smartapp.client.data.LedFileReq
+import com.unilumin.smartapp.client.data.LedMaterialInfoVO
 import com.unilumin.smartapp.client.data.LedPageBO
 import com.unilumin.smartapp.client.data.LedPlanBO
 import com.unilumin.smartapp.client.data.LedProgramRequest
 import com.unilumin.smartapp.client.data.LedProgramRes
+import com.unilumin.smartapp.client.data.Quadruple
 import com.unilumin.smartapp.client.service.ScreenService
+import com.unilumin.smartapp.client.service.UserService
 import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -29,10 +33,11 @@ import kotlinx.coroutines.flow.flatMapLatest
  * */
 class ScreenViewModel(
     retrofitClient: RetrofitClient, application: Application
-) : AndroidViewModel(application) {
+) : BaseViewModel(application) {
 
 
     private val screenService = retrofitClient.getService(ScreenService::class.java)
+    private val userService = retrofitClient.getService(UserService::class.java)
 
     //分页数据总数
     private val _totalCount = MutableStateFlow<Int>(0)
@@ -57,6 +62,24 @@ class ScreenViewModel(
     }
 
 
+    //video,audio,image,document,txt
+    val fileType = MutableStateFlow(-1)
+    fun updateFileType(type: Int) {
+        fileType.value = type
+    }
+
+
+    val parentId = MutableStateFlow(0L)
+    fun updateParentId(type: Long) {
+        parentId.value = type
+    }
+
+    //素材审核状态
+    val fileStatus = MutableStateFlow(-1)
+    fun updateFileStatus(status: Int) {
+        fileStatus.value = status
+    }
+
     //关键词
     val searchQuery = MutableStateFlow("")
     fun updateSearch(query: String) {
@@ -68,87 +91,92 @@ class ScreenViewModel(
      * 播放盒分页数据
      * */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val ledDevPagingFlow =
-        combine(state, searchQuery) { state, keywords ->
-            Pair(state, keywords)
-        }.flatMapLatest { (state, keywords) ->
-            Pager(
-                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
-                pagingSourceFactory = {
-                    GenericPagingSource { page, pageSize ->
-                        getLedInfo(
-                            state = state,
-                            searchQuery = keywords,
-                            page = page,
-                            pageSize = pageSize
-                        )
-                    }
-                }).flow
-        }.cachedIn(viewModelScope)
+    val ledDevPagingFlow = combine(state, searchQuery) { state, keywords ->
+        Pair(state, keywords)
+    }.flatMapLatest { (state, keywords) ->
+        Pager(
+            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+            pagingSourceFactory = {
+                GenericPagingSource { page, pageSize ->
+                    getLedInfo(
+                        state = state, searchQuery = keywords, page = page, pageSize = pageSize
+                    )
+                }
+            }).flow
+    }.cachedIn(viewModelScope)
 
     /**
      * 播放表分页数据
      * */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val ledProgramPagingFlow =
-        combine(checkState, searchQuery) { checkState, keywords ->
-            Pair(checkState, keywords)
-        }.flatMapLatest { (checkState, keywords) ->
-            Pager(
-                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
-                pagingSourceFactory = {
-                    GenericPagingSource { page, pageSize ->
-                        getLedProgram(
-                            checkState = checkState,
-                            searchQuery = keywords,
-                            page = page,
-                            pageSize = pageSize
-                        )
-                    }
-                }).flow
-        }.cachedIn(viewModelScope)
+    val ledProgramPagingFlow = combine(checkState, searchQuery) { checkState, keywords ->
+        Pair(checkState, keywords)
+    }.flatMapLatest { (checkState, keywords) ->
+        Pager(
+            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+            pagingSourceFactory = {
+                GenericPagingSource { page, pageSize ->
+                    getLedProgram(
+                        checkState = checkState,
+                        searchQuery = keywords,
+                        page = page,
+                        pageSize = pageSize
+                    )
+                }
+            }).flow
+    }.cachedIn(viewModelScope)
 
     /**
      * 分组管理分页数据
      * */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val ledGroupPagingFlow =
-        searchQuery.flatMapLatest { keywords ->
-            Pager(
-                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
-                pagingSourceFactory = {
-                    GenericPagingSource { page, pageSize ->
-                        getLedGroup(
-                            searchQuery = keywords,
-                            page = page,
-                            pageSize = pageSize
-                        )
-                    }
+    val ledGroupPagingFlow = searchQuery.flatMapLatest { keywords ->
+        Pager(
+            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+            pagingSourceFactory = {
+                GenericPagingSource { page, pageSize ->
+                    getLedGroup(
+                        searchQuery = keywords, page = page, pageSize = pageSize
+                    )
                 }
-            ).flow
-        }.cachedIn(viewModelScope)
+            }).flow
+    }.cachedIn(viewModelScope)
 
     /**
      * 方案管理分页数据
      * */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val ledPlanPagingFlow =
-        combine(planType, searchQuery) { planType, keywords ->
-            Pair(planType, keywords)
-        }.flatMapLatest { (planType, keywords) ->
-            Pager(
-                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
-                pagingSourceFactory = {
-                    GenericPagingSource { page, pageSize ->
-                        getLedPlans(
-                            planType = planType,
-                            searchQuery = keywords,
-                            page = page,
-                            pageSize = pageSize
-                        )
-                    }
-                }).flow
-        }.cachedIn(viewModelScope)
+    val ledPlanPagingFlow = combine(planType, searchQuery) { planType, keywords ->
+        Pair(planType, keywords)
+    }.flatMapLatest { (planType, keywords) ->
+        Pager(
+            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
+            pagingSourceFactory = {
+                GenericPagingSource { page, pageSize ->
+                    getLedPlans(
+                        planType = planType,
+                        searchQuery = keywords,
+                        page = page,
+                        pageSize = pageSize
+                    )
+                }
+            }).flow
+    }.cachedIn(viewModelScope)
+
+
+    // 素材列表
+    val ledFilePagingFlow = createPagingFlow(
+        combine(fileStatus, fileType, searchQuery, parentId, ::Quadruple)
+    ) { (fileStatus, fileType, searchQuery, parentId), page, size ->
+        getLedFiles(
+            checkStatus = fileStatus,
+            fileType = fileType,
+            searchQuery = searchQuery,
+            page = page,
+            pageSize = size,
+            parentId = parentId
+        )
+    }
 
 
     suspend fun getLedInfo(
@@ -203,9 +231,7 @@ class ScreenViewModel(
     ): List<LedDevGroupRes> {
         val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
             screenService.getLedGroupList(
-                keyword = searchQuery,
-                pageSize = pageSize,
-                curPage = page
+                keyword = searchQuery, pageSize = pageSize, curPage = page
             )
         )
         val groupList = parseDataNewSuspend?.list ?: emptyList()
@@ -222,7 +248,7 @@ class ScreenViewModel(
                 }.awaitAll()
             }
         }
-          return groupList
+        return groupList
     }
 
     suspend fun getLedPlans(
@@ -233,10 +259,7 @@ class ScreenViewModel(
     ): List<LedPlanBO> {
         val pageData = UniCallbackService.parseDataNewSuspend(
             screenService.getLedPlans(
-                keyword = searchQuery,
-                pageSize = pageSize,
-                curPage = page,
-                type = planType
+                keyword = searchQuery, pageSize = pageSize, curPage = page, type = planType
             )
         )
         val planList = pageData?.list ?: emptyList()
@@ -255,4 +278,52 @@ class ScreenViewModel(
         }
         return planList
     }
+
+
+    suspend fun getLedFiles(
+        checkStatus: Int,
+        fileType: Int,
+        searchQuery: String,
+        page: Int,
+        pageSize: Int,
+        parentId: Long
+    ): List<LedMaterialInfoVO> {
+        val pageData = UniCallbackService.parseDataNewSuspend(
+            screenService.getLedFileList(
+                LedFileReq(
+                    keyword = searchQuery,
+                    pageSize = pageSize,
+                    curPage = page,
+                    materialType = fileType.takeIf { it != -1 }?.let { key ->
+                        fileTypeOptionsTransform[key]
+                    },
+                    reviewStatus = checkStatus.takeIf { it != -1 },
+                    parentId = parentId
+                )
+            )
+        )
+        val fileList = pageData?.list ?: emptyList()
+        _totalCount.value = pageData?.total ?: 0
+        coroutineScope {
+            fileList.map { file ->
+                async {
+                    val targetPath = file.videoCoverPath ?: file.relativePath
+                    if (!targetPath.isNullOrBlank()) {
+                        try {
+                            val minioResponse = UniCallbackService.parseDataSuspend(
+                                userService.getUserAvatarPath(targetPath)
+                            )
+                            minioResponse?.url?.let { validUrl ->
+                                file.videoCoverPath = validUrl
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            }.awaitAll()
+        }
+        return fileList
+    }
+
 }

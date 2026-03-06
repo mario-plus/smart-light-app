@@ -3,6 +3,8 @@ package com.unilumin.smartapp.client.service
 import com.unilumin.smartapp.client.constant.RequestPathKey
 import com.unilumin.smartapp.client.data.LedCtlPlanDetail
 import com.unilumin.smartapp.client.data.LedDevGroupRes
+import com.unilumin.smartapp.client.data.LedFileReq
+import com.unilumin.smartapp.client.data.LedMaterialInfoVO
 import com.unilumin.smartapp.client.data.LedPageBO
 import com.unilumin.smartapp.client.data.LedPlanBO
 import com.unilumin.smartapp.client.data.LedProgramRequest
@@ -83,17 +85,14 @@ interface ScreenService {
         @Query("id") id: Long, @Query("subSystemType") subSystemType: Int? = 3
     ): Call<NewResponseData<List<LedCtlPlanDetail>?>?>?
 
-//    /**
-//     *  素材用于制作节目，过于复杂，建议在web端制作，所以就没必要
-//     * */
-//    fun getLedFileList(
-//        @Query("keyword") keyword: String,
-//        @Query("curPage") curPage: Int,
-//        @Query("pageSize") pageSize: Int,
-//        @Query("materialType") materialType: String,//素材类型 video-视频 image-图片 txt-文本 document-文档
-//        @Query("reviewStatus") reviewStatus: Int,//审核状态 0-待审核，1-审核中，2-审核通过，3-审核不通过
-//        @Query("queryType") queryType: Int? = 1//素材管理(只查询上传者(超级管理员不限制)上传的素材，且可以查询素材和目录)
-//    ): Call<NewResponseData<PageResponse<LedPageBO>?>?>?
+
+    /**
+     * 素材列表
+     * */
+    @POST(RequestPathKey.KEY_LED_FILE_LIST)
+    fun getLedFileList(
+        @Body request: LedFileReq
+    ): Call<NewResponseData<PageResponse<LedMaterialInfoVO>?>?>?
 
 
 }

@@ -193,6 +193,7 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         //智慧屏幕
                         composable("smartPlayBoxScreen") { e ->
                             SmartLedScreen(
+                                imageLoader,
                                 retrofitClient,
                                 onBack = { navController.popBackStack() },
                                 toNew = { e ->

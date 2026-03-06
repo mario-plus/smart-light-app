@@ -28,7 +28,7 @@ object RequestPathKey {
     const val KEY_LED_LIST: String = "$SMART_LED/uni-led/led_page_list"
 
     //素材列表
-    //const val KEY_FILE_LIST: String = "$SMART_LED/ledmaterial/info/list"
+    const val KEY_LED_FILE_LIST: String = "$SMART_LED/ledmaterial/info/list"
     //播放表列表
     const val KEY_PROGRAM_LIST: String = "$SMART_LED/uni-led/led_program_list"
 

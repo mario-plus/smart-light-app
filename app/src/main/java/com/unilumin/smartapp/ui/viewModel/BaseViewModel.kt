@@ -3,9 +3,17 @@ package com.unilumin.smartapp.ui.viewModel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import com.unilumin.smartapp.util.ToastUtil
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 // 使用 open 关键字，允许其他 ViewModel 继承
@@ -56,6 +64,30 @@ open class BaseViewModel(application: Application) : AndroidViewModel(applicatio
                 }
             }
         }
+    }
+
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    protected fun <T : Any, P> createPagingFlow(
+        paramsFlow: Flow<P>,
+        pageSize: Int = 20,
+        fetcher: suspend (params: P, page: Int, pageSize: Int) -> List<T>
+    ): Flow<PagingData<T>> {
+        return paramsFlow.flatMapLatest { params ->
+            Pager(
+                config = PagingConfig(
+                    pageSize = pageSize,
+                    initialLoadSize = pageSize,
+                    prefetchDistance = 2
+                ),
+                pagingSourceFactory = {
+                    GenericPagingSource { page, size ->
+                        fetcher(params, page, size)
+                    }
+                }
+            ).flow
+        }.cachedIn(viewModelScope)
     }
 
 }
