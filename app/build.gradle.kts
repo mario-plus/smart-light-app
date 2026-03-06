@@ -92,7 +92,13 @@ dependencies {
     implementation(libs.webrtc)
 
 
+    // Coil (你可能已经有了，但需要加上 gif 扩展)
+    implementation(libs.coil.gif) // 支持 GIF
 
+    // AndroidX Media3 (ExoPlayer 替代者，处理音视频)
+    implementation(libs.androidx.media3.exoplayer.v121)
+    implementation(libs.androidx.media3.ui.v121)
+    implementation(libs.androidx.media3.datasource.okhttp)
 
 
 }

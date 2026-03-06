@@ -1,7 +1,6 @@
 package com.unilumin.smartapp.ui.components
 
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -217,13 +216,11 @@ import com.unilumin.smartapp.ui.theme.TextTitle
 import com.unilumin.smartapp.ui.theme.White
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import com.unilumin.smartapp.util.JsonUtils.parseJsonToKeyValue
+import com.unilumin.smartapp.util.TimeUtil
 import com.unilumin.smartapp.util.ToastUtil
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -678,7 +675,9 @@ fun DeviceRealDataCardModern(
                     }
                 }
                 InfoRowItem(
-                    icon = Icons.Outlined.AccessTime, label = "最近更新时间", value = data.updateTime?.takeIf { it.isNotBlank() } ?: "--"
+                    icon = Icons.Outlined.AccessTime,
+                    label = "最近更新时间",
+                    value = data.updateTime?.takeIf { it.isNotBlank() } ?: "--"
                 )
             }
         }
@@ -1001,7 +1000,7 @@ fun LineChartComponent(data: List<SequenceTsl>, modifier: Modifier = Modifier) {
         // 5. 绘制横轴 X 轴标签 (仅首尾两点)
         val xEndpoints = listOf(0, sortedData.size - 1)
         xEndpoints.forEachIndexed { i, index ->
-            val timestamp = formatTs(sortedData[index].ts, "MM-dd HH:mm")
+            val timestamp = TimeUtil.formatTs(sortedData[index].ts, "MM-dd HH:mm")
             val textLayout = textMeasurer.measure(timestamp, labelStyle)
             val xPos = points[index].x
 
@@ -1036,7 +1035,7 @@ fun LineChartComponent(data: List<SequenceTsl>, modifier: Modifier = Modifier) {
 
             // Tooltip 文字：显示完整日期时间
             val tooltipText =
-                "${formatTs(dataItem.ts, "yyyy-MM-dd HH:mm:ss")}\n数值: ${dataItem.value}"
+                "${TimeUtil.formatTs(dataItem.ts, TimeUtil.DEFAULT_PATTERN)}\n数值: ${dataItem.value}"
             val tooltipResult = textMeasurer.measure(tooltipText, tooltipStyle)
 
             val rectWidth = tooltipResult.size.width + 24f
@@ -1061,17 +1060,6 @@ fun LineChartComponent(data: List<SequenceTsl>, modifier: Modifier = Modifier) {
                 topLeft = Offset(tooltipX + 12f, tooltipY + 12f)
             )
         }
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-fun formatTs(ts: Long, pattern: String = "yyyy-MM-dd HH:mm"): String {
-    return try {
-        val instant = Instant.ofEpochMilli(ts)
-        val formatter = DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
-        instant.atZone(ZoneId.systemDefault()).format(formatter)
-    } catch (_: Exception) {
-        ""
     }
 }
 
@@ -1213,7 +1201,7 @@ fun TableRow(item: SequenceTsl, isLast: Boolean) {
             .padding(16.dp)
     ) {
         Text(
-            formatTs(item.ts),
+            TimeUtil.formatTs(item.ts),
             modifier = Modifier.weight(1.5f),
             fontSize = 14.sp,
             color = Color.DarkGray

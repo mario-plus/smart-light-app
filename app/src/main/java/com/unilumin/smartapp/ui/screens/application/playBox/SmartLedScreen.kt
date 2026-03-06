@@ -1,4 +1,4 @@
-package com.unilumin.smartapp.ui.screens.app.playBox
+package com.unilumin.smartapp.ui.screens.application.playBox
 
 import android.app.Application
 import androidx.compose.foundation.layout.Box
@@ -117,7 +117,7 @@ fun SmartLedScreen(
                     screenViewModel.updateSearch("")
                     screenViewModel.updateFileStatus(-1)
                     screenViewModel.updateFileType(-1)
-                    SmartLedFileManage(screenViewModel,imageLoader)
+                    SmartLedFileManage(screenViewModel,imageLoader,retrofitClient)
                 }
                 //播放方案
                 SMART_LED_PLAY_SCHEDULE -> {

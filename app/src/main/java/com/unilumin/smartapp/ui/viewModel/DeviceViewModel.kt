@@ -24,8 +24,8 @@ import com.unilumin.smartapp.client.data.PagingState
 import com.unilumin.smartapp.client.data.RealTimeDataTs
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.service.DeviceService
-import com.unilumin.smartapp.ui.components.formatTs
 import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
+import com.unilumin.smartapp.util.TimeUtil
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -290,7 +290,7 @@ class DeviceViewModel(
                     val matchingData = realTimeDataTs?.find { it.key == templateItem.key }
                     val newValue = matchingData?.value ?: ""
                     val updateTimeStr = matchingData?.ts?.let {
-                        formatTs(matchingData.ts, "yyyy-MM-dd HH:mm:ss")
+                        TimeUtil.formatTs(matchingData.ts, TimeUtil.DEFAULT_PATTERN)
                     } ?: ""
                     templateItem.copy(value = newValue.toString(), updateTime = updateTimeStr)
                 }

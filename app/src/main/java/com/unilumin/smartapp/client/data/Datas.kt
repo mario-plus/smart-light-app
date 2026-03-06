@@ -1191,6 +1191,8 @@ data class LedMaterialInfoVO(
     //视频封面路径
     var videoCoverPath: String? = null,
 
+    var pictureMinioUrl: String? = null,
+
     //文本素材内容
     var txtContent: String? = null,
 

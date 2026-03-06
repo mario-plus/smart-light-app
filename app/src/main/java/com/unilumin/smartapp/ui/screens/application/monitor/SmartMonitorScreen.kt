@@ -1,4 +1,4 @@
-package com.unilumin.smartapp.ui.screens.app.monitor
+package com.unilumin.smartapp.ui.screens.application.monitor
 
 import android.app.Activity
 import android.app.Application

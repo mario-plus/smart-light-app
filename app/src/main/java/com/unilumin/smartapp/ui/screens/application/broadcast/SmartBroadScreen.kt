@@ -1,4 +1,4 @@
-package com.unilumin.smartapp.ui.screens.app.broadcast
+package com.unilumin.smartapp.ui.screens.application.broadcast
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues

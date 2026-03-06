@@ -1,4 +1,4 @@
-package com.unilumin.smartapp.ui.screens.app.playBox
+package com.unilumin.smartapp.ui.screens.application.playBox
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee

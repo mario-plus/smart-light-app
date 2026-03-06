@@ -1,4 +1,4 @@
-package com.unilumin.smartapp.ui.screens.app.env
+package com.unilumin.smartapp.ui.screens.application.env
 
 import android.app.Application
 import android.os.Build

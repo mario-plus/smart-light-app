@@ -25,7 +25,6 @@ class RetrofitClient {
     }
 
 
-
     fun initRetrofit(url: String) {
         retrofit =
             Retrofit.Builder().baseUrl(url).client(client).addConverterFactory(gsonConverterFactory)
@@ -43,11 +42,13 @@ class RetrofitClient {
                     chain: Array<out X509Certificate>?, authType: String?
                 ) {
                 }
+
                 @SuppressLint("TrustAllX509TrustManager")
                 override fun checkServerTrusted(
                     chain: Array<out X509Certificate>?, authType: String?
                 ) {
                 }
+
                 override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
             })
         // 2. 配置 SSLContext
@@ -62,6 +63,12 @@ class RetrofitClient {
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             }).build()
+    }
+
+    fun getExoOkHttpClient(): OkHttpClient {
+        val builder = client.newBuilder()
+        builder.interceptors().removeAll { it is HttpLoggingInterceptor }
+        return builder.build()
     }
 
     fun getImageLoader(context: Context): ImageLoader {

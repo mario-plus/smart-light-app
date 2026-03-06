@@ -1,6 +1,8 @@
-package com.unilumin.smartapp.ui.screens.app.playBox
+package com.unilumin.smartapp.ui.screens.application.playBox
 
+import UniversalMediaViewer
 import androidx.activity.compose.BackHandler
+import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -21,13 +23,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.InsertDriveFile
 import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Slideshow
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -51,26 +56,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.fileStatusOptions
 import com.unilumin.smartapp.client.constant.DeviceConstant.fileTypeOptions
 import com.unilumin.smartapp.client.data.FolderNode
 import com.unilumin.smartapp.client.data.LedMaterialInfoVO
 import com.unilumin.smartapp.ui.components.DeviceStatus
+import com.unilumin.smartapp.ui.components.InfoRowItem
 import com.unilumin.smartapp.ui.components.ModernStateSelector
 import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchHeader
 import com.unilumin.smartapp.ui.viewModel.ScreenViewModel
-
+import com.unilumin.smartapp.util.TimeUtil.formatIsoTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartLedFileManage(
-    screenViewModel: ScreenViewModel, imageLoader: ImageLoader
+    screenViewModel: ScreenViewModel, imageLoader: ImageLoader, retrofitClient: RetrofitClient
 ) {
     val searchQuery by screenViewModel.searchQuery.collectAsState()
     val fileType by screenViewModel.fileType.collectAsState()
@@ -81,11 +90,18 @@ fun SmartLedFileManage(
     // 维护一个文件夹的导航路径栈，初始化为根目录
     var folderStack by remember { mutableStateOf(listOf(FolderNode(0L, "全部文件"))) }
 
-    // 拦截物理返回键：如果当前不在根目录，点击返回键则是返回上一级文件夹
-    BackHandler(enabled = folderStack.size > 1) {
-        val newStack = folderStack.dropLast(1)
-        folderStack = newStack
-        screenViewModel.updateParentId(newStack.last().id)
+    // 用于控制全屏媒体预览的状态
+    var previewFile by remember { mutableStateOf<LedMaterialInfoVO?>(null) }
+
+
+    BackHandler(enabled = folderStack.size > 1 || previewFile != null) {
+        if (previewFile != null) {
+            previewFile = null
+        } else {
+            val newStack = folderStack.dropLast(1)
+            folderStack = newStack
+            screenViewModel.updateParentId(newStack.last().id)
+        }
     }
 
     Column(
@@ -116,6 +132,7 @@ fun SmartLedFileManage(
                 onValueChange = { newValue ->
                     screenViewModel.updateFileStatus(newValue)
                 })
+
             if (folderStack.size > 1) {
                 BreadcrumbRow(
                     folderStack = folderStack,
@@ -154,10 +171,80 @@ fun SmartLedFileManage(
                             folderStack = folderStack + FolderNode(targetId, targetName)
                             screenViewModel.updateParentId(targetId)
                         } else {
-                            // 这里可以处理普通文件的点击事件 (如预览、全屏等)
+                            // 点击普通文件，触发全屏预览弹窗
+                            previewFile = file
                         }
                     }
                 )
+            }
+        }
+    }
+
+    // 全屏媒体预览弹窗
+    if (previewFile != null) {
+        Dialog(
+            onDismissRequest = { previewFile = null },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false, // 允许填满屏幕
+                dismissOnBackPress = true
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            ) {
+                // 记录真实的 URL 和 加载状态
+                var realMediaUrl by remember { mutableStateOf<String?>(null) }
+                var isFetchingUrl by remember { mutableStateOf(true) }
+
+                // 当 previewFile 发生变化时，启动协程去获取真实的 URL
+                LaunchedEffect(previewFile) {
+                    isFetchingUrl = true
+                    val rawPath = previewFile?.relativePath
+                    if (!rawPath.isNullOrBlank()) {
+                        realMediaUrl = screenViewModel.getMinioUrl(rawPath)
+                    }
+                    isFetchingUrl = false
+                }
+                if (isFetchingUrl) {
+                    // 1. 正在获取 URL，显示 Loading 圈
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color.White
+                    )
+                } else if (!realMediaUrl.isNullOrBlank()) {
+                    // 2. 获取成功，使用 UniversalMediaViewer 播放
+                    UniversalMediaViewer(
+                        modifier = Modifier.fillMaxSize(),
+                        url = realMediaUrl!!,
+                        suffix = previewFile?.suffix,
+                        imageLoader = imageLoader,
+                        okHttpClient = retrofitClient.getExoOkHttpClient()
+                    )
+                } else {
+                    // 3. 获取失败或路径为空时的兜底提示
+                    Text(
+                        text = "获取文件地址失败",
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                // 右上角关闭按钮 (悬浮在最上层)
+                IconButton(
+                    onClick = { previewFile = null },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .background(Color.Black.copy(alpha = 0.5f), shape = RoundedCornerShape(50))
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = "关闭预览",
+                        tint = Color.White
+                    )
+                }
             }
         }
     }
@@ -181,7 +268,7 @@ fun BreadcrumbRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)) // 浅灰背景区分层级
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         IconButton(
@@ -219,7 +306,9 @@ fun BreadcrumbRow(
                         imageVector = Icons.Rounded.ChevronRight,
                         contentDescription = "分隔符",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp).padding(horizontal = 2.dp)
+                        modifier = Modifier
+                            .size(18.dp)
+                            .padding(horizontal = 2.dp)
                     )
                 }
             }
@@ -295,7 +384,7 @@ fun LedMaterialCard(
             }
 
             if (!isFileDirectory) {
-                val imageUrl = item.videoCoverPath
+                val imageUrl = item.pictureMinioUrl
                 Spacer(modifier = Modifier.height(12.dp))
                 if (!imageUrl.isNullOrBlank() && !imageLoadError) {
                     AsyncImage(
@@ -319,9 +408,13 @@ fun LedMaterialCard(
                     DefaultFileCover(suffix = item.suffix)
                 }
             }
+            Spacer(modifier = Modifier.height(12.dp))
+            val formattedTime = formatIsoTime(item.createTime)
+            InfoRowItem(Icons.Rounded.Schedule, "创建时间", formattedTime)
         }
     }
 }
+
 
 /**
  * 提取独立的默认封面组件
@@ -334,14 +427,22 @@ fun DefaultFileCover(suffix: String?) {
     val (fileIcon, bgColor, iconTint) = when (safeSuffix) {
         "txt", "doc", "docx", "pdf" ->
             Triple(Icons.Rounded.Description, Color(0xFFE3F2FD), Color(0xFF1976D2))
+
         "ppt", "pptx" ->
             Triple(Icons.Rounded.Slideshow, Color(0xFFFFEBEE), Color(0xFFD32F2F))
+
         "mp3", "wav", "flac", "aac" ->
             Triple(Icons.Rounded.MusicNote, Color(0xFFFFF8E1), Color(0xFFF57F17))
+
         "mp4", "avi", "mkv", "mov" ->
             Triple(Icons.Rounded.Movie, Color(0xFFF3E5F5), Color(0xFF7B1FA2))
+
         else ->
-            Triple(Icons.Rounded.InsertDriveFile, MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
+            Triple(
+                Icons.Rounded.InsertDriveFile,
+                MaterialTheme.colorScheme.surfaceVariant,
+                MaterialTheme.colorScheme.onSurfaceVariant
+            )
     }
 
     Box(

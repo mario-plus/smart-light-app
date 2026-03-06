@@ -1,4 +1,4 @@
-package com.unilumin.smartapp.ui.screens.app.lamp
+package com.unilumin.smartapp.ui.screens.application.lamp
 
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable

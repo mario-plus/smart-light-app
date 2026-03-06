@@ -279,7 +279,6 @@ class ScreenViewModel(
         return planList
     }
 
-
     suspend fun getLedFiles(
         checkStatus: Int,
         fileType: Int,
@@ -307,23 +306,30 @@ class ScreenViewModel(
         coroutineScope {
             fileList.map { file ->
                 async {
+                    //获取封面
                     val targetPath = file.videoCoverPath ?: file.relativePath
-                    if (!targetPath.isNullOrBlank()) {
-                        try {
-                            val minioResponse = UniCallbackService.parseDataSuspend(
-                                userService.getUserAvatarPath(targetPath)
-                            )
-                            minioResponse?.url?.let { validUrl ->
-                                file.videoCoverPath = validUrl
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
+                    val realUrl = getMinioUrl(targetPath)
+                    if (realUrl != null) {
+                        file.pictureMinioUrl = realUrl
                     }
                 }
             }.awaitAll()
         }
         return fileList
+    }
+
+
+    suspend fun getMinioUrl(targetPath: String?): String? {
+        if (targetPath.isNullOrBlank()) return null
+        return try {
+            val minioResponse = UniCallbackService.parseDataSuspend(
+                userService.getUserAvatarPath(targetPath)
+            )
+            minioResponse?.url
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
 }
