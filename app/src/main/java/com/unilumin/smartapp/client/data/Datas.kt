@@ -1262,3 +1262,6 @@ data class Quadruple<out A, out B, out C, out D>(
     val third: C,
     val fourth: D
 )
+
+// 用于记录路径层级的数据结构
+data class FolderNode(val id: Long, val name: String)
