@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -56,6 +57,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
@@ -77,7 +79,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.FilterList
-import androidx.compose.material.icons.rounded.KeyboardDoubleArrowUp
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.List
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Person
@@ -95,7 +97,6 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -106,7 +107,6 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -1035,7 +1035,12 @@ fun LineChartComponent(data: List<SequenceTsl>, modifier: Modifier = Modifier) {
 
             // Tooltip 文字：显示完整日期时间
             val tooltipText =
-                "${TimeUtil.formatTs(dataItem.ts, TimeUtil.DEFAULT_PATTERN)}\n数值: ${dataItem.value}"
+                "${
+                    TimeUtil.formatTs(
+                        dataItem.ts,
+                        TimeUtil.DEFAULT_PATTERN
+                    )
+                }\n数值: ${dataItem.value}"
             val tooltipResult = textMeasurer.measure(tooltipText, tooltipStyle)
 
             val rectWidth = tooltipResult.size.width + 24f
@@ -1486,6 +1491,8 @@ fun UsageLinearBar(label: String, usage: Double) {
  * @param verticalArrangement 垂直边距
  * @param emptyMessage 空状态提示词
  * @param itemContent 业务布局，如DeviceCardItem，SiteCardItem
+ * @param onAddClick 悬浮按钮
+ * @param addText 悬浮按钮名称
  * */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1494,158 +1501,153 @@ fun <T : Any> PagingList(
     modifier: Modifier = Modifier,
     totalCount: Int? = null,
     forceLoading: Boolean = false,
-    listState: LazyListState = rememberLazyListState(), // 允许外部传入 state，也可以内部默认
+    listState: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(16.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(12.dp),
     emptyMessage: String = "暂无相关数据",
     itemKey: ((T) -> Any)? = null,
+    onAddClick: (() -> Unit)? = null,
+    addText: String = "新增",
     itemContent: @Composable (T) -> Unit
 ) {
     val refreshState = lazyPagingItems.loadState.refresh
     val shouldShowFullLoading =
         forceLoading || (refreshState is LoadState.Loading && lazyPagingItems.itemCount == 0)
-
-    // 协程作用域，用于控制滚动
     val scope = rememberCoroutineScope()
-
-    // 计算是否显示“回到顶部”按钮 (当第一个可见项索引 > 5 时显示)
-    val showScrollToTop by remember {
+    val isScrolledDown by remember {
         derivedStateOf {
-            listState.firstVisibleItemIndex > 5
+            listState.firstVisibleItemIndex > 2
         }
     }
-
-    // 头部提示显隐逻辑
+    val showScrollToTop = isScrolledDown
+    val isFabExpanded = !isScrolledDown
     var showHeader by remember { mutableStateOf(false) }
     LaunchedEffect(totalCount, refreshState) {
         if (totalCount != null && totalCount > 0 && refreshState is LoadState.NotLoading) {
             showHeader = true
-            delay(2000) // 稍微延长一点展示时间
+            delay(2000)
             showHeader = false
         }
     }
+
     Box(modifier = modifier.fillMaxSize()) {
         PullToRefreshBox(
             isRefreshing = refreshState is LoadState.Loading && !shouldShowFullLoading,
             onRefresh = { lazyPagingItems.refresh() },
             modifier = Modifier.fillMaxSize()
         ) {
-            LoadingContent(shouldShowFullLoading) {
-                LazyColumn(
-                    state = listState,
-                    contentPadding = contentPadding,
-                    verticalArrangement = verticalArrangement,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    item(key = "header_total_count") {
-                        AnimatedVisibility(
-                            visible = showHeader,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
-                        ) {
-                            if (totalCount != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(
-                                            bottom = 8.dp, start = 16.dp, end = 16.dp
-                                        ), // 左右留白，不要贴边
-                                    contentAlignment = Alignment.Center
+            LazyColumn(
+                state = listState,
+                contentPadding = contentPadding,
+                verticalArrangement = verticalArrangement,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                item(key = "header_total_count") {
+                    AnimatedVisibility(
+                        visible = showHeader,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        if (totalCount != null) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                    ),
+                                    shape = RoundedCornerShape(50),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Surface(
-                                        // --- 核心修改：改为浅色清爽风格 ---
-                                        // 背景：使用主色调的 10% 透明度，形成极淡的背景
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                        // 边框：加一个 20% 透明度的细边框，增加层次感
-                                        border = BorderStroke(
-                                            1.dp,
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                        ),
-                                        shape = RoundedCornerShape(50), // 改为全圆角(胶囊状)或 RoundedCornerShape(8.dp)
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Text(
-                                            text = "成功加载 $totalCount 条数据",
-                                            modifier = Modifier.padding(vertical = 8.dp),
-                                            textAlign = TextAlign.Center,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Medium,
-                                            // 文字：使用高亮主色，与淡背景形成对比
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
+                                    Text(
+                                        text = "成功加载 $totalCount 条数据",
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        textAlign = TextAlign.Center,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
                                 }
                             }
                         }
                     }
+                }
+                items(
+                    count = lazyPagingItems.itemCount,
+                    key = if (itemKey != null) lazyPagingItems.itemKey { itemKey(it) } else null
+                ) { index ->
+                    lazyPagingItems[index]?.let { itemContent(it) }
+                }
 
-                    // --- Content: 列表内容 ---
-                    items(
-                        count = lazyPagingItems.itemCount,
-                        key = if (itemKey != null) lazyPagingItems.itemKey { itemKey(it) } else null) { index ->
-                        lazyPagingItems[index]?.let { itemContent(it) }
-                    }
-                    lazyPagingItems.apply {
-                        when {
-                            loadState.append is LoadState.Loading -> {
-                                item {
-                                    Box(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp), Alignment.Center
+                lazyPagingItems.apply {
+                    when {
+                        loadState.append is LoadState.Loading -> {
+                            item {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp), Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        Modifier.size(20.dp),
+                                        strokeWidth = 2.dp,
+                                        color = Color(0xFF2979FF) // 统一调色
+                                    )
+                                }
+                            }
+                        }
+
+                        loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
+                            item {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text("加载失败", color = Color.Gray, fontSize = 14.sp)
+                                    Button(
+                                        onClick = { retry() },
+                                        modifier = Modifier.padding(top = 8.dp)
                                     ) {
-                                        CircularProgressIndicator(
-                                            Modifier.size(20.dp), // 稍微缩小一点更精致
-                                            strokeWidth = 2.dp,
-                                            color = MaterialTheme.colorScheme.primary
+                                        Text("重试")
+                                    }
+                                }
+                            }
+                        }
+
+                        loadState.refresh is LoadState.NotLoading && itemCount == 0 -> {
+                            item {
+                                Box(
+                                    modifier = Modifier.fillParentMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(emptyMessage, color = Color.Gray)
+                                }
+                            }
+                        }
+
+                        loadState.append.endOfPaginationReached && itemCount > 0 -> {
+                            item {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 24.dp),
+                                    Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "— 到底啦，没有更多数据了 —",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = 0.6f
                                         )
-                                    }
-                                }
-                            }
-
-                            loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
-                                item {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        verticalArrangement = Arrangement.Center,
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text("加载失败", color = Color.Gray, fontSize = 14.sp)
-                                        Button(
-                                            onClick = { retry() },
-                                            modifier = Modifier.padding(top = 8.dp)
-                                        ) {
-                                            Text("重试")
-                                        }
-                                    }
-                                }
-                            }
-
-                            loadState.refresh is LoadState.NotLoading && itemCount == 0 -> {
-                                item {
-                                    EmptyDataView(message = emptyMessage)
-                                }
-                            }
-
-                            // 4. 底线 (已加载全部)
-                            loadState.append.endOfPaginationReached && itemCount > 0 -> {
-                                item {
-                                    Box(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 24.dp), // 增加底部边距
-                                        Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "— 到底啦，没有更多数据了 —",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                                alpha = 0.6f
-                                            )
-                                        )
-                                    }
+                                    )
                                 }
                             }
                         }
@@ -1653,38 +1655,76 @@ fun <T : Any> PagingList(
                 }
             }
         }
-
-        AnimatedVisibility(
-            visible = showScrollToTop,
-            enter = scaleIn(spring(stiffness = Spring.StiffnessLow)) + fadeIn(),
-            exit = scaleOut() + fadeOut(),
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = 40.dp)
+                .padding(end = 16.dp, bottom = 32.dp),
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SmallFloatingActionButton(
-                onClick = {
-                    scope.launch {
-                        listState.animateScrollToItem(0)
-                    }
-                },
-                containerColor = Color(0xFFF2F4F7),
-                contentColor = Color(0xFF42A5F5),
-                shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 6.dp, pressedElevation = 2.dp
-                )
+            AnimatedVisibility(
+                visible = showScrollToTop,
+                enter = scaleIn(spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(),
+                exit = scaleOut(spring(stiffness = Spring.StiffnessMediumLow)) + fadeOut()
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.KeyboardDoubleArrowUp,
-                    contentDescription = "回到顶部",
-                    modifier = Modifier.size(20.dp)
+                Surface(
+                    onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                    modifier = Modifier.size(44.dp), // 【强制尺寸】精确到 44dp 的正圆
+                    shape = CircleShape,
+                    color = Color(0xFFF0F4F8).copy(alpha = 0.9f), // 轻微半透明的灰白底色
+                    contentColor = Color(0xFF5F6368),
+                    shadowElevation = 2.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            imageVector = Icons.Rounded.KeyboardArrowUp,
+                            contentDescription = "回到顶部",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
+            if (onAddClick != null) {
+                val horizontalPadding by animateDpAsState(
+                    targetValue = if (isFabExpanded) 16.dp else 0.dp,
+                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                    label = "fab_padding"
                 )
+                Surface(
+                    onClick = onAddClick,
+                    modifier = Modifier.height(44.dp),
+                    shape = CircleShape,
+                    color = Color(0xFF2979FF).copy(alpha = 0.15f),
+                    contentColor = Color(0xFF2979FF),
+                    shadowElevation = 0.dp
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .widthIn(min = 44.dp)
+                            .padding(horizontal = horizontalPadding)
+                            .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = addText,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        if (isFabExpanded) {
+                            Text(
+                                text = addText,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
-
 
 @Composable
 fun TimeFilterSegment(selectedType: Int, onTypeSelected: (Int) -> Unit) {
