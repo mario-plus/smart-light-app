@@ -1081,14 +1081,9 @@ data class LedDevGroupRes(
 )
 
 data class LedPlanBO(
-    val id: Long,
-    val name: String?,
-    val startDate: String?,
-    val endDate: String?,
+    val id: Long, val name: String?, val startDate: String?, val endDate: String?,
     //周限值，中间用英文逗号分隔，7个值，分别表示星期一到星期天：1执行 0不执行
-    val weekValue: String?,
-    val createTime: String?,
-    val updateTime: String?,
+    val weekValue: String?, val createTime: String?, val updateTime: String?,
     //类型：1.指令(控制) 2.节目(播放)
     val type: Int?,
     //执行时间，HH:mm:ss
@@ -1104,8 +1099,7 @@ data class LedPlanBO(
     //节目播放类型 100插播 200轮播
     val programPlayType: Int?,
     //节目优先级 0~100，同一个终端时，多个优先级必须不一样
-    val programSort: Int?,
-    val programId: String?,
+    val programSort: Int?, val programId: String?,
     //节目名称
     val programName: String?,
     //是否有时间，0否1是
@@ -1160,9 +1154,7 @@ data class PlayBoxDeviceBO(
 )
 
 data class RealTimeDataTs(
-    val key: String,
-    val value: String,
-    val ts: Long
+    val key: String, val value: String, val ts: Long
 )
 
 data class LedMaterialInfoVO(
@@ -1259,11 +1251,33 @@ data class LedFileReq(
  * 4个参数
  * */
 data class Quadruple<out A, out B, out C, out D>(
-    val first: A,
-    val second: B,
-    val third: C,
-    val fourth: D
+    val first: A, val second: B, val third: C, val fourth: D
 )
 
 // 用于记录路径层级的数据结构
 data class FolderNode(val id: Long, val name: String)
+
+
+//智慧路灯分组产品类型
+data class LampGroupProduct(
+    val id: Long, val productTypeId: Long, val name: String, val mode: String, val protocolId: Int
+)
+
+//创建分组
+data class CreateGroupDTO(
+    var groupName: String,
+    var productId: Long? = null,
+    //所属设备
+    var deviceId: Long? = null,
+    //所属设备集合，当productId=5603，即洲明回路控制器时，可以多选灯控网关设备
+    var deviceIds: List<Long>? = emptyList<Long>(),
+    var description: String? = null,
+    var subSystemType: Int? = 1,
+    var type: String? = null
+)
+
+//网关信息
+data class DevSimpleInfo(
+    val id: Long,
+    val deviceName: String? = null
+)

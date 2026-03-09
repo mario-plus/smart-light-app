@@ -1,6 +1,8 @@
 package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
+import com.unilumin.smartapp.client.data.CreateGroupDTO
+import com.unilumin.smartapp.client.data.DevSimpleInfo
 import com.unilumin.smartapp.client.data.DeviceAlarmInfo
 import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.GroupMemberInfo
@@ -15,6 +17,7 @@ import com.unilumin.smartapp.client.data.LampJobInfo
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampLoopCtlInfo
 import com.unilumin.smartapp.client.data.LampStrategyInfo
+import com.unilumin.smartapp.client.data.LampGroupProduct
 import com.unilumin.smartapp.client.data.LightDayEnergy
 import com.unilumin.smartapp.client.data.LightEnergy
 import com.unilumin.smartapp.client.data.LightYearEnergy
@@ -111,16 +114,32 @@ interface RoadService {
     @POST(RequestPathKey.KEY_LAMP_CTL)
     fun lampCtl(@Body lampCtlReq: LampCtlReq): Call<NewResponseData<String?>?>?
 
-    //uni_light_groupCtl
+    //单灯控制
     @POST(RequestPathKey.KEY_GROUP_CTL)
     fun groupCtl(@Body lampCtlReq: LampCtlReq): Call<NewResponseData<String?>?>?
 
+    //回路控制
     @PUT(RequestPathKey.KEY_LOOP_CTL)
     fun loopCtl(@Body loopCtlReq: LoopCtlReq): Call<NewResponseData<String?>?>?
 
+    //分组成员
     @POST(RequestPathKey.KEY_GET_GROUP_MEMBER)
     fun getGroupMembers(@Body groupReq: GroupMemberReq): Call<NewResponseData<PageResponse<GroupMemberInfo>?>?>?
 
 
+    //分组产品
+    @GET(RequestPathKey.KEY_GET_GROUP_PRODUCT)
+    fun getGroupProduct(
+        @Query("productTypeId") productTypeId: Int? = 25,
+        @Query("subSystemType") subSystemType: Int? = 1
+    ): Call<NewResponseData<List<LampGroupProduct>?>?>?
+
+    @POST(RequestPathKey.KEY_GET_GROUP_CREATE)
+    fun createGroup(@Body requestBody: CreateGroupDTO): Call<NewResponseData<Void?>?>?
+
+    @GET(RequestPathKey.KEY_GET_GROUP_GATEWAY)
+    fun getGatewayList(
+        @Query("productId") productId: Long, @Query("subSystemType") subSystemType: Int? = 1
+    ): Call<NewResponseData<List<DevSimpleInfo>?>?>?
 
 }

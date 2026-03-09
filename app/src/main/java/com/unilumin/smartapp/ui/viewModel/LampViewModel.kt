@@ -11,6 +11,8 @@ import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.constant.FILTER_NONE
 import com.unilumin.smartapp.client.constant.PAGE_SIZE
 import com.unilumin.smartapp.client.constant.PREFETCH_DIST
+import com.unilumin.smartapp.client.data.CreateGroupDTO
+import com.unilumin.smartapp.client.data.DevSimpleInfo
 import com.unilumin.smartapp.client.data.DeviceAlarmInfo
 import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.GroupMemberFilter
@@ -21,6 +23,7 @@ import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
 import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LampGroupInfo
+import com.unilumin.smartapp.client.data.LampGroupProduct
 import com.unilumin.smartapp.client.data.LampJobInfo
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampStrategyInfo
@@ -130,6 +133,15 @@ class LampViewModel(
     private val _yearEnergyList = MutableStateFlow(LightYearEnergy())
     val yearEnergyList = _yearEnergyList.asStateFlow()
 
+
+    //分组产品
+    private val _groupProductList = MutableStateFlow<List<LampGroupProduct>>(emptyList())
+    val groupProductList = _groupProductList.asStateFlow()
+
+
+    //集控信息
+    private val _gatewayDevSimpleInfo = MutableStateFlow<List<DevSimpleInfo>>(emptyList())
+    val gatewayDevSimpleInfo = _gatewayDevSimpleInfo.asStateFlow()
 
     /**
      * 首页在线率和亮灯率
@@ -425,7 +437,7 @@ class LampViewModel(
                 )
             )
             UniCallbackService.parseDataNewSuspend(call)
-            ToastUtil.showSuccess(context,"操作成功")
+            ToastUtil.showSuccess(context, "操作成功")
         }
     }
 
@@ -433,14 +445,11 @@ class LampViewModel(
         launchWithLoading {
             val call: Call<NewResponseData<String?>?>? = roadService.groupCtl(
                 LampCtlReq(
-                    cmdType = cmdType,
-                    cmdValue = cmdValue,
-                    ids = listOf(groupId),
-                    subSystemType = 1
+                    cmdType = cmdType, cmdValue = cmdValue, ids = listOf(groupId), subSystemType = 1
                 )
             )
             UniCallbackService.parseDataNewSuspend(call)
-            ToastUtil.showSuccess(context,"操作成功")
+            ToastUtil.showSuccess(context, "操作成功")
         }
     }
 
@@ -452,8 +461,42 @@ class LampViewModel(
                 LoopCtlReq(listOf(id), numList, onOff)
             )
             UniCallbackService.parseDataNewSuspend(call)
-            ToastUtil.showSuccess(context,"操作成功")
+            ToastUtil.showSuccess(context, "操作成功")
         }
+    }
+
+    fun getGroupProduct() {
+        launchWithLoading {
+            val call = roadService.getGroupProduct()
+            val resultData = UniCallbackService.parseDataNewSuspend(call)
+            if (resultData != null) {
+                _groupProductList.value = resultData
+            } else {
+                _groupProductList.value = emptyList()
+            }
+        }
+
+    }
+
+    fun getGatewayList(productId: Long) {
+        launchWithLoading {
+            val call = roadService.getGatewayList(productId)
+            val resultData = UniCallbackService.parseDataNewSuspend(call)
+            if (resultData != null) {
+                _gatewayDevSimpleInfo.value = resultData
+            } else {
+                _gatewayDevSimpleInfo.value = emptyList()
+            }
+        }
+    }
+
+
+    fun createGroup(groupInfo: CreateGroupDTO) {
+        launchWithLoading {
+            var createGroup = roadService.createGroup(groupInfo)
+            UniCallbackService.parseDataNewSuspend(createGroup)
+        }
+
     }
 
 
@@ -469,7 +512,6 @@ class LampViewModel(
                     }
                 }
             }
-
         }
     }
 

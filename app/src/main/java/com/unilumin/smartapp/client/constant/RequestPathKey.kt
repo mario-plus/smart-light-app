@@ -88,6 +88,13 @@ object RequestPathKey {
     //获取分组成员
     const val KEY_GET_GROUP_MEMBER: String = "$SMART_ROAD_LAMPS/uni_light_getGroupMemberInfo"
 
+    //获取分组产品
+    const val KEY_GET_GROUP_PRODUCT: String = "$SMART_ROAD_LAMPS/uni_light_getGroupProduct"
+    //创建分组
+    const val KEY_GET_GROUP_CREATE: String = "$SMART_ROAD_LAMPS/uni_light_createGroup"
+    //集控列表
+    const val KEY_GET_GROUP_GATEWAY: String = "$SMART_ROAD_LAMPS/uni_light_group_gateway_list"
+
     //设备列表
     const val KEY_GET_DEVICE: String = "$IOT_HUB_MANAGER/iot_device_page"
 

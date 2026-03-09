@@ -6,7 +6,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -1514,14 +1513,15 @@ fun <T : Any> PagingList(
     val shouldShowFullLoading =
         forceLoading || (refreshState is LoadState.Loading && lazyPagingItems.itemCount == 0)
     val scope = rememberCoroutineScope()
+
     val isScrolledDown by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex > 2
         }
     }
     val showScrollToTop = isScrolledDown
-    val isFabExpanded = !isScrolledDown
     var showHeader by remember { mutableStateOf(false) }
+
     LaunchedEffect(totalCount, refreshState) {
         if (totalCount != null && totalCount > 0 && refreshState is LoadState.NotLoading) {
             showHeader = true
@@ -1596,7 +1596,7 @@ fun <T : Any> PagingList(
                                     CircularProgressIndicator(
                                         Modifier.size(20.dp),
                                         strokeWidth = 2.dp,
-                                        color = Color(0xFF2979FF) // 统一调色
+                                        color = Color(0xFF29FFA2)
                                     )
                                 }
                             }
@@ -1655,13 +1655,16 @@ fun <T : Any> PagingList(
                 }
             }
         }
+
+        // 底部操作区：统一样式的悬浮按钮
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 16.dp, bottom = 32.dp),
-            horizontalAlignment = Alignment.End,
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // 回到顶部按钮
             AnimatedVisibility(
                 visible = showScrollToTop,
                 enter = scaleIn(spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(),
@@ -1669,63 +1672,47 @@ fun <T : Any> PagingList(
             ) {
                 Surface(
                     onClick = { scope.launch { listState.animateScrollToItem(0) } },
-                    modifier = Modifier.size(44.dp), // 【强制尺寸】精确到 44dp 的正圆
+                    modifier = Modifier.size(48.dp), // 统一尺寸 48dp
                     shape = CircleShape,
-                    color = Color(0xFFF0F4F8).copy(alpha = 0.9f), // 轻微半透明的灰白底色
-                    contentColor = Color(0xFF5F6368),
-                    shadowElevation = 2.dp
+                    color = Color(0xFF2979FF).copy(alpha = 0.2f), // 统一透明底色
+                    contentColor = Color(0xFF2979FF), // 统一图标颜色
+                    shadowElevation = 0.dp // 统一无阴影
                 ) {
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                         Icon(
                             imageVector = Icons.Rounded.KeyboardArrowUp,
                             contentDescription = "回到顶部",
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(24.dp) // 统一图标大小
                         )
                     }
                 }
             }
+
+            // 新增按钮
             if (onAddClick != null) {
-                val horizontalPadding by animateDpAsState(
-                    targetValue = if (isFabExpanded) 16.dp else 0.dp,
-                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                    label = "fab_padding"
-                )
                 Surface(
                     onClick = onAddClick,
-                    modifier = Modifier.height(44.dp),
+                    modifier = Modifier.size(48.dp), // 统一尺寸 48dp
                     shape = CircleShape,
-                    color = Color(0xFF2979FF).copy(alpha = 0.15f),
-                    contentColor = Color(0xFF2979FF),
-                    shadowElevation = 0.dp
+                    color = Color(0xFF2979FF).copy(alpha = 0.2f), // 统一透明底色
+                    contentColor = Color(0xFF2979FF), // 统一图标颜色
+                    shadowElevation = 0.dp // 统一无阴影
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier
-                            .widthIn(min = 44.dp)
-                            .padding(horizontal = horizontalPadding)
-                            .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = addText,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(24.dp) // 统一图标大小
                         )
-                        if (isFabExpanded) {
-                            Text(
-                                text = addText,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp,
-                                modifier = Modifier.padding(start = 4.dp)
-                            )
-                        }
                     }
                 }
             }
         }
     }
 }
-
 @Composable
 fun TimeFilterSegment(selectedType: Int, onTypeSelected: (Int) -> Unit) {
     val options = listOf(0 to "最近活跃时间", 1 to "最近7天", 2 to "最近30天", 3 to "最近90天")
@@ -2211,6 +2198,8 @@ fun <T : Any> BaseLampListScreen(
     viewModel: LampViewModel,
     pagingItems: LazyPagingItems<T>,
     keySelector: ((T) -> Any)? = null,
+    onAddClick: (() -> Unit)? = null,
+    addText: String = "新增",
     middleContent: (@Composable () -> Unit)? = null,
     itemContent: @Composable (T) -> Unit
 ) {
@@ -2252,7 +2241,9 @@ fun <T : Any> BaseLampListScreen(
             modifier = Modifier.weight(1f),
             itemKey = keySelector,
             contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp, start = 16.dp, end = 16.dp),
-            itemContent = itemContent
+            itemContent = itemContent,
+            addText = addText,
+            onAddClick = onAddClick
         )
     }
 }
