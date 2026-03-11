@@ -1281,3 +1281,55 @@ data class DevSimpleInfo(
     val id: Long,
     val deviceName: String? = null
 )
+
+//操作分组设备
+data class OptGroupDev(
+    val groupId: Long,
+    val deviceIds: List<Long>,
+    //0删除，1新增
+    val type: Int
+)
+//查询分组可添加的设备
+data class GroupDevParam(
+    val keyword: String,
+    val curPage: Int,
+    val pageSize: Int,
+    //分组id
+    val id: Long,
+    val subSystemType: Int? = 1,
+)
+
+data class GroupOptDevVO(
+    // 设备id或回路id
+    var id: Long? = null,
+    // 产品id
+    var productId: Long? = null,
+    // 产品名称
+    var productName: String? = null,
+    // 备注
+    var description: String? = null,
+    // 设备名称
+    var deviceName: String? = null,
+    // 设备序列号
+    var serialNum: String? = null,
+    // 集控id
+    var gwId: Long? = null,
+    // 集控名称
+    var gwName: String? = null,
+    // 回路控制器id
+    var loopCtlId: Long? = null,
+    // 回路控制器名称
+    var loopCtlName: String? = null,
+    // 回路名称
+    var loopName: String? = null,
+    // 回路编码
+    var loopCode: String? = null,
+    // 回路端口号
+    var loopUuid: String? = null,
+    // 回路序列号
+    var loopNum: Int? = null,
+    // 已绑定分组数
+    var useGCount: Int = 0,
+    // 可用分组数
+    var unUseGCount: Int = 0
+)

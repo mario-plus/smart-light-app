@@ -5,24 +5,27 @@ import com.unilumin.smartapp.client.data.CreateGroupDTO
 import com.unilumin.smartapp.client.data.DevSimpleInfo
 import com.unilumin.smartapp.client.data.DeviceAlarmInfo
 import com.unilumin.smartapp.client.data.DeviceStatusSummary
+import com.unilumin.smartapp.client.data.GroupDevParam
 import com.unilumin.smartapp.client.data.GroupMemberInfo
 import com.unilumin.smartapp.client.data.GroupMemberReq
+import com.unilumin.smartapp.client.data.GroupOptDevVO
 import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
 import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LampGateWayInfo
 import com.unilumin.smartapp.client.data.LampGroupInfo
+import com.unilumin.smartapp.client.data.LampGroupProduct
 import com.unilumin.smartapp.client.data.LampJobInfo
 import com.unilumin.smartapp.client.data.LampLightInfo
 import com.unilumin.smartapp.client.data.LampLoopCtlInfo
 import com.unilumin.smartapp.client.data.LampStrategyInfo
-import com.unilumin.smartapp.client.data.LampGroupProduct
 import com.unilumin.smartapp.client.data.LightDayEnergy
 import com.unilumin.smartapp.client.data.LightEnergy
 import com.unilumin.smartapp.client.data.LightYearEnergy
 import com.unilumin.smartapp.client.data.LoopCtlReq
 import com.unilumin.smartapp.client.data.NewResponseData
+import com.unilumin.smartapp.client.data.OptGroupDev
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
 import com.unilumin.smartapp.client.data.StrategyRequestParam
@@ -141,5 +144,13 @@ interface RoadService {
     fun getGatewayList(
         @Query("productId") productId: Long, @Query("subSystemType") subSystemType: Int? = 1
     ): Call<NewResponseData<List<DevSimpleInfo>?>?>?
+
+
+    @POST(RequestPathKey.KEY_GET_GROUP_DEV_OPT)
+    fun optGroupDev(requestBody: OptGroupDev): Call<NewResponseData<Void?>?>?
+
+    @POST(RequestPathKey.KEY_GET_GROUP_GET_DEV)
+    fun getGroupDevToAdd(requestBody: GroupDevParam): Call<NewResponseData<PageResponse<GroupOptDevVO>?>?>?
+
 
 }

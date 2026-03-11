@@ -3,10 +3,6 @@ package com.unilumin.smartapp.ui.viewModel
 import android.app.Application
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.lifecycle.viewModelScope
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.cachedIn
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.RetrofitClient
@@ -19,18 +15,14 @@ import com.unilumin.smartapp.client.data.EnvReq
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
 import com.unilumin.smartapp.client.data.IotDevice
-import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PagingState
 import com.unilumin.smartapp.client.data.RealTimeDataTs
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.service.DeviceService
-import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
 import com.unilumin.smartapp.util.TimeUtil
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -39,8 +31,7 @@ class DeviceViewModel(
 ) : BaseViewModel(application) {
 
     private val deviceService = retrofitClient.getService(DeviceService::class.java)
-    private val _totalCount = MutableStateFlow<Int>(0)
-    val totalCount = _totalCount.asStateFlow()
+
 
     val productType = MutableStateFlow("1")
     fun updateFilter(type: String) {
@@ -108,78 +99,52 @@ class DeviceViewModel(
     private val _deviceStatusAnalysis = MutableStateFlow<DeviceStatusAnalysisResp?>(null)
     val deviceStatusAnalysisData = _deviceStatusAnalysis.asStateFlow()
 
-
-    // Paging Flows
-    @OptIn(ExperimentalCoroutinesApi::class)
     val devicePagingFlow =
-        combine(state, productType, searchQuery) { state, productType, keywords ->
-            Triple(state, productType, keywords)
-        }.flatMapLatest { (state, productType, keywords) ->
-            Pager(
-                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
-                pagingSourceFactory = {
-                    GenericPagingSource { page, pageSize ->
-                        getIotDevices(
-                            state = state,
-                            productType = productType.toLong(),
-                            searchQuery = keywords,
-                            page = page,
-                            pageSize = pageSize
-                        )
-                    }
-                }).flow
-        }.cachedIn(viewModelScope)
+        createPagingFlow(
+            combine(
+                state,
+                productType,
+                searchQuery,
+                ::Triple
+            )
+        ) { (state, productType, keywords), page, size ->
+            fetchPageData {
+                deviceService.getDeviceList(
+                    keywords, page, size, productType.toLong(), state.takeIf { it != -1 }
+                )
+            }
+        }
 
-
-    @OptIn(ExperimentalCoroutinesApi::class)
     val envDevicePagingFlow =
-        combine(state, productType, searchQuery) { state, productType, keywords ->
-            Triple(state, productType, keywords)
-        }.flatMapLatest { (state, productType, keywords) ->
-            Pager(
-                config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
-                pagingSourceFactory = {
-                    GenericPagingSource { page, pageSize ->
-                        var deviceList = getEnvDevices(
-                            state = state,
-                            productType = productType.toLong(),
-                            searchQuery = keywords,
-                            page = page,
-                            pageSize = pageSize
-                        )
-
-                        deviceList
-                    }
-                }).flow
-        }.cachedIn(viewModelScope)
+        createPagingFlow(
+            combine(
+                state,
+                productType,
+                searchQuery,
+                ::Triple
+            )
+        ) { (state, productType, keywords), page, size ->
+            getEnvDevices(
+                state = state,
+                productType = productType.toLong(),
+                searchQuery = keywords,
+                page = page,
+                pageSize = size
+            )
+        }
 
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val offlineDeviceList = combine(chartType, primaryClass) { timeType, primaryClass ->
-        Pair(timeType, primaryClass)
-    }.flatMapLatest { (filter, query) ->
-        Pager(
-            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
-            pagingSourceFactory = {
-                GenericPagingSource { page, pageSize ->
-                    getOfflineDeviceList(
-                        timeType = filter, curPage = page, pageSize = pageSize, primaryClass = query
-                    )
-                }
-            }).flow
-    }.cachedIn(viewModelScope)
+    val offlineDeviceList =
+        createPagingFlow(combine(chartType, primaryClass, ::Pair)) { (filter, query), page, size ->
+            fetchPageData {
+                deviceService.offlineDeviceList(
+                    page,
+                    size,
+                    filter.takeIf { it != 0 },
+                    query.takeIf { it != 0 })
+            }
+        }
 
-    suspend fun getOfflineDeviceList(
-        curPage: Int, pageSize: Int, timeType: Int, primaryClass: Int
-    ): List<OfflineDevice> {
-        val tType = timeType.takeIf { it != 0 }
-        val pClass = primaryClass.takeIf { it != 0 }
-        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
-            deviceService.offlineDeviceList(curPage, pageSize, tType, pClass)
-        )
-        _totalCount.value = parseDataNewSuspend?.total!!
-        return parseDataNewSuspend.list
-    }
 
     /**
      * 获取环境传感器设备列表+实时数据
@@ -198,7 +163,7 @@ class DeviceViewModel(
             deviceService.getDeviceList(searchQuery, page, pageSize, productType, s)
         ) ?: return emptyList()
         val deviceList = deviceResponse.list ?: return emptyList()
-        _totalCount.value = deviceResponse.total ?: 0
+        updateTotalCount(deviceResponse.total ?: 0)
         if (deviceList.isEmpty()) return emptyList()
         val envReqList = deviceList.map {
             EnvReq(deviceId = it.id, productId = it.productId)
@@ -216,22 +181,6 @@ class DeviceViewModel(
         return deviceList
     }
 
-    suspend fun getIotDevices(
-        state: Int,
-        productType: Long,
-        searchQuery: String,
-        page: Int,
-        pageSize: Int,
-    ): List<IotDevice> {
-        val s = state.takeIf { it != -1 }
-        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
-            deviceService.getDeviceList(
-                searchQuery, page, pageSize, productType, s
-            )
-        )
-        _totalCount.value = parseDataNewSuspend?.total!!
-        return parseDataNewSuspend.list
-    }
 
     fun deviceStatusAnalysis() {
         launchWithLoading {

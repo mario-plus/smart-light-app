@@ -1491,7 +1491,6 @@ fun UsageLinearBar(label: String, usage: Double) {
  * @param emptyMessage 空状态提示词
  * @param itemContent 业务布局，如DeviceCardItem，SiteCardItem
  * @param onAddClick 悬浮按钮
- * @param addText 悬浮按钮名称
  * */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1506,7 +1505,6 @@ fun <T : Any> PagingList(
     emptyMessage: String = "暂无相关数据",
     itemKey: ((T) -> Any)? = null,
     onAddClick: (() -> Unit)? = null,
-    addText: String = "新增",
     itemContent: @Composable (T) -> Unit
 ) {
     val refreshState = lazyPagingItems.loadState.refresh
@@ -1704,7 +1702,7 @@ fun <T : Any> PagingList(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
-                            contentDescription = addText,
+                            contentDescription = "",
                             modifier = Modifier.size(24.dp) // 统一图标大小
                         )
                     }
@@ -2199,7 +2197,6 @@ fun <T : Any> BaseLampListScreen(
     pagingItems: LazyPagingItems<T>,
     keySelector: ((T) -> Any)? = null,
     onAddClick: (() -> Unit)? = null,
-    addText: String = "新增",
     middleContent: (@Composable () -> Unit)? = null,
     itemContent: @Composable (T) -> Unit
 ) {
@@ -2242,7 +2239,6 @@ fun <T : Any> BaseLampListScreen(
             itemKey = keySelector,
             contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp, start = 16.dp, end = 16.dp),
             itemContent = itemContent,
-            addText = addText,
             onAddClick = onAddClick
         )
     }

@@ -119,7 +119,6 @@ fun LampGroupContent(
         pagingItems = lampGroupFlow,
         keySelector = { it.id },
         searchTitle = "搜索分组名称或产品名称",
-        addText = "新建分组",
         onAddClick = {
             showAddDialog = true
         },

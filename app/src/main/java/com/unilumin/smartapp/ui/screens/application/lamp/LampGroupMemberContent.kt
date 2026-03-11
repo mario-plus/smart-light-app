@@ -92,6 +92,9 @@ fun LampGroupMemberContent(
                 viewModel = lampViewModel,
                 pagingItems = groupMemberFlow,
                 keySelector = { it.deviceId },
+                onAddClick = {
+                    //增加分组成员，加载分组成员，然后勾选
+                },
                 searchTitle = "搜索设备名称或序列码",
                 middleContent = {
                     if (currentGroupInfo.value?.groupType != 56) {

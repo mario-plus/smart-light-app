@@ -303,7 +303,6 @@ object DeviceConstant {
 
 }
 
-
 const val PAGE_SIZE = 20
 const val PREFETCH_DIST = 2
 const val FILTER_NONE = -1

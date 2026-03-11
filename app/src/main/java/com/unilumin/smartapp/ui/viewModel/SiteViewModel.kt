@@ -2,9 +2,6 @@ package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
 import androidx.lifecycle.viewModelScope
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.cachedIn
 import com.amap.api.maps.CameraUpdate
 import com.amap.api.maps.CameraUpdateFactory
 import com.amap.api.maps.model.LatLng
@@ -15,8 +12,6 @@ import com.unilumin.smartapp.client.data.PoleMapPointRes
 import com.unilumin.smartapp.client.data.SiteInfo
 import com.unilumin.smartapp.client.data.SiteRoadInfo
 import com.unilumin.smartapp.client.service.SiteService
-import com.unilumin.smartapp.ui.viewModel.pages.GenericPagingSource
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,7 +19,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 class SiteViewModel(
@@ -57,9 +51,6 @@ class SiteViewModel(
     private val _isDetailLoading = MutableStateFlow(false)
     val isDetailLoading = _isDetailLoading.asStateFlow()
 
-    // 列表总数
-    private val _totalCount = MutableStateFlow(0)
-    val totalCount = _totalCount.asStateFlow()
 
     // 筛选条件
     private val _selectedRoadId = MutableStateFlow<String?>(null)
@@ -147,35 +138,20 @@ class SiteViewModel(
     }
 
     // ================== 列表分页数据流 ==================
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val sitePagingFlow = combine(_selectedRoadId, _searchKeyword) { roadId, keyword ->
-        Pair(roadId, keyword)
-    }.flatMapLatest { (roadId, keyword) ->
-        Pager(
-            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 2),
-            pagingSourceFactory = {
-                GenericPagingSource { page, pageSize ->
-                    getSitePages(roadId, keyword, page, pageSize)
-                }
-            }).flow
-    }.cachedIn(viewModelScope)
 
-    private suspend fun getSitePages(
-        roadId: String?, keyword: String, page: Int, pageSize: Int
-    ): List<SiteInfo> {
-        val rawResponse = siteService.getSiteList(
-            curPage = page,
-            pageSize = pageSize,
-            roadIdList = roadId?.toLongOrNull()?.let { listOf(it) },
-            tagCondition = "or",
-            keyword = keyword
-        )
-        val result = UniCallbackService.parseDataNewSuspend(rawResponse)
-        if (page == 1) _totalCount.value = result?.total ?: 0
-        return result?.list ?: emptyList()
-    }
 
-    // ================== 筛选与定位 ==================
+    val sitePagingFlow =
+        createPagingFlow(combine(_selectedRoadId, _searchKeyword, ::Pair)) { (roadId, keyword), page, size ->
+            fetchPageData {
+                siteService.getSiteList(
+                    curPage = page,
+                    pageSize = size,
+                    roadIdList = roadId?.toLongOrNull()?.let { listOf(it) },
+                    tagCondition = "or",
+                    keyword = keyword
+                )
+            }
+        }
 
     fun updateRoadFilter(roadId: String?) {
         _selectedRoadId.value = roadId
@@ -193,8 +169,6 @@ class SiteViewModel(
 
         searchLocateJob = viewModelScope.launch {
             delay(800)
-            // 【优化】静默请求，不显示 Loading
-
             try {
                 val rawResponse = siteService.getSiteList(
                     curPage = 1,
