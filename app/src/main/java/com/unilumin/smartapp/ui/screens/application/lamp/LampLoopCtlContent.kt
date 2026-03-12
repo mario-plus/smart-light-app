@@ -43,7 +43,7 @@ import com.unilumin.smartapp.client.data.LampLoopCtlInfo
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.LoopCircleItem
-import com.unilumin.smartapp.ui.screens.dialog.LoopControlDialog
+import com.unilumin.smartapp.ui.screens.dialog.LoopControlBottomSheet
 import com.unilumin.smartapp.ui.theme.CardBgColor
 import com.unilumin.smartapp.ui.theme.IconBgColor
 import com.unilumin.smartapp.ui.theme.TextMain
@@ -79,7 +79,7 @@ fun LampLoopCtlContent(
     }
 
     selectedLoopCtl?.let { loopCtl ->
-        LoopControlDialog(
+        LoopControlBottomSheet(
             deviceName = loopCtl.loopControllerName.toString(),
             loopInfos = loopCtl.loops,
             onDismiss = { selectedLoopCtl = null },

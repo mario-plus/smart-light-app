@@ -70,7 +70,7 @@ import com.unilumin.smartapp.client.data.LampGroupInfo
 import com.unilumin.smartapp.client.data.LampGroupProduct
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.DeviceStatus
-import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
+import com.unilumin.smartapp.ui.screens.dialog.DeviceControlBottomSheet
 import com.unilumin.smartapp.ui.theme.BluePrimary
 import com.unilumin.smartapp.ui.theme.CardBgColor
 import com.unilumin.smartapp.ui.theme.DataPanelBgColor
@@ -134,7 +134,8 @@ fun LampGroupContent(
 
     // 设备控制弹窗
     if (showDialog) {
-        DeviceControlDialog(
+        DeviceControlBottomSheet(
+            title = "分组控制",
             productId = currentGroup.value?.productId?.toString() ?: "",
             deviceName = currentGroup.value?.groupName ?: "未知分组",
             initialBrightness = 0,

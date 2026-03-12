@@ -46,7 +46,7 @@ import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.DeviceStatusRow
 import com.unilumin.smartapp.ui.components.ModernStateSelector
-import com.unilumin.smartapp.ui.screens.dialog.DeviceControlDialog
+import com.unilumin.smartapp.ui.screens.dialog.DeviceControlBottomSheet
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,7 +86,7 @@ fun LampLightContent(
     }
 
     selectedLamp?.let { lamp ->
-        DeviceControlDialog(
+        DeviceControlBottomSheet(
             productId = lamp.productId?.toString() ?: "",
             deviceName = lamp.name ?: "未知设备",
             initialBrightness = lamp.bright1?.toInt(),
