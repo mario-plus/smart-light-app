@@ -5,6 +5,7 @@ import com.unilumin.smartapp.client.data.CreateGroupDTO
 import com.unilumin.smartapp.client.data.DevSimpleInfo
 import com.unilumin.smartapp.client.data.DeviceAlarmInfo
 import com.unilumin.smartapp.client.data.DeviceStatusSummary
+import com.unilumin.smartapp.client.data.ForceDelGroupDev
 import com.unilumin.smartapp.client.data.GroupDevParam
 import com.unilumin.smartapp.client.data.GroupMemberInfo
 import com.unilumin.smartapp.client.data.GroupMemberReq
@@ -32,6 +33,7 @@ import com.unilumin.smartapp.client.data.StrategyRequestParam
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Query
@@ -147,10 +149,13 @@ interface RoadService {
 
 
     @POST(RequestPathKey.KEY_GET_GROUP_DEV_OPT)
-    fun optGroupDev(requestBody: OptGroupDev): Call<NewResponseData<Void?>?>?
+    fun optGroupDev(@Body requestBody: OptGroupDev): Call<NewResponseData<Void?>?>?
+
+    @HTTP(method = "DELETE", path = RequestPathKey.KEY_FORCE_DEL_GROUP_DEV, hasBody = true)
+    fun forceDelGroupDev(@Body requestBody: ForceDelGroupDev): Call<NewResponseData<Void?>?>?
 
     @POST(RequestPathKey.KEY_GET_GROUP_GET_DEV)
-    fun getGroupDevToAdd(requestBody: GroupDevParam): Call<NewResponseData<PageResponse<GroupOptDevVO>?>?>?
+    fun getGroupDevToAdd(@Body requestBody: GroupDevParam): Call<NewResponseData<PageResponse<GroupOptDevVO>?>?>?
 
 
 }

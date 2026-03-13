@@ -1289,6 +1289,14 @@ data class OptGroupDev(
     //0删除，1新增
     val type: Int
 )
+//强制删除分组设备
+data class ForceDelGroupDev(
+    val groupId: Long,
+    val deviceIds: List<Long>,
+    val subSystemType: Int? = 1
+)
+
+
 //查询分组可添加的设备
 data class GroupDevParam(
     val keyword: String,
@@ -1296,7 +1304,7 @@ data class GroupDevParam(
     val pageSize: Int,
     //分组id
     val id: Long,
-    val subSystemType: Int? = 1,
+    val subSystemType: Int? = 1
 )
 
 data class GroupOptDevVO(

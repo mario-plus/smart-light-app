@@ -29,6 +29,7 @@ object RequestPathKey {
 
     //素材列表
     const val KEY_LED_FILE_LIST: String = "$SMART_LED/ledmaterial/info/list"
+
     //播放表列表
     const val KEY_PROGRAM_LIST: String = "$SMART_LED/uni-led/led_program_list"
 
@@ -90,12 +91,18 @@ object RequestPathKey {
 
     //获取分组产品
     const val KEY_GET_GROUP_PRODUCT: String = "$SMART_ROAD_LAMPS/uni_light_getGroupProduct"
+
     //创建分组
     const val KEY_GET_GROUP_CREATE: String = "$SMART_ROAD_LAMPS/uni_light_createGroup"
+
     //集控列表
     const val KEY_GET_GROUP_GATEWAY: String = "$SMART_ROAD_LAMPS/uni_light_group_gateway_list"
+
     //分组成员添加或删除
     const val KEY_GET_GROUP_DEV_OPT: String = "$SMART_ROAD_LAMPS/uni_light_addDevToGroup"
+
+    //强制移除分组成员
+    const val KEY_FORCE_DEL_GROUP_DEV: String = "$SMART_ROAD_LAMPS/force_delete_group_device"
 
     //获取可添加的分组成员
     const val KEY_GET_GROUP_GET_DEV: String = "$SMART_ROAD_LAMPS/uni_light_getGroupDevList"

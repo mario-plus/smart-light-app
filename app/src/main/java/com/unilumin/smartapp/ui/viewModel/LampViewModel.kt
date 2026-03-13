@@ -7,6 +7,7 @@ import com.unilumin.smartapp.client.constant.FILTER_NONE
 import com.unilumin.smartapp.client.data.CreateGroupDTO
 import com.unilumin.smartapp.client.data.DevSimpleInfo
 import com.unilumin.smartapp.client.data.DeviceStatusSummary
+import com.unilumin.smartapp.client.data.ForceDelGroupDev
 import com.unilumin.smartapp.client.data.GroupDevParam
 import com.unilumin.smartapp.client.data.GroupMemberReq
 import com.unilumin.smartapp.client.data.GroupOptDevVO
@@ -392,6 +393,13 @@ class LampViewModel(
     fun optGroupDev(optInfo: OptGroupDev) {
         launchWithLoading {
             var createGroup = roadService.optGroupDev(optInfo)
+            parseDataNewSuspend(createGroup)
+        }
+    }
+
+    fun forceDelGroupDev(optInfo: ForceDelGroupDev) {
+        launchWithLoading {
+            var createGroup = roadService.forceDelGroupDev(optInfo)
             parseDataNewSuspend(createGroup)
         }
     }
