@@ -105,6 +105,13 @@ class LampViewModel(
         _currentGroupInfo.value = e
     }
 
+    val groupId = MutableStateFlow(0L)
+    fun updateGroupId(s: Long?) {
+        if (s != null) {
+            groupId.value = s
+        }
+    }
+
     //月度能耗对比
     private val _monthEnergyList = MutableStateFlow<List<LightEnergy>>(emptyList())
     val monthEnergyList = _monthEnergyList.asStateFlow()
@@ -177,8 +184,7 @@ class LampViewModel(
                     keyword = query,
                     curPage = page,
                     pageSize = size,
-                    networkState = filter.takeIf { it != FILTER_NONE }
-                )
+                    networkState = filter.takeIf { it != FILTER_NONE })
             }
         }
 
@@ -247,6 +253,21 @@ class LampViewModel(
                 keyword = searchQuery,
                 level = level.takeIf { it != FILTER_NONE },
                 isConfirm = alarmConfirm.takeIf { it != FILTER_NONE })
+        }
+    }
+
+    val groupDevToAddFlow = createPagingFlow(
+        combine(searchQuery, groupId, ::Pair)
+    ) { (searchQuery, groupId), page, size ->
+        fetchPageData {
+            roadService.getGroupDevToAdd(
+                GroupDevParam(
+                    curPage = page,
+                    pageSize = size,
+                    keyword = searchQuery,
+                    id = currentGroupInfo.value?.id ?: 0
+                )
+            )
         }
     }
 
@@ -390,15 +411,15 @@ class LampViewModel(
     }
 
     //分作成员操作
-    fun optGroupDev(optInfo: OptGroupDev) {
-        launchWithLoading {
+    fun optGroupDev(optInfo: OptGroupDev, onSuccess: (() -> Unit)? = null) {
+        launchWithLoading(onSuccess = onSuccess) {
             var createGroup = roadService.optGroupDev(optInfo)
             parseDataNewSuspend(createGroup)
         }
     }
 
-    fun forceDelGroupDev(optInfo: ForceDelGroupDev) {
-        launchWithLoading {
+    fun forceDelGroupDev(optInfo: ForceDelGroupDev, onSuccess: (() -> Unit)? = null) {
+        launchWithLoading(onSuccess = onSuccess) {
             var createGroup = roadService.forceDelGroupDev(optInfo)
             parseDataNewSuspend(createGroup)
         }

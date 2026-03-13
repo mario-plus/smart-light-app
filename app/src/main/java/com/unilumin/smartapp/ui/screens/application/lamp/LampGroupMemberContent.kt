@@ -1,26 +1,36 @@
 package com.unilumin.smartapp.ui.screens.application.lamp
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeviceHub
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Info
@@ -29,10 +39,17 @@ import androidx.compose.material.icons.outlined.LinkOff
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -56,6 +73,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.constant.DeviceConstant.groupDeviceBindOptions
 import com.unilumin.smartapp.client.constant.DeviceConstant.statusOptions
@@ -77,7 +95,6 @@ import com.unilumin.smartapp.ui.theme.TextSub
 import com.unilumin.smartapp.ui.theme.TextTitle
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LampGroupMemberContent(
@@ -88,6 +105,10 @@ fun LampGroupMemberContent(
 
     val currentGroupInfo = lampViewModel.currentGroupInfo.collectAsState()
 
+    val groupDevToAddFlow = lampViewModel.groupDevToAddFlow.collectAsLazyPagingItems()
+
+    var showAddDevBottomSheet by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         lampViewModel.updateSearch("")
         lampViewModel.updateState(-1)
@@ -96,7 +117,10 @@ fun LampGroupMemberContent(
 
     Scaffold(
         topBar = {
-            CommonTopAppBar(title = "分组成员", onBack = { onBack() })
+            CommonTopAppBar(
+                title = currentGroupInfo.value?.groupName.toString(),
+                subTitle = "分组成员",
+                onBack = { onBack() })
         }, containerColor = PageBackground
     ) { padding ->
         Box(
@@ -110,7 +134,9 @@ fun LampGroupMemberContent(
                 pagingItems = groupMemberFlow,
                 keySelector = { it.deviceId },
                 onAddClick = {
-                    //增加分组成员，加载分组成员，然后勾选
+                    lampViewModel.updateGroupId(currentGroupInfo.value?.id)
+                    groupDevToAddFlow.refresh()
+                    showAddDevBottomSheet = true
                 },
                 searchTitle = "搜索设备名称或序列码",
                 middleContent = {
@@ -127,7 +153,6 @@ fun LampGroupMemberContent(
                     }
 
                 }) { item ->
-
                 if (currentGroupInfo.value?.groupType == 56) {
                     LoopControllerCard(item)
                 } else {
@@ -145,12 +170,23 @@ fun LampGroupMemberContent(
                             ForceDelGroupDev(
                                 groupId = currentGroupInfo.value?.id ?: 0,
                                 deviceIds = listOf(item.deviceId),
-                            )
+                            ),
+                            onSuccess = {
+                                groupMemberFlow.refresh()
+                            }
                         )
-                        groupMemberFlow.refresh()
                     })
                 }
-
+            }
+            if (showAddDevBottomSheet) {
+                AddDeviceBottomSheet(
+                    viewModel = lampViewModel,
+                    groupId = currentGroupInfo.value?.id,
+                    onDismiss = { showAddDevBottomSheet = false },
+                    onAddSuccess = {
+                        showAddDevBottomSheet = false
+                        groupMemberFlow.refresh()
+                    })
             }
         }
     }
@@ -301,7 +337,7 @@ fun NormalDeviceCard(
  */
 @Composable
 fun DataFieldItem(
-    label: String, value: String?, modifier: Modifier = Modifier, isFullWidth: Boolean = false
+    label: String, value: String?, modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
         Text(
@@ -539,6 +575,313 @@ private fun ActionItem(
             Text(
                 text = subTitle, style = TextStyle(
                     fontSize = 12.sp, color = Color.Gray
+                )
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddDeviceBottomSheet(
+    viewModel: LampViewModel,
+    groupId: Long?,
+    onDismiss: () -> Unit,
+    onAddSuccess: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val availableDevices = viewModel.groupDevToAddFlow.collectAsLazyPagingItems()
+    var selectedDeviceIds by remember { mutableStateOf(setOf<Long>()) }
+    val searchQuery by viewModel.searchQuery.collectAsState()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color(0xFFF8F9FA),
+        // 恢复了 DragHandle，让 BottomSheet 看起来更自然
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        modifier = Modifier.fillMaxHeight(0.95f)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // --- 1. 顶部标题栏 ---
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp), // 调整间距使其更协调
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "选择要添加的设备",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextTitle
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                // 增大触摸热区，让关闭更容易点击
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "关闭",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            // --- 2. 搜索框 (优化为更轻量的样式) ---
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .background(Color(0xFFEEEEEE).copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    BasicTextField(
+                        value = searchQuery,
+                        onValueChange = { viewModel.updateSearch(it) },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        textStyle = TextStyle(fontSize = 15.sp, color = Color.Black),
+                        decorationBox = { innerTextField ->
+                            if (searchQuery.isEmpty()) {
+                                Text(
+                                    text = "搜索设备名称或序列码",
+                                    style = TextStyle(fontSize = 15.sp, color = Color.LightGray)
+                                )
+                            }
+                            innerTextField()
+                        }
+                    )
+                }
+            }
+
+            // --- 3. 设备列表 ---
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                when {
+                    availableDevices.loadState.refresh is LoadState.Loading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            color = BluePrimary
+                        )
+                    }
+
+                    availableDevices.loadState.refresh is LoadState.NotLoading && availableDevices.itemCount == 0 -> {
+                        // 优化空状态，增加图标
+                        Column(
+                            modifier = Modifier.align(Alignment.Center),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lightbulb, // 你可以换成专用的空状态 Icon
+                                contentDescription = null,
+                                tint = Color.LightGray,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .padding(bottom = 8.dp)
+                            )
+                            Text(
+                                text = "暂无相关设备",
+                                style = TextStyle(fontSize = 14.sp, color = Color.Gray)
+                            )
+                        }
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp) // 用统一间距替代Item内边距
+                        ) {
+                            items(availableDevices.itemCount) { index ->
+                                val deviceInfo = availableDevices[index]
+                                if (deviceInfo != null) {
+                                    val currentDeviceId: Long? = deviceInfo.id
+                                    if (currentDeviceId != null) {
+                                        val isSelected = selectedDeviceIds.contains(currentDeviceId)
+                                        SelectableDeviceItem(
+                                            deviceName = deviceInfo.deviceName ?: "未知设备",
+                                            deviceSn = "SN: ${deviceInfo.serialNum ?: "--"}",
+                                            isSelected = isSelected,
+                                            onClick = {
+                                                selectedDeviceIds = if (isSelected) {
+                                                    selectedDeviceIds - currentDeviceId
+                                                } else {
+                                                    selectedDeviceIds + currentDeviceId
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                            if (availableDevices.loadState.append is LoadState.Loading) {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            color = BluePrimary,
+                                            strokeWidth = 2.dp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- 4. 底部操作栏 (去阴影，改用轻巧的分割线) ---
+            Column(
+                modifier = Modifier.background(Color.White)
+            ) {
+                HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 0.5.dp) // 柔和的顶部边界
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                        .navigationBarsPadding(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "已选择: ${selectedDeviceIds.size} 项",
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            color = if (selectedDeviceIds.isNotEmpty()) BluePrimary else TextSub,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+
+                    Button(
+                        onClick = {
+                            if (selectedDeviceIds.isNotEmpty() && groupId != null) {
+                                viewModel.optGroupDev(
+                                    OptGroupDev(
+                                        groupId = groupId,
+                                        deviceIds = selectedDeviceIds.toList(),
+                                        type = 1
+                                    ),
+                                    onSuccess = onAddSuccess
+                                )
+                            }
+                        },
+                        enabled = selectedDeviceIds.isNotEmpty(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = BluePrimary,
+                            disabledContainerColor = Color(0xFFE0E0E0) // 让禁用状态也好看些
+                        ),
+                        shape = RoundedCornerShape(24.dp),
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                    ) {
+                        Text("确定添加", style = TextStyle(fontWeight = FontWeight.Bold))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SelectableDeviceItem(
+    deviceName: String,
+    deviceSn: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            // 移除了内部 padding，使用 LazyColumn 的 spacedBy 控制间距
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = LocalIndication.current
+            ) { onClick() },
+        shape = RoundedCornerShape(16.dp), // 圆角稍微增大更现代
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) Color(0xFFF0F4FF) else Color.White
+        ),
+        // 增加选中时的外描边，大幅提升精致感
+        border = if (isSelected) BorderStroke(
+            1.dp,
+            BluePrimary.copy(alpha = 0.5f)
+        ) else BorderStroke(1.dp, Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 图标容器
+            Box(
+                modifier = Modifier
+                    .size(44.dp) // 稍微放大一点点
+                    .background(
+                        if (isSelected) BluePrimary.copy(alpha = 0.15f) else Color(0xFFF5F7FA),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lightbulb,
+                    contentDescription = null,
+                    tint = if (isSelected) BluePrimary else Color.Gray,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // 文本区域
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = deviceName,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF1A1A1A)
+                    ),
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(2.dp)) // 稍微拉开标题和副标题距离
+                Text(
+                    text = deviceSn,
+                    style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF888888)),
+                    maxLines = 1
+                )
+            }
+
+            // Checkbox 视觉微调
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onClick() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = BluePrimary,
+                    uncheckedColor = Color.LightGray,
+                    checkmarkColor = Color.White
                 )
             )
         }

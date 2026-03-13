@@ -1309,7 +1309,7 @@ data class GroupDevParam(
 
 data class GroupOptDevVO(
     // 设备id或回路id
-    var id: Long? = null,
+    var id: Long,
     // 产品id
     var productId: Long? = null,
     // 产品名称

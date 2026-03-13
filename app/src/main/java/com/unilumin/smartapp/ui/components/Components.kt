@@ -1956,44 +1956,75 @@ private fun StatusItem(label: String, text: String, isError: Boolean) {
 
 @Composable
 fun CommonTopAppBar(
-    title: String, onBack: () -> Unit, modifier: Modifier = Modifier, height: Dp = 56.dp, // 调整为标准高度
-    menuItems: List<SystemConfig> = emptyList(), onMenuItemClick: (SystemConfig) -> Unit = {}
+    title: String,
+    subTitle: String? = null, // 新增：可选的二级标题参数
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    height: Dp = 56.dp,
+    menuItems: List<SystemConfig> = emptyList(),
+    onMenuItemClick: (SystemConfig) -> Unit = {}
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val textMain = Color(0xFF1D1B20) // 更加深邃的 M3 文本色
+    val textMain = Color(0xFF1D1B20)
+    val textSecondary = Color(0xFF757575) // 新增：副标题专属的次级文本颜色
 
-    // 使用简单的纯色背景，通过阴影或底部细线区分，比渐变更高级
     Surface(
-        modifier = modifier.fillMaxWidth(), color = Color.White, shadowElevation = 2.dp // 柔和的阴影
+        modifier = modifier.fillMaxWidth(),
+        color = Color.White,
+        shadowElevation = 2.dp
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding() // 确保适配刘海屏/状态栏
+                .statusBarsPadding()
                 .height(height)
                 .padding(horizontal = 4.dp)
         ) {
-            // === 左侧：返回按钮 (增加点击区域感) ===
+            // === 左侧：返回按钮 ===
             IconButton(
                 onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack, // 使用自动镜像图标适配 RTL
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back", tint = textMain, modifier = Modifier.size(24.dp)
                 )
             }
 
-            // === 中间：标题 (增加字重和间距优化) ===
-            Text(
-                text = title,
-                style = TextStyle(
-                    fontSize = 18.sp, fontWeight = FontWeight.SemiBold, // SemiBold 比 Bold 更具现代感
-                    color = textMain, letterSpacing = 0.2.sp
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.align(Alignment.Center)
-            )
+            // === 中间：主标题与副标题 ===
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 48.dp), // 增加水平内边距，防止长标题与左右图标重叠
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = title,
+                    style = TextStyle(
+                        // 优化：如果有副标题，主标题字号稍微缩小以适应 56dp 的高度
+                        fontSize = if (subTitle.isNullOrEmpty()) 18.sp else 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = textMain,
+                        letterSpacing = 0.2.sp
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                // 仅当传入了副标题时才渲染这部分
+                if (!subTitle.isNullOrEmpty()) {
+                    Text(
+                        text = subTitle,
+                        style = TextStyle(
+                            fontSize = 12.sp, // 字体更小
+                            fontWeight = FontWeight.Normal, // 字重变轻
+                            color = textSecondary // 颜色变淡，拉开视觉层级
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
 
             // === 右侧：操作区 ===
             if (menuItems.isNotEmpty()) {
@@ -2009,6 +2040,7 @@ fun CommonTopAppBar(
                         )
                     }
 
+                    // 假设你已经有 ReferenceStyleDropdownMenu 的实现
                     ReferenceStyleDropdownMenu(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },

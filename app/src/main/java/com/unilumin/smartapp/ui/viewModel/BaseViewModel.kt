@@ -44,12 +44,14 @@ open class BaseViewModel(application: Application) : AndroidViewModel(applicatio
      */
     protected fun launchWithLoading(
         showErrorToast: Boolean = true,
+        onSuccess: (() -> Unit)? = null,
         consumer: suspend () -> Unit
     ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 consumer()
+                onSuccess?.invoke()
             } catch (e: Exception) {
                 e.printStackTrace()
                 if (showErrorToast) {
@@ -64,11 +66,13 @@ open class BaseViewModel(application: Application) : AndroidViewModel(applicatio
 
     protected fun launchDirect(
         showErrorToast: Boolean = true,
+        onSuccess: (() -> Unit)? = null,
         consumer: suspend () -> Unit
     ) {
         viewModelScope.launch {
             try {
                 consumer()
+                onSuccess?.invoke()
             } catch (e: Exception) {
                 e.printStackTrace()
                 if (showErrorToast) {
@@ -80,6 +84,14 @@ open class BaseViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
 
+    /**
+     * 使用教程
+     * 一个参数:    createPagingFlow(searchQuery) { searchQuery, page, size ->
+     * 两个参数:    createPagingFlow(combine(chartType, primaryClass, ::Pair)) { (filter, query), page, size ->
+     * 三个参数:    createPagingFlow(combine(state, searchQuery, lampModel, ::Triple)) { (taskState, searchQuery, lampModel), page, size ->
+     * 四个参数: createPagingFlow(combine(fileStatus, fileType, searchQuery, parentId, ::Quadruple)) { (fileStatus, fileType, searchQuery, parentId), page, size ->
+     * 多个参数，可以逐步定义，参考Quadruple
+     * */
     @OptIn(ExperimentalCoroutinesApi::class)
     protected fun <T : Any, P> createPagingFlow(
         paramsFlow: Flow<P>,
