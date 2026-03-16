@@ -1341,3 +1341,9 @@ data class GroupOptDevVO(
     // 可用分组数
     var unUseGCount: Int = 0
 )
+
+enum class GroupDevActionType {
+    ADD,
+    REMOVE,
+    FORCE_REMOVE
+}

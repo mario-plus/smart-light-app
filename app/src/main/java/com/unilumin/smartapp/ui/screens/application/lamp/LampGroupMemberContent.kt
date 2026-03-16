@@ -32,12 +32,10 @@ import androidx.compose.material.icons.filled.DeviceHub
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.LinkOff
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -55,7 +53,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -74,11 +71,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.unilumin.smartapp.client.constant.DeviceConstant.GROUP_DEV_REMOVE_TYPE
+import com.unilumin.smartapp.client.constant.DeviceConstant.GROUP_FORCE_REMOVE_DEV
+import com.unilumin.smartapp.client.constant.DeviceConstant.GROUP_REMOVE_DEV
 import com.unilumin.smartapp.client.constant.DeviceConstant.groupDeviceBindOptions
 import com.unilumin.smartapp.client.constant.DeviceConstant.statusOptions
 import com.unilumin.smartapp.client.data.ForceDelGroupDev
+import com.unilumin.smartapp.client.data.GroupDevActionType
 import com.unilumin.smartapp.client.data.GroupMemberInfo
+import com.unilumin.smartapp.client.data.GroupOptDevVO
 import com.unilumin.smartapp.client.data.OptGroupDev
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
@@ -101,13 +104,16 @@ fun LampGroupMemberContent(
     lampViewModel: LampViewModel, onBack: () -> Unit
 ) {
     val groupMemberFlow = lampViewModel.groupMemberFlow.collectAsLazyPagingItems()
+
     val bindState = lampViewModel.bindState.collectAsState()
 
     val currentGroupInfo = lampViewModel.currentGroupInfo.collectAsState()
 
-    val groupDevToAddFlow = lampViewModel.groupDevToAddFlow.collectAsLazyPagingItems()
+
 
     var showAddDevBottomSheet by remember { mutableStateOf(false) }
+    var showRemoveBottomSheet by remember { mutableStateOf(false) }
+    var showForceBottomSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         lampViewModel.updateSearch("")
@@ -120,6 +126,20 @@ fun LampGroupMemberContent(
             CommonTopAppBar(
                 title = currentGroupInfo.value?.groupName.toString(),
                 subTitle = "分组成员",
+                menuItems = GROUP_DEV_REMOVE_TYPE,
+                onMenuItemClick = { option ->
+                    if (option.id == GROUP_REMOVE_DEV) {
+                        showRemoveBottomSheet = true
+                        groupMemberFlow.refresh()
+                    } else if (option.id == GROUP_FORCE_REMOVE_DEV) {
+                        showForceBottomSheet = true
+                        groupMemberFlow.refresh()
+                    }else{
+                        lampViewModel.updateGroupId(currentGroupInfo.value?.id)
+                        showAddDevBottomSheet = true
+                    }
+
+                },
                 onBack = { onBack() })
         }, containerColor = PageBackground
     ) { padding ->
@@ -133,11 +153,6 @@ fun LampGroupMemberContent(
                 viewModel = lampViewModel,
                 pagingItems = groupMemberFlow,
                 keySelector = { it.deviceId },
-                onAddClick = {
-                    lampViewModel.updateGroupId(currentGroupInfo.value?.id)
-                    groupDevToAddFlow.refresh()
-                    showAddDevBottomSheet = true
-                },
                 searchTitle = "搜索设备名称或序列码",
                 middleContent = {
                     if (currentGroupInfo.value?.groupType != 56) {
@@ -156,38 +171,52 @@ fun LampGroupMemberContent(
                 if (currentGroupInfo.value?.groupType == 56) {
                     LoopControllerCard(item)
                 } else {
-                    NormalDeviceCard(item, onRemove = {
-                        lampViewModel.optGroupDev(
-                            OptGroupDev(
-                                groupId = currentGroupInfo.value?.id ?: 0,
-                                deviceIds = listOf(item.deviceId),
-                                type = 0
-                            )
-                        )
-                        groupMemberFlow.refresh()
-                    }, onForceRemove = {
-                        lampViewModel.forceDelGroupDev(
-                            ForceDelGroupDev(
-                                groupId = currentGroupInfo.value?.id ?: 0,
-                                deviceIds = listOf(item.deviceId),
-                            ),
-                            onSuccess = {
-                                groupMemberFlow.refresh()
-                            }
-                        )
-                    })
+                    NormalDeviceCard(item)
                 }
             }
             if (showAddDevBottomSheet) {
-                AddDeviceBottomSheet(
+                val groupDevToAddFlow = lampViewModel.groupDevToAddFlow.collectAsLazyPagingItems()
+                DeviceActionBottomSheet(
                     viewModel = lampViewModel,
                     groupId = currentGroupInfo.value?.id,
                     onDismiss = { showAddDevBottomSheet = false },
-                    onAddSuccess = {
+                    availableDevices = groupDevToAddFlow,
+                    actionType = GroupDevActionType.ADD,
+                    onSuccess = {
                         showAddDevBottomSheet = false
                         groupMemberFlow.refresh()
-                    })
+                    }
+                )
             }
+            if (showRemoveBottomSheet) {
+                DeviceActionBottomSheet(
+                    viewModel = lampViewModel,
+                    groupId = currentGroupInfo.value?.id,
+                    onDismiss = { showRemoveBottomSheet = false },
+                    availableDevices = lampViewModel.groupMemberFlow.collectAsLazyPagingItems(),
+                    actionType = GroupDevActionType.REMOVE,
+                    onSuccess = {
+                        showRemoveBottomSheet = false
+                        groupMemberFlow.refresh()
+                    }
+                )
+            }
+
+            if (showForceBottomSheet) {
+                DeviceActionBottomSheet(
+                    viewModel = lampViewModel,
+                    groupId = currentGroupInfo.value?.id,
+                    onDismiss = { showForceBottomSheet = false },
+                    availableDevices = lampViewModel.groupMemberFlow.collectAsLazyPagingItems(),
+                    actionType = GroupDevActionType.FORCE_REMOVE,
+                    onSuccess = {
+                        showForceBottomSheet = false
+                        groupMemberFlow.refresh()
+                    }
+                )
+            }
+
+
         }
     }
 }
@@ -238,16 +267,13 @@ fun LoopControllerCard(item: GroupMemberInfo) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NormalDeviceCard(
-    item: GroupMemberInfo, onRemove: () -> Unit, onForceRemove: () -> Unit
+    item: GroupMemberInfo
 ) {
-    var showMenu by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 6.dp, vertical = 4.dp)
-            .combinedClickable(onClick = { /* 点击进入详情 */ }, onLongClick = {
-                showMenu = true
-            }),
+            .combinedClickable(onClick = { /* 点击进入详情 */ }, onLongClick = {/*长按*/ }),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -323,11 +349,6 @@ fun NormalDeviceCard(
             Spacer(modifier = Modifier.height(12.dp))
             GroupMemberStatusRow(item.bindState, item.operateState)
         }
-    }
-    if (showMenu) {
-        DeviceActionBottomSheet(
-            onDismiss = { showMenu = false }, onRemove = onRemove, onForceRemove = onForceRemove
-        )
     }
 }
 
@@ -495,110 +516,46 @@ fun GroupMemberStatusRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceActionBottomSheet(
-    onDismiss: () -> Unit, onRemove: () -> Unit, onForceRemove: () -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState()
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        dragHandle = { BottomSheetDefaults.DragHandle() }, // 顶部的横条
-        containerColor = Color.White,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp, top = 8.dp) // 底部留出安全距离
-        ) {
-            // 选项 1: 普通移除
-            ActionItem(
-                icon = Icons.Outlined.Delete,
-                title = "移除设备",
-                subTitle = "从当前分组中正常移除该设备",
-                onClick = {
-                    onRemove()
-                    onDismiss()
-                })
-            // 选项 2: 强制移除 (强调危险/警示)
-            ActionItem(
-                icon = Icons.Outlined.WarningAmber,
-                title = "强制移除",
-                subTitle = "当设备离线无法响应时使用，直接清除记录",
-                titleColor = Color(0xFFD32F2F), // 红色警示
-                onClick = {
-                    onForceRemove()
-                    onDismiss()
-                })
-            Spacer(modifier = Modifier.height(8.dp))
-            // 取消按钮
-            TextButton(
-                onClick = onDismiss, modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            ) {
-                Text("取消", color = Color.Gray)
-            }
-        }
-    }
-}
-
-/**
- * 底部弹窗内的单个功能行
- */
-@Composable
-private fun ActionItem(
-    icon: ImageVector,
-    title: String,
-    subTitle: String,
-    titleColor: Color = Color(0xFF1A1A1A),
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = if (titleColor == Color(0xFF1A1A1A)) Color.Gray else titleColor,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column {
-            Text(
-                text = title, style = TextStyle(
-                    fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = titleColor
-                )
-            )
-            Text(
-                text = subTitle, style = TextStyle(
-                    fontSize = 12.sp, color = Color.Gray
-                )
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddDeviceBottomSheet(
     viewModel: LampViewModel,
     groupId: Long?,
+    availableDevices: LazyPagingItems<out Any>,
+    actionType: GroupDevActionType = GroupDevActionType.ADD, // 默认是新增
     onDismiss: () -> Unit,
-    onAddSuccess: () -> Unit
+    onSuccess: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val availableDevices = viewModel.groupDevToAddFlow.collectAsLazyPagingItems()
     var selectedDeviceIds by remember { mutableStateOf(setOf<Long>()) }
     val searchQuery by viewModel.searchQuery.collectAsState()
+
+    // --- 动态文案与颜色 ---
+    val titleText = when (actionType) {
+        GroupDevActionType.ADD -> "选择要添加的设备"
+        GroupDevActionType.REMOVE -> "选择要移除的设备"
+        GroupDevActionType.FORCE_REMOVE -> "选择要强制移除的设备"
+    }
+
+    val actionText = when (actionType) {
+        GroupDevActionType.ADD -> "确定添加"
+        GroupDevActionType.REMOVE -> "确定移除"
+        GroupDevActionType.FORCE_REMOVE -> "强制移除"
+    }
+
+    val actionColor = when (actionType) {
+        GroupDevActionType.ADD -> BluePrimary
+        GroupDevActionType.REMOVE -> Color(0xFFF57C00) // 警告橙
+        GroupDevActionType.FORCE_REMOVE -> Color(0xFFD32F2F) // 危险红
+    }
+
+    // --- 每次打开弹窗刷新状态 ---
+    LaunchedEffect(Unit) {
+        viewModel.updateSearch("")
+        selectedDeviceIds = setOf()
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = Color(0xFFF8F9FA),
-        // 恢复了 DragHandle，让 BottomSheet 看起来更自然
         dragHandle = { BottomSheetDefaults.DragHandle() },
         modifier = Modifier.fillMaxHeight(0.95f)
     ) {
@@ -607,11 +564,11 @@ fun AddDeviceBottomSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp), // 调整间距使其更协调
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "选择要添加的设备",
+                    text = titleText,
                     style = TextStyle(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
@@ -619,7 +576,6 @@ fun AddDeviceBottomSheet(
                     ),
                     modifier = Modifier.weight(1f)
                 )
-                // 增大触摸热区，让关闭更容易点击
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = Icons.Default.Close,
@@ -630,7 +586,7 @@ fun AddDeviceBottomSheet(
                 }
             }
 
-            // --- 2. 搜索框 (优化为更轻量的样式) ---
+            // --- 2. 搜索框 ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -680,18 +636,17 @@ fun AddDeviceBottomSheet(
                     availableDevices.loadState.refresh is LoadState.Loading -> {
                         CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center),
-                            color = BluePrimary
+                            color = actionColor
                         )
                     }
 
                     availableDevices.loadState.refresh is LoadState.NotLoading && availableDevices.itemCount == 0 -> {
-                        // 优化空状态，增加图标
                         Column(
                             modifier = Modifier.align(Alignment.Center),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Lightbulb, // 你可以换成专用的空状态 Icon
+                                imageVector = Icons.Default.Lightbulb,
                                 contentDescription = null,
                                 tint = Color.LightGray,
                                 modifier = Modifier
@@ -709,18 +664,36 @@ fun AddDeviceBottomSheet(
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp) // 用统一间距替代Item内边距
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             items(availableDevices.itemCount) { index ->
                                 val deviceInfo = availableDevices[index]
                                 if (deviceInfo != null) {
-                                    val currentDeviceId: Long? = deviceInfo.id
+                                    val currentDeviceId: Long? = when (deviceInfo) {
+                                        is GroupMemberInfo -> deviceInfo.deviceId
+                                        is GroupOptDevVO -> deviceInfo.id
+                                        else -> null
+                                    }
+
+                                    val deviceName: String = when (deviceInfo) {
+                                        is GroupMemberInfo -> deviceInfo.deviceName
+                                        is GroupOptDevVO -> deviceInfo.deviceName
+                                        else -> null
+                                    } ?: "未知设备"
+
+                                    val deviceSn: String = when (deviceInfo) {
+                                        is GroupMemberInfo -> deviceInfo.serialNum
+                                        is GroupOptDevVO -> deviceInfo.serialNum
+                                        else -> null
+                                    } ?: "--"
+
                                     if (currentDeviceId != null) {
                                         val isSelected = selectedDeviceIds.contains(currentDeviceId)
                                         SelectableDeviceItem(
-                                            deviceName = deviceInfo.deviceName ?: "未知设备",
-                                            deviceSn = "SN: ${deviceInfo.serialNum ?: "--"}",
+                                            deviceName = deviceName,
+                                            deviceSn = "SN: $deviceSn",
                                             isSelected = isSelected,
+                                            activeColor = actionColor,
                                             onClick = {
                                                 selectedDeviceIds = if (isSelected) {
                                                     selectedDeviceIds - currentDeviceId
@@ -742,7 +715,7 @@ fun AddDeviceBottomSheet(
                                     ) {
                                         CircularProgressIndicator(
                                             modifier = Modifier.size(24.dp),
-                                            color = BluePrimary,
+                                            color = actionColor,
                                             strokeWidth = 2.dp
                                         )
                                     }
@@ -753,11 +726,11 @@ fun AddDeviceBottomSheet(
                 }
             }
 
-            // --- 4. 底部操作栏 (去阴影，改用轻巧的分割线) ---
+            // --- 4. 底部操作栏 ---
             Column(
                 modifier = Modifier.background(Color.White)
             ) {
-                HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 0.5.dp) // 柔和的顶部边界
+                HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 0.5.dp)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -770,7 +743,7 @@ fun AddDeviceBottomSheet(
                         text = "已选择: ${selectedDeviceIds.size} 项",
                         style = TextStyle(
                             fontSize = 14.sp,
-                            color = if (selectedDeviceIds.isNotEmpty()) BluePrimary else TextSub,
+                            color = if (selectedDeviceIds.isNotEmpty()) actionColor else TextSub,
                             fontWeight = FontWeight.Medium
                         )
                     )
@@ -778,25 +751,51 @@ fun AddDeviceBottomSheet(
                     Button(
                         onClick = {
                             if (selectedDeviceIds.isNotEmpty() && groupId != null) {
-                                viewModel.optGroupDev(
-                                    OptGroupDev(
-                                        groupId = groupId,
-                                        deviceIds = selectedDeviceIds.toList(),
-                                        type = 1
-                                    ),
-                                    onSuccess = onAddSuccess
-                                )
+                                // 👇 核心分支：根据枚举调用不同接口
+                                when (actionType) {
+                                    GroupDevActionType.ADD -> {
+                                        viewModel.optGroupDev(
+                                            optInfo = OptGroupDev(
+                                                groupId = groupId,
+                                                deviceIds = selectedDeviceIds.toList(),
+                                                type = 1
+                                            ),
+                                            onSuccess = onSuccess
+                                        )
+                                    }
+
+                                    GroupDevActionType.REMOVE -> {
+                                        viewModel.optGroupDev(
+                                            optInfo = OptGroupDev(
+                                                groupId = groupId,
+                                                deviceIds = selectedDeviceIds.toList(),
+                                                type = 0
+                                            ),
+                                            onSuccess = onSuccess
+                                        )
+                                    }
+
+                                    GroupDevActionType.FORCE_REMOVE -> {
+                                        viewModel.forceDelGroupDev(
+                                            ForceDelGroupDev(
+                                                groupId = groupId,
+                                                deviceIds = selectedDeviceIds.toList()
+                                            ),
+                                            onSuccess = onSuccess
+                                        )
+                                    }
+                                }
                             }
                         },
                         enabled = selectedDeviceIds.isNotEmpty(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = BluePrimary,
-                            disabledContainerColor = Color(0xFFE0E0E0) // 让禁用状态也好看些
+                            containerColor = actionColor,
+                            disabledContainerColor = Color(0xFFE0E0E0)
                         ),
                         shape = RoundedCornerShape(24.dp),
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
                     ) {
-                        Text("确定添加", style = TextStyle(fontWeight = FontWeight.Bold))
+                        Text(actionText, style = TextStyle(fontWeight = FontWeight.Bold))
                     }
                 }
             }
@@ -809,24 +808,24 @@ fun SelectableDeviceItem(
     deviceName: String,
     deviceSn: String,
     isSelected: Boolean,
+    activeColor: Color = BluePrimary, // 👈 新增参数：动态主题色
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            // 移除了内部 padding，使用 LazyColumn 的 spacedBy 控制间距
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = LocalIndication.current
             ) { onClick() },
-        shape = RoundedCornerShape(16.dp), // 圆角稍微增大更现代
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) Color(0xFFF0F4FF) else Color.White
+            containerColor = if (isSelected) activeColor.copy(alpha = 0.05f) else Color.White
         ),
-        // 增加选中时的外描边，大幅提升精致感
+        // 外描边也跟随主题色
         border = if (isSelected) BorderStroke(
             1.dp,
-            BluePrimary.copy(alpha = 0.5f)
+            activeColor.copy(alpha = 0.4f)
         ) else BorderStroke(1.dp, Color.Transparent),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -836,12 +835,11 @@ fun SelectableDeviceItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 图标容器
             Box(
                 modifier = Modifier
-                    .size(44.dp) // 稍微放大一点点
+                    .size(44.dp)
                     .background(
-                        if (isSelected) BluePrimary.copy(alpha = 0.15f) else Color(0xFFF5F7FA),
+                        if (isSelected) activeColor.copy(alpha = 0.15f) else Color(0xFFF5F7FA),
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -849,14 +847,13 @@ fun SelectableDeviceItem(
                 Icon(
                     imageVector = Icons.Default.Lightbulb,
                     contentDescription = null,
-                    tint = if (isSelected) BluePrimary else Color.Gray,
+                    tint = if (isSelected) activeColor else Color.Gray,
                     modifier = Modifier.size(24.dp)
                 )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // 文本区域
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = deviceName,
@@ -866,7 +863,7 @@ fun SelectableDeviceItem(
                     ),
                     maxLines = 1
                 )
-                Spacer(modifier = Modifier.height(2.dp)) // 稍微拉开标题和副标题距离
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = deviceSn,
                     style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF888888)),
@@ -874,12 +871,11 @@ fun SelectableDeviceItem(
                 )
             }
 
-            // Checkbox 视觉微调
             Checkbox(
                 checked = isSelected,
                 onCheckedChange = { onClick() },
                 colors = CheckboxDefaults.colors(
-                    checkedColor = BluePrimary,
+                    checkedColor = activeColor, // Checkbox 也跟随主题色
                     uncheckedColor = Color.LightGray,
                     checkmarkColor = Color.White
                 )

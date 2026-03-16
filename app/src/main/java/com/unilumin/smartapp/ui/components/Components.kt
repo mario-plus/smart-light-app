@@ -2269,7 +2269,7 @@ fun <T : Any> BaseLampListScreen(
             forceLoading = isSwitching,
             modifier = Modifier.weight(1f),
             itemKey = keySelector,
-            contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp, start = 16.dp, end = 16.dp),
+            contentPadding = PaddingValues(top = 0.dp, bottom = 8.dp, start = 8.dp, end = 8.dp),
             itemContent = itemContent,
             onAddClick = onAddClick
         )

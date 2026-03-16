@@ -10,7 +10,6 @@ import com.unilumin.smartapp.client.data.DeviceStatusSummary
 import com.unilumin.smartapp.client.data.ForceDelGroupDev
 import com.unilumin.smartapp.client.data.GroupDevParam
 import com.unilumin.smartapp.client.data.GroupMemberReq
-import com.unilumin.smartapp.client.data.GroupOptDevVO
 import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
@@ -105,7 +104,7 @@ class LampViewModel(
         _currentGroupInfo.value = e
     }
 
-    val groupId = MutableStateFlow(0L)
+    val groupId = MutableStateFlow(-1L)
     fun updateGroupId(s: Long?) {
         if (s != null) {
             groupId.value = s
@@ -271,17 +270,6 @@ class LampViewModel(
         }
     }
 
-    suspend fun getGroupDevToOpt(
-        curPage: Int, pageSize: Int, searchQuery: String, groupId: Long
-    ): List<GroupOptDevVO> {
-        return fetchPageData {
-            roadService.getGroupDevToAdd(
-                GroupDevParam(
-                    curPage = curPage, pageSize = pageSize, keyword = searchQuery, id = groupId
-                )
-            )
-        }
-    }
 
     /**
      * 注意此处bindState和state替换

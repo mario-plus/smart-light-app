@@ -72,6 +72,17 @@ object DeviceConstant {
         SystemConfig(SMART_LAMP_JOB, "任务管理", getIconForName(SMART_LAMP_JOB), true),
     )
 
+    const val GROUP_REMOVE_DEV = "remove"
+    const val GROUP_FORCE_REMOVE_DEV = "forceRemove"
+    const val GROUP_ADD_DEV = "addGroupDev"
+
+    val GROUP_DEV_REMOVE_TYPE = listOf<SystemConfig>(
+        SystemConfig(GROUP_REMOVE_DEV, "移除设备", getIconForName(GROUP_REMOVE_DEV), true),
+        SystemConfig(GROUP_FORCE_REMOVE_DEV, "强制移除", getIconForName(GROUP_FORCE_REMOVE_DEV), true),
+        SystemConfig(GROUP_ADD_DEV, "添加设备", getIconForName(GROUP_ADD_DEV), true)
+    )
+
+
 
     //播放盒管理
     const val SMART_LED_DEV_MANAGE = "ledDevManage"
