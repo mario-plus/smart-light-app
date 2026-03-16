@@ -105,10 +105,11 @@ fun LampGroupMemberContent(
 ) {
     val groupMemberFlow = lampViewModel.groupMemberFlow.collectAsLazyPagingItems()
 
+    val groupDevToAddFlow = lampViewModel.groupDevToAddFlow.collectAsLazyPagingItems()
+
     val bindState = lampViewModel.bindState.collectAsState()
 
     val currentGroupInfo = lampViewModel.currentGroupInfo.collectAsState()
-
 
 
     var showAddDevBottomSheet by remember { mutableStateOf(false) }
@@ -130,11 +131,9 @@ fun LampGroupMemberContent(
                 onMenuItemClick = { option ->
                     if (option.id == GROUP_REMOVE_DEV) {
                         showRemoveBottomSheet = true
-                        groupMemberFlow.refresh()
                     } else if (option.id == GROUP_FORCE_REMOVE_DEV) {
                         showForceBottomSheet = true
-                        groupMemberFlow.refresh()
-                    }else{
+                    } else {
                         lampViewModel.updateGroupId(currentGroupInfo.value?.id)
                         showAddDevBottomSheet = true
                     }
@@ -175,15 +174,18 @@ fun LampGroupMemberContent(
                 }
             }
             if (showAddDevBottomSheet) {
-                val groupDevToAddFlow = lampViewModel.groupDevToAddFlow.collectAsLazyPagingItems()
                 DeviceActionBottomSheet(
                     viewModel = lampViewModel,
                     groupId = currentGroupInfo.value?.id,
-                    onDismiss = { showAddDevBottomSheet = false },
+                    onDismiss = {
+                        showAddDevBottomSheet = false
+                        lampViewModel.updateGroupId(-1L)
+                    },
                     availableDevices = groupDevToAddFlow,
                     actionType = GroupDevActionType.ADD,
                     onSuccess = {
                         showAddDevBottomSheet = false
+                        lampViewModel.updateGroupId(-1L)
                         groupMemberFlow.refresh()
                     }
                 )
@@ -677,13 +679,21 @@ fun DeviceActionBottomSheet(
 
                                     val deviceName: String = when (deviceInfo) {
                                         is GroupMemberInfo -> deviceInfo.deviceName
+                                            ?: deviceInfo.loopCtlName
+
                                         is GroupOptDevVO -> deviceInfo.deviceName
+                                            ?: deviceInfo.loopCtlName
+
                                         else -> null
                                     } ?: "未知设备"
 
                                     val deviceSn: String = when (deviceInfo) {
                                         is GroupMemberInfo -> deviceInfo.serialNum
+                                            ?: deviceInfo.loopCode
+
                                         is GroupOptDevVO -> deviceInfo.serialNum
+                                            ?: deviceInfo.loopCode
+
                                         else -> null
                                     } ?: "--"
 

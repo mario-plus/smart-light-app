@@ -258,13 +258,17 @@ class LampViewModel(
     val groupDevToAddFlow = createPagingFlow(
         combine(searchQuery, groupId, ::Pair)
     ) { (searchQuery, groupId), page, size ->
+        if (groupId == -1L) {
+            return@createPagingFlow emptyList()
+        }
+
         fetchPageData {
             roadService.getGroupDevToAdd(
                 GroupDevParam(
                     curPage = page,
                     pageSize = size,
                     keyword = searchQuery,
-                    id = currentGroupInfo.value?.id ?: 0
+                    id = groupId
                 )
             )
         }
