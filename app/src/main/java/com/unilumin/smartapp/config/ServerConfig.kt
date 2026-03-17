@@ -1,4 +1,4 @@
-package com.unilumin.smartapp.mock
+package com.unilumin.smartapp.config
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

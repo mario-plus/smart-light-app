@@ -272,6 +272,7 @@ fun DevicesScreen(
             emptyMessage = "未找到相关设备",
             contentPadding = PaddingValues(vertical = 12.dp, horizontal = 16.dp)
         ) { device ->
+
             DeviceCardItem(
                 iotDevice = device,
                 productType = productType.toLong(),

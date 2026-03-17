@@ -26,7 +26,7 @@ import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.unilumin.smartapp.client.data.SystemConfig
-import com.unilumin.smartapp.mock.ServerConfig
+import com.unilumin.smartapp.config.ServerConfig
 
 object DeviceConstant {
 

@@ -39,7 +39,7 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_MONITOR
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_PLAY_BOX
 import com.unilumin.smartapp.client.data.IotDevice
-import com.unilumin.smartapp.mock.ServerConfig
+import com.unilumin.smartapp.config.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
 import com.unilumin.smartapp.ui.screens.application.broadcast.SmartBroadScreen
 import com.unilumin.smartapp.ui.screens.application.env.SmartEnvScreen

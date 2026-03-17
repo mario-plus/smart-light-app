@@ -1,4 +1,4 @@
-package com.unilumin.smartapp.mock
+package com.unilumin.smartapp.config
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit

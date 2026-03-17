@@ -9,7 +9,7 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_APP_LIST
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_FUNC_LIST
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_FUNC_LIST
 import com.unilumin.smartapp.client.data.SystemConfig
-import com.unilumin.smartapp.mock.SystemConfigManager
+import com.unilumin.smartapp.config.SystemConfigManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn

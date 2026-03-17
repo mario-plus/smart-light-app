@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.unilumin.smartapp.client.RetrofitClient
-import com.unilumin.smartapp.mock.ServerConfig
+import com.unilumin.smartapp.config.ServerConfig
 
 @Composable
 fun ServerSettingsDialog(
