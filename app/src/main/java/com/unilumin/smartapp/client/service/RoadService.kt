@@ -30,6 +30,8 @@ import com.unilumin.smartapp.client.data.OptGroupDev
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
 import com.unilumin.smartapp.client.data.StrategyRequestParam
+import com.unilumin.smartapp.client.data.TaskIdRequest
+import com.unilumin.smartapp.client.data.TaskInfo
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -156,6 +158,9 @@ interface RoadService {
 
     @POST(RequestPathKey.KEY_GET_GROUP_GET_DEV)
     fun getGroupDevToAdd(@Body requestBody: GroupDevParam): Call<NewResponseData<PageResponse<GroupOptDevVO>?>?>?
+
+    @POST(RequestPathKey.KEY_GET_JOB_DETAIL)
+    fun getJobDetailById(@Body requestBody: TaskIdRequest): Call<NewResponseData<PageResponse<TaskInfo>?>?>?
 
 
 }

@@ -1289,13 +1289,13 @@ data class OptGroupDev(
     //0删除，1新增
     val type: Int
 )
+
 //强制删除分组设备
 data class ForceDelGroupDev(
     val groupId: Long,
     val deviceIds: List<Long>,
     val subSystemType: Int? = 1
 )
-
 
 //查询分组可添加的设备
 data class GroupDevParam(
@@ -1343,7 +1343,41 @@ data class GroupOptDevVO(
 )
 
 enum class GroupDevActionType {
-    ADD,
-    REMOVE,
-    FORCE_REMOVE
+    ADD,//分组添加设备
+    REMOVE,//分组移除设备
+    FORCE_REMOVE//分组强制移除设备
 }
+
+data class TaskIdRequest(
+    var id: Long,
+    /** 执行结果（1未执行或执行未成功 2执行成功 ） */
+    var status: Int? = null,
+    /** 设备名称 */
+    var keyword: String? = null,
+    /** 页数 */
+    var curPage: Int? = null,
+    /** 条数 */
+    var pageSize: Int? = null
+)
+
+data class TaskInfo(
+    var id: Long,
+    /** 执行状态（1未执行或执行未成功 2执行成功 3.待确认） */
+    var status: Int? = null,
+    var updateDate: String? = null,
+    var tryNum: Long? = null,
+    /** 任务标识 */
+    var transactionId: String? = null,
+    /** 任务内容 */
+    var context: String? = null,
+    /** 相应数据 */
+    var responseInfo: String? = null,
+    var remark: String? = null,
+    var parentId: Long? = null,
+    var deviceName: String? = null,
+    var businessId: Long? = null,
+    /** 执行结果 */
+    var cause: String? = null,
+    /** 子任务 */
+    var childJobs: List<TaskInfo>? = null
+)

@@ -25,6 +25,7 @@ import com.unilumin.smartapp.client.data.OptGroupDev
 import com.unilumin.smartapp.client.data.Quadruple
 import com.unilumin.smartapp.client.data.RequestParam
 import com.unilumin.smartapp.client.data.StrategyRequestParam
+import com.unilumin.smartapp.client.data.TaskIdRequest
 import com.unilumin.smartapp.client.service.RoadService
 import com.unilumin.smartapp.util.ToastUtil
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,6 +58,7 @@ class LampViewModel(
     //策略状态
     //任务状态
     //分组类型
+    //任务详情状态
     val state = MutableStateFlow(-1)
     fun updateState(s: Int) {
         state.value = s
@@ -67,6 +69,13 @@ class LampViewModel(
     fun updateSyncState(s: Int) {
         syncState.value = s
     }
+
+    //当前任务id
+    val currentTaskId = MutableStateFlow(-1L)
+    fun updateCurrentTaskId(s: Long) {
+        currentTaskId.value = s
+    }
+
 
     //单灯模式
     val lampModel = MutableStateFlow(-1)
@@ -327,6 +336,28 @@ class LampViewModel(
             )
         }
     }
+
+    //任务详情
+    val lampJobDetailFlow = createPagingFlow(
+        combine(state, searchQuery, currentTaskId, ::Triple)
+    ) { (state, searchQuery, currentTaskId), page, size ->
+        if (currentTaskId == -1L) {
+            return@createPagingFlow emptyList()
+        }
+        val s = state.takeIf { it != FILTER_NONE }
+        fetchPageData {
+            roadService.getJobDetailById(
+                TaskIdRequest(
+                    id = currentTaskId,
+                    keyword = searchQuery,
+                    curPage = page,
+                    pageSize = size,
+                    status = s
+                )
+            )
+        }
+    }
+
 
     //设备控制按钮
     fun lampCtl(deviceId: Long, cmdType: Int, cmdValue: Int) {

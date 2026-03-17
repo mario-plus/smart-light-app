@@ -40,7 +40,7 @@ import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 fun SmartLampScreen(
     retrofitClient: RetrofitClient,
     onBack: () -> Unit,
-    toNew: (LampViewModel) -> Unit
+    toNew: (LampViewModel, String) -> Unit
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
@@ -77,7 +77,8 @@ fun SmartLampScreen(
 
     Scaffold(
         topBar = {
-            CommonTopAppBar(title = currentTitle,
+            CommonTopAppBar(
+                title = currentTitle,
                 onBack = { onBack() },
                 menuItems = lampFunctions,
                 onMenuItemClick = { systemConfig ->
@@ -112,7 +113,9 @@ fun SmartLampScreen(
 
                 // 分组管理
                 SMART_LAMP_GROUP -> {
-                    LampGroupContent(lampViewModel, toNew = { toNew(lampViewModel) })
+                    LampGroupContent(
+                        lampViewModel,
+                        toNew = { toNew(lampViewModel, SMART_LAMP_GROUP) })
                 }
 
                 SMART_LAMP_STRATEGY -> {
@@ -120,7 +123,7 @@ fun SmartLampScreen(
                 }
 
                 SMART_LAMP_JOB -> {
-                    LampJobContent(lampViewModel)
+                    LampJobContent(lampViewModel, toNew = { toNew(lampViewModel, SMART_LAMP_JOB) })
                 }
 
                 else -> {

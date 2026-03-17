@@ -78,10 +78,14 @@ object DeviceConstant {
 
     val GROUP_DEV_REMOVE_TYPE = listOf<SystemConfig>(
         SystemConfig(GROUP_REMOVE_DEV, "移除设备", getIconForName(GROUP_REMOVE_DEV), true),
-        SystemConfig(GROUP_FORCE_REMOVE_DEV, "强制移除", getIconForName(GROUP_FORCE_REMOVE_DEV), true),
+        SystemConfig(
+            GROUP_FORCE_REMOVE_DEV,
+            "强制移除",
+            getIconForName(GROUP_FORCE_REMOVE_DEV),
+            true
+        ),
         SystemConfig(GROUP_ADD_DEV, "添加设备", getIconForName(GROUP_ADD_DEV), true)
     )
-
 
 
     //播放盒管理
@@ -242,6 +246,9 @@ object DeviceConstant {
         listOf(-1 to "全部", 0 to "正常", 1 to "提示", 2 to "次要", 3 to "重要", 4 to "紧急")
 
     val groupDeviceBindOptions = listOf(-1 to "全部", 1 to "已绑定", 0 to "未绑定")
+
+    val jobDetailStatusOptions = listOf(-1 to "全部", 1 to "失败", 2 to "成功", 3 to "待确认")
+
     val alarmConfirmOptions = listOf(1 to "已确认", 0 to "未确认")
 
     val fileTypeOptions = listOf(

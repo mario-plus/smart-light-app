@@ -336,17 +336,11 @@ fun BottomNavBar(navController: NavController) {
                 onClick = {
                     if (currentRoute != route) {
                         navController.navigate(route) {
-//                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-//                            launchSingleTop = true
-//                            restoreState = true
                             navController.navigate(route) {
-                                // 1. 弹出到起始目的地，并关闭 saveState 避免缓存子页堆栈
                                 popUpTo(navController.graph.startDestinationId) {
                                     saveState = false
                                 }
-                                // 2. 确保栈中只有一个目的地实例
                                 launchSingleTop = true
-                                // 3. 关键：不恢复之前的状态（子页面状态会被销毁，回到根页面）
                                 restoreState = false
                             }
                         }
@@ -365,15 +359,17 @@ fun BottomNavBar(navController: NavController) {
 }
 
 @Composable
-fun InfoLabelValue(label: String, value: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+fun InfoLabelValue(label: String, value: String, modifier: Modifier = Modifier) {
+    Row(
+        verticalAlignment = Alignment.Top,
+        modifier = modifier.fillMaxWidth()
+    ) {
         Text(text = "$label: ", fontSize = 12.sp, color = Gray400)
         Text(
             text = value,
             fontSize = 12.sp,
             color = Gray500,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            modifier = Modifier.weight(1f)
         )
     }
 }
@@ -1711,6 +1707,7 @@ fun <T : Any> PagingList(
         }
     }
 }
+
 @Composable
 fun TimeFilterSegment(selectedType: Int, onTypeSelected: (Int) -> Unit) {
     val options = listOf(0 to "最近活跃时间", 1 to "最近7天", 2 to "最近30天", 3 to "最近90天")

@@ -107,6 +107,9 @@ object RequestPathKey {
     //获取可添加的分组成员
     const val KEY_GET_GROUP_GET_DEV: String = "$SMART_ROAD_LAMPS/uni_light_getGroupDevList"
 
+    //任务详情
+    const val KEY_GET_JOB_DETAIL: String = "$SMART_ROAD_LAMPS/uni_light_getTaskDetailById"
+
     //设备列表
     const val KEY_GET_DEVICE: String = "$IOT_HUB_MANAGER/iot_device_page"
 

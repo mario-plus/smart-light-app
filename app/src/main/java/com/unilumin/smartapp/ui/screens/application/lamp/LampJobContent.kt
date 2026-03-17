@@ -53,12 +53,10 @@ import com.unilumin.smartapp.ui.viewModel.LampViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LampJobContent(
-    lampViewModel: LampViewModel
+    lampViewModel: LampViewModel,toNew: (LampViewModel) -> Unit
 ) {
     val sceneOptions = lampViewModel.sceneOptions.collectAsState()
     val sceneSelectIds = lampViewModel.selectSceneIds.collectAsState()
-
-
     val lampJobFlow = lampViewModel.lampJobFlow.collectAsLazyPagingItems()
 
     LaunchedEffect(Unit) {
@@ -71,7 +69,6 @@ fun LampJobContent(
         statusOptions = DeviceConstant.jobOrStrategyStatusOptions,
         viewModel = lampViewModel,
         pagingItems = lampJobFlow,
-        //TODO 接口有问题，下拉分页查询，出现重复数据，会直接导致app崩溃 keySelector = { it.id }
         keySelector = null,
         searchTitle = "搜索业务对象名称",
         middleContent = {
@@ -85,7 +82,11 @@ fun LampJobContent(
             )
         }
     ) { item ->
-        LampJobItem(sceneOptions.value, item, onItemClick = {})
+        LampJobItem(sceneOptions.value, item, onItemClick = {
+            //任务详情
+            lampViewModel.updateCurrentTaskId(item.id)
+            toNew(lampViewModel)
+        })
     }
 }
 
@@ -303,7 +304,7 @@ private fun getStatusVisuals(status: Int): Pair<Color, String> {
         2 -> ProcessingColor to "执行中"
         3 -> SuccessColor to "成功"
         4 -> FailColor to "失败"
-        else  -> TextSecondary to "未知"
+        else -> TextSecondary to "未知"
     }
 }
 
