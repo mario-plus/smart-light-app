@@ -38,6 +38,7 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_ENV
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GROUP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_JOB
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_STRATEGY
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_MONITOR
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_PLAY_BOX
 import com.unilumin.smartapp.client.data.IotDevice
@@ -47,6 +48,7 @@ import com.unilumin.smartapp.ui.screens.application.broadcast.SmartBroadScreen
 import com.unilumin.smartapp.ui.screens.application.env.SmartEnvScreen
 import com.unilumin.smartapp.ui.screens.application.lamp.LampGroupMemberContent
 import com.unilumin.smartapp.ui.screens.application.lamp.LampJobDetailContent
+import com.unilumin.smartapp.ui.screens.application.lamp.LampStrategyOptContent
 import com.unilumin.smartapp.ui.screens.application.lamp.SmartLampScreen
 import com.unilumin.smartapp.ui.screens.application.monitor.SmartMonitorScreen
 import com.unilumin.smartapp.ui.screens.application.playBox.SmartLedScreen
@@ -168,6 +170,7 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                     when (name) {
                                         SMART_LAMP_GROUP -> navController.navigate("groupMemberScreen")
                                         SMART_LAMP_JOB -> navController.navigate("jobDetailScreen")
+                                        SMART_LAMP_STRATEGY -> navController.navigate("strategyOptScreen")
                                     }
                                 })
                         }
@@ -179,9 +182,18 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                 })
                             }
                         }
+                        //任务详情
                         composable("jobDetailScreen") { e ->
                             cachedLampViewModel?.let {
                                 LampJobDetailContent(cachedLampViewModel!!, onBack = {
+                                    navController.popBackStack()
+                                })
+                            }
+                        }
+
+                        composable("strategyOptScreen") { e ->
+                            cachedLampViewModel?.let {
+                                LampStrategyOptContent(cachedLampViewModel!!, onBack = {
                                     navController.popBackStack()
                                 })
                             }

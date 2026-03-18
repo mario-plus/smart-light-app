@@ -119,11 +119,15 @@ fun SmartLampScreen(
                 }
 
                 SMART_LAMP_STRATEGY -> {
-                    LampStrategyContent(lampViewModel)
+                    LampStrategyContent(
+                        lampViewModel,
+                        toNew = { toNew(lampViewModel, SMART_LAMP_STRATEGY) })
                 }
 
                 SMART_LAMP_JOB -> {
-                    LampJobContent(lampViewModel, toNew = { toNew(lampViewModel, SMART_LAMP_JOB) })
+                    LampJobContent(
+                        lampViewModel,
+                        toNew = { toNew(lampViewModel, SMART_LAMP_JOB) })
                 }
 
                 else -> {

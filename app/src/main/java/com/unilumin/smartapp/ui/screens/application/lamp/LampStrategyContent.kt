@@ -54,7 +54,7 @@ import kotlin.math.abs
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LampStrategyContent(
-    lampViewModel: LampViewModel
+    lampViewModel: LampViewModel, toNew: (LampViewModel) -> Unit
 ) {
     val lampStrategyFlow = lampViewModel.lampStrategyFlow.collectAsLazyPagingItems()
     val syncState = lampViewModel.syncState.collectAsState()
@@ -71,6 +71,9 @@ fun LampStrategyContent(
         pagingItems = lampStrategyFlow,
         keySelector = { it.id },
         searchTitle = "搜索策略名称或产品名称",
+        onAddClick = {
+            toNew(lampViewModel)
+        },
         middleContent = {
             // 单选框组件
             ModernStateSelector(
