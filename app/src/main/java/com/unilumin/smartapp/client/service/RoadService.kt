@@ -29,6 +29,9 @@ import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OptGroupDev
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
+import com.unilumin.smartapp.client.data.StrategyGroupDTO
+import com.unilumin.smartapp.client.data.StrategyGroupListVO
+import com.unilumin.smartapp.client.data.StrategyProductVO
 import com.unilumin.smartapp.client.data.StrategyRequestParam
 import com.unilumin.smartapp.client.data.TaskIdRequest
 import com.unilumin.smartapp.client.data.TaskInfo
@@ -161,6 +164,22 @@ interface RoadService {
 
     @POST(RequestPathKey.KEY_GET_JOB_DETAIL)
     fun getJobDetailById(@Body requestBody: TaskIdRequest): Call<NewResponseData<PageResponse<TaskInfo>?>?>?
+
+
+    /**
+     * 创建策略，可选产品
+     * */
+    @GET(RequestPathKey.KEY_GET_GROUP_PRODUCT_LIST)
+    fun getGroupProductList():Call<NewResponseData<List<StrategyProductVO>?>?>?
+
+
+    /**
+     * 创建策略，关联的分组，可选的分组
+     * */
+    @POST(RequestPathKey.KEY_GET_STRATEGY_PRODUCT_LIST)
+    fun getStrategyGroupInfoList(@Body requestBody: StrategyGroupDTO): Call<NewResponseData<PageResponse<StrategyGroupListVO>?>?>?
+
+
 
 
 }

@@ -24,6 +24,8 @@ import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OptGroupDev
 import com.unilumin.smartapp.client.data.Quadruple
 import com.unilumin.smartapp.client.data.RequestParam
+import com.unilumin.smartapp.client.data.StrategyGroupDTO
+import com.unilumin.smartapp.client.data.StrategyProductVO
 import com.unilumin.smartapp.client.data.StrategyRequestParam
 import com.unilumin.smartapp.client.data.TaskIdRequest
 import com.unilumin.smartapp.client.service.RoadService
@@ -76,6 +78,10 @@ class LampViewModel(
         currentTaskId.value = s
     }
 
+    val currentProductId = MutableStateFlow(-1L)
+    fun updateCurrentProductId(s: Long) {
+        currentProductId.value = s
+    }
 
     //单灯模式
     val lampModel = MutableStateFlow(-1)
@@ -142,6 +148,20 @@ class LampViewModel(
     private val _gatewayDevSimpleInfo = MutableStateFlow<List<DevSimpleInfo>>(emptyList())
     val gatewayDevSimpleInfo = _gatewayDevSimpleInfo.asStateFlow()
 
+    //策略可选分组产品列表
+    private val _strategyGroupProductList = MutableStateFlow<List<StrategyProductVO>>(emptyList())
+    val strategyGroupProductList = _strategyGroupProductList.asStateFlow()
+
+    suspend fun getGroupProductList() {
+        val parseDataNewSuspend = parseDataNewSuspend(
+            roadService.getGroupProductList()
+        )
+        if (parseDataNewSuspend != null) {
+            _strategyGroupProductList.value = parseDataNewSuspend
+        }
+    }
+
+
     /**
      * 首页在线率和亮灯率
      * */
@@ -195,6 +215,24 @@ class LampViewModel(
                     networkState = filter.takeIf { it != FILTER_NONE })
             }
         }
+
+    //策略分组信息
+    val lampStrategyGroupInfoFlow =
+        createPagingFlow(
+            combine(currentProductId, searchQuery, ::Pair)
+        ) { (currentProductId, query), page, size ->
+            fetchPageData {
+                roadService.getStrategyGroupInfoList(
+                    StrategyGroupDTO(
+                        curPage = page,
+                        pageSize = size,
+                        keyword = query,
+                        productId = currentProductId
+                    )
+                )
+            }
+        }
+
 
     val lampGateWayFlow =
         createPagingFlow(combine(state, searchQuery, ::Pair)) { (filter, query), page, size ->

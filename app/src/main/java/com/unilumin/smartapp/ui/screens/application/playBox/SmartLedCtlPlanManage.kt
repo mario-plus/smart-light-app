@@ -38,11 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.data.LedCtlPlanDetail
 import com.unilumin.smartapp.client.data.LedPlanBO
+import com.unilumin.smartapp.client.data.Tuple4
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.InfoRowItem
 import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchHeader
-import com.unilumin.smartapp.ui.components.Tuple4
+
 import com.unilumin.smartapp.ui.components.WeekStrategySection
 import com.unilumin.smartapp.ui.viewModel.ScreenViewModel
 

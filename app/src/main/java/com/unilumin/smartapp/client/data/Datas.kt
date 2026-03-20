@@ -1381,3 +1381,75 @@ data class TaskInfo(
     /** 子任务 */
     var childJobs: List<TaskInfo>? = null
 )
+
+/**
+ * 策略分组产品
+ * */
+data class StrategyProductVO(
+    val productId: Long,
+    val productName: String
+)
+
+data class StrategyGroupDTO(
+    /** 策略id：编辑需要提供，新增不需要 */
+    var strategyId: Long? = null,
+
+    /** 产品id */
+    var productId: Long? = null,
+
+    /** 类型：0未选择，1已选择 */
+    var type: Int? = null,
+
+    /** 关键词：分组名称 */
+    var keyword: String? = null,
+
+    var projectId: Long? = null,
+
+    /** 页数 */
+    var curPage: Int? = null,
+    /** 条数 */
+    var pageSize: Int? = null,
+
+    /** 子系统：1智慧路灯、2智慧景观、3智慧屏幕、4智慧光显、5光显控台、6智慧隧道 */
+    var subSystemType: Int? = 1
+)
+
+data class StrategyGroupListVO(
+    /** 分组id */
+    var groupId: Long? = null,
+
+    /** 分组名称 */
+    var groupName: String? = null,
+
+    /** 设备id */
+    var deviceId: Long? = null,
+
+    /** 分组类型（1.单灯，25集控，56回路） */
+    var groupType: Long? = null,
+
+    /** 设备名称 */
+    var deviceName: String? = null,
+
+    /** 同步状态 */
+    var syncState: Int? = null,
+
+    /** 组员数 */
+    var count: Int? = null,
+
+    /** 可用策略数量 */
+    var availablePolicyNum: Int? = null,
+
+    /** 最大策略数量 */
+    var maxPolicyNum: Int? = null,
+
+    /** 可用单灯策略数量 */
+    var availablePolicyNumOfLight: Int? = null,
+
+    /** 最大单灯策略数量 */
+    var maxPolicyNumOfLight: Int? = null,
+
+    /** 是否展示单灯策略数量：0或者null,不展示；1，展示 */
+    var isShowPolicyNumOfLight: Int? = null
+)
+
+data class Tuple4<A, B, C, D>(val v1: A, val v2: B, val v3: C, val v4: D)

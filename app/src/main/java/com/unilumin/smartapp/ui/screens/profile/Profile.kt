@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Business
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.SwapVert
@@ -51,6 +52,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -63,13 +65,13 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant.menuItems
-import com.unilumin.smartapp.ui.components.ProfileMenuItem
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Emerald500
 import com.unilumin.smartapp.ui.theme.Gray100
 import com.unilumin.smartapp.ui.theme.Gray200
 import com.unilumin.smartapp.ui.theme.Gray400
 import com.unilumin.smartapp.ui.theme.Gray50
+import com.unilumin.smartapp.ui.theme.Gray500
 import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.Red500
 import com.unilumin.smartapp.ui.viewModel.ProfileViewModel
@@ -392,6 +394,65 @@ fun ProfileScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+
+// 我的--页面子组件
+@Composable
+fun ProfileMenuItem(
+    title: String,
+    icon: ImageVector,
+    iconColor: Color,
+    iconBg: Color,
+    trailingText: String? = null,
+    showArrow: Boolean = true,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = trailingText == null, onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 18.dp), // 加大一点内边距
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                shape = RoundedCornerShape(14.dp), // 更圆润
+                color = iconBg, modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        icon, null, tint = iconColor, modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(18.dp))
+            Text(
+                title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Gray900
+            )
+        }
+        if (trailingText != null) {
+            Surface(
+                color = Gray50,
+                shape = RoundedCornerShape(6.dp),
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Text(
+                    text = trailingText,
+                    fontSize = 13.sp,
+                    color = Gray500,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+
+        } else if (showArrow) {
+            Icon(
+                Icons.Rounded.ChevronRight, null, tint = Gray200, modifier = Modifier.size(22.dp)
+            )
         }
     }
 }

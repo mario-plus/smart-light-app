@@ -1,8 +1,11 @@
 package com.unilumin.smartapp.ui.screens.application.lamp
 
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeveloperBoard
@@ -22,8 +26,12 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,9 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.data.LampLoopCtlInfo
+import com.unilumin.smartapp.client.data.LoopInfo
 import com.unilumin.smartapp.ui.components.BaseLampListScreen
 import com.unilumin.smartapp.ui.components.DeviceStatus
-import com.unilumin.smartapp.ui.components.LoopCircleItem
 import com.unilumin.smartapp.ui.screens.dialog.LoopControlBottomSheet
 import com.unilumin.smartapp.ui.theme.CardBgColor
 import com.unilumin.smartapp.ui.theme.IconBgColor
@@ -199,6 +207,46 @@ fun LampLoopCtlCard(
     }
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoopCircleItem(loop: LoopInfo) {
+    val (baseColor, contentColor) = when (loop.state) {
+        1 -> Color(0xFFE8F5E9) to Color(0xFF2E7D32) // 柔和绿 (通电)
+        0 -> Color(0xFFFFEBEE) to Color(0xFFC62828) // 柔和红 (断电)
+        else -> Color(0xFFF5F5F5) to Color(0xFF757575) // 浅灰 (未知)
+    }
+    val tooltipState = rememberTooltipState()
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(), tooltip = {
+            PlainTooltip(
+                containerColor = Color(0xFF333333).copy(alpha = 0.9f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(modifier = Modifier.padding(4.dp)) {
+                    Text("状态: ${if (loop.state == 1) "通电" else "断电"}", color = Color.White)
+                    Text(
+                        "回路: 第 ${loop.loopNum} 路",
+                        fontSize = 10.sp,
+                        color = Color.White.copy(0.7f)
+                    )
+                }
+            }
+        }, state = tooltipState
+    ) {
+        Box(
+            contentAlignment = Alignment.Center, modifier = Modifier
+                .size(28.dp) // 稍微加大尺寸，更易点击
+                .background(color = baseColor, shape = CircleShape)
+                .border(1.dp, contentColor.copy(alpha = 0.3f), CircleShape) // 添加同色系的浅色边框
+        ) {
+            Text(
+                text = "${loop.loopNum}", color = contentColor, // 文字颜色与边框/状态保持一致
+                fontSize = 14.sp, fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
 
 
 

@@ -2,6 +2,7 @@ package com.unilumin.smartapp.util
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonParser
 import org.json.JSONObject
 
 /**
@@ -37,6 +38,17 @@ object JsonUtils {
             list
         } catch (_: Exception) {
             emptyList()
+        }
+    }
+
+    fun isJsonValid(json: String?): Boolean {
+        if (json.isNullOrBlank()) return false
+        return try {
+            val element = JsonParser().parse(json)
+            // 只有当它是 JSON 对象或 JSON 数组时，才认为是我们需要的 "结构化 JSON"
+            element.isJsonObject || element.isJsonArray
+        } catch (e: Exception) {
+            false
         }
     }
 }

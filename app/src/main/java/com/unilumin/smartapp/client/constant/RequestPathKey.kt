@@ -74,6 +74,15 @@ object RequestPathKey {
 
     const val KEY_JOB_LIST: String = "$SMART_ROAD_LAMPS/uni_light_selectTaskList"
 
+    //创建策略，选择分组产品
+    const val KEY_GET_GROUP_PRODUCT_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getGroupProductList"
+
+    //分组产品下，可选分组
+    const val KEY_GET_STRATEGY_PRODUCT_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getStrategyGroupInfoList"
+
+
+
+
     //亮灯率+在线率
     const val KEY_REAL_TIME_COUNT: String = "$SMART_ROAD_LAMPS/light_real_time_count"
 

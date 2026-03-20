@@ -57,6 +57,7 @@ fun LampStrategyContent(
     lampViewModel: LampViewModel, toNew: (LampViewModel) -> Unit
 ) {
     val lampStrategyFlow = lampViewModel.lampStrategyFlow.collectAsLazyPagingItems()
+
     val syncState = lampViewModel.syncState.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -72,6 +73,8 @@ fun LampStrategyContent(
         keySelector = { it.id },
         searchTitle = "搜索策略名称或产品名称",
         onAddClick = {
+            //获取策略可选分组产品列表
+            lampViewModel.getGroupProduct()
             toNew(lampViewModel)
         },
         middleContent = {

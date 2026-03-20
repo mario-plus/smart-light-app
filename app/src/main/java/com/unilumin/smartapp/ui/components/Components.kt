@@ -17,7 +17,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -55,26 +54,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.HighlightOff
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.FilterList
@@ -85,7 +78,6 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
-import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -96,6 +88,8 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -103,18 +97,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberDateRangePickerState
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -163,31 +154,24 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
-import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.constant.DeviceConstant
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.HistoryData
-import com.unilumin.smartapp.client.data.LoopInfo
-import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.data.SystemConfig
 import com.unilumin.smartapp.ui.screens.dashboard.InfoRowItem
 import com.unilumin.smartapp.ui.theme.AccentBlue
-import com.unilumin.smartapp.ui.theme.AlarmBg
-import com.unilumin.smartapp.ui.theme.AlarmRed
 import com.unilumin.smartapp.ui.theme.BackgroundGray
 import com.unilumin.smartapp.ui.theme.Blue50
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.BluePrimary
 import com.unilumin.smartapp.ui.theme.Border
-import com.unilumin.smartapp.ui.theme.CardBorder
 import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.DividerColor
 import com.unilumin.smartapp.ui.theme.Gray100
 import com.unilumin.smartapp.ui.theme.Gray200
 import com.unilumin.smartapp.ui.theme.Gray400
-import com.unilumin.smartapp.ui.theme.Gray50
 import com.unilumin.smartapp.ui.theme.Gray500
 import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.Green50
@@ -195,15 +179,11 @@ import com.unilumin.smartapp.ui.theme.Green500
 import com.unilumin.smartapp.ui.theme.GreenStatus
 import com.unilumin.smartapp.ui.theme.HeaderBg
 import com.unilumin.smartapp.ui.theme.LineColor
-import com.unilumin.smartapp.ui.theme.OfflineGray
 import com.unilumin.smartapp.ui.theme.Orange50
 import com.unilumin.smartapp.ui.theme.Orange500
 import com.unilumin.smartapp.ui.theme.PlaceholderColor
-import com.unilumin.smartapp.ui.theme.PrimaryBlue
 import com.unilumin.smartapp.ui.theme.PrimaryText
 import com.unilumin.smartapp.ui.theme.RedStatus
-import com.unilumin.smartapp.ui.theme.SafeBg
-import com.unilumin.smartapp.ui.theme.SafeGreen
 import com.unilumin.smartapp.ui.theme.SearchBarBg
 import com.unilumin.smartapp.ui.theme.SecondaryText
 import com.unilumin.smartapp.ui.theme.TextDark
@@ -211,9 +191,9 @@ import com.unilumin.smartapp.ui.theme.TextGray
 import com.unilumin.smartapp.ui.theme.TextPrimary
 import com.unilumin.smartapp.ui.theme.TextSecondary
 import com.unilumin.smartapp.ui.theme.TextSub
-import com.unilumin.smartapp.ui.theme.TextTitle
 import com.unilumin.smartapp.ui.theme.White
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
+import com.unilumin.smartapp.util.JsonUtils
 import com.unilumin.smartapp.util.JsonUtils.parseJsonToKeyValue
 import com.unilumin.smartapp.util.TimeUtil
 import com.unilumin.smartapp.util.ToastUtil
@@ -392,9 +372,6 @@ fun EmptyDataView(message: String) {
     }
 }
 
-/**
- * 设备状态(按钮:在线/离线)
- * */
 @Composable
 fun DeviceStatus(
     status: Int?, statusMapping: Map<Int, Triple<Color, Color, String>> = mapOf(
@@ -426,122 +403,6 @@ fun DeviceStatus(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun LoopCircleItem(loop: LoopInfo) {
-    val (baseColor, contentColor) = when (loop.state) {
-        1 -> Color(0xFFE8F5E9) to Color(0xFF2E7D32) // 柔和绿 (通电)
-        0 -> Color(0xFFFFEBEE) to Color(0xFFC62828) // 柔和红 (断电)
-        else -> Color(0xFFF5F5F5) to Color(0xFF757575) // 浅灰 (未知)
-    }
-    val tooltipState = rememberTooltipState()
-    TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(), tooltip = {
-            PlainTooltip(
-                containerColor = Color(0xFF333333).copy(alpha = 0.9f),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Column(modifier = Modifier.padding(4.dp)) {
-                    Text("状态: ${if (loop.state == 1) "通电" else "断电"}", color = Color.White)
-                    Text(
-                        "回路: 第 ${loop.loopNum} 路",
-                        fontSize = 10.sp,
-                        color = Color.White.copy(0.7f)
-                    )
-                }
-            }
-        }, state = tooltipState
-    ) {
-        Box(
-            contentAlignment = Alignment.Center, modifier = Modifier
-                .size(28.dp) // 稍微加大尺寸，更易点击
-                .background(color = baseColor, shape = CircleShape)
-                .border(1.dp, contentColor.copy(alpha = 0.3f), CircleShape) // 添加同色系的浅色边框
-        ) {
-            Text(
-                text = "${loop.loopNum}", color = contentColor, // 文字颜色与边框/状态保持一致
-                fontSize = 14.sp, fontWeight = FontWeight.SemiBold
-            )
-        }
-    }
-}
-
-// 我的--页面子组件
-@Composable
-fun ProfileMenuItem(
-    title: String,
-    icon: ImageVector,
-    iconColor: Color,
-    iconBg: Color,
-    trailingText: String? = null,
-    showArrow: Boolean = true,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = trailingText == null, onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = 18.dp), // 加大一点内边距
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(
-                shape = RoundedCornerShape(14.dp), // 更圆润
-                color = iconBg, modifier = Modifier.size(44.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        icon, null, tint = iconColor, modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(18.dp))
-            Text(
-                title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Gray900
-            )
-        }
-        if (trailingText != null) {
-            Surface(
-                color = Gray50,
-                shape = RoundedCornerShape(6.dp),
-                modifier = Modifier.padding(start = 8.dp)
-            ) {
-                Text(
-                    text = trailingText,
-                    fontSize = 13.sp,
-                    color = Gray500,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
-
-        } else if (showArrow) {
-            Icon(
-                Icons.Rounded.ChevronRight, null, tint = Gray200, modifier = Modifier.size(22.dp)
-            )
-        }
-    }
-}
-
-/**
- * 美观的标签组件
- */
-@Composable
-fun DeviceTag(text: String) {
-    Surface(
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f), // 浅色背景
-        shape = RoundedCornerShape(4.dp), // 轻微圆角，显得更有工业/科技感
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 12.sp, color = MaterialTheme.colorScheme.primary // 字体颜色
-            )
-        )
-    }
-}
 
 @Composable
 fun DetailCard(title: String, content: @Composable () -> Unit) {
@@ -565,9 +426,6 @@ fun DetailCard(title: String, content: @Composable () -> Unit) {
     }
 }
 
-/**
- * 优化后的信息展示行
- */
 @Composable
 fun DetailRow(label: String, value: String) {
     Column {
@@ -778,14 +636,11 @@ fun DateRangePickerModern(
 
 /**
  * 历史数据卡片
- * */
-/**
- * 历史数据卡片
  */
 @Composable
 fun HistoryDataCard(data: HistoryData) {
     var isExpanded by remember { mutableStateOf(false) }
-    val isLongContent = isJsonValid(data.value)
+    val isLongContent = JsonUtils.isJsonValid(data.value)
     val keyValuePairs = remember(data.value) {
         if (isLongContent) parseJsonToKeyValue(data.value) else emptyList()
     }
@@ -883,16 +738,7 @@ fun HistoryDataCard(data: HistoryData) {
     }
 }
 
-fun isJsonValid(json: String?): Boolean {
-    if (json.isNullOrBlank()) return false
-    return try {
-        val element = JsonParser().parse(json)
-        // 只有当它是 JSON 对象或 JSON 数组时，才认为是我们需要的 "结构化 JSON"
-        element.isJsonObject || element.isJsonArray
-    } catch (e: Exception) {
-        false
-    }
-}
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalTextApi::class)
@@ -1326,59 +1172,6 @@ fun HeaderSection(text: String, onDismiss: () -> Unit) {
     }
 }
 
-/**
- * 新增：信息提示条 (包含滚动描述和单位)
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun InfoRibbon(data: DeviceModelData) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 8.dp),
-        color = Color(0xFFF0F7FF),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Info,
-                contentDescription = null,
-                tint = Color(0xFF007AFF),
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            val description = data.keyDes.ifBlank { "暂无描述信息" }
-            Text(
-                text = description, modifier = Modifier
-                    .weight(1f)
-                    .basicMarquee(
-                        iterations = Int.MAX_VALUE, initialDelayMillis = 2000, velocity = 30.dp
-                    ), style = TextStyle(
-                    color = Color(0xFF007AFF), fontSize = 13.sp, fontWeight = FontWeight.Medium
-                ), maxLines = 1
-            )
-            if (!data.unit.isNullOrBlank()) {
-                Spacer(modifier = Modifier.width(12.dp))
-                Surface(
-                    color = Color(0xFF007AFF), shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = "单位: ${data.unit}",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        style = TextStyle(
-                            color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold
-                        )
-                    )
-                }
-            }
-        }
-    }
-}
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeviceDataGrid(
@@ -1404,8 +1197,6 @@ fun DeviceDataGrid(
         }
     }
 }
-
-
 /**
  * 缓冲加载
  * */
@@ -1708,161 +1499,6 @@ fun <T : Any> PagingList(
     }
 }
 
-@Composable
-fun TimeFilterSegment(selectedType: Int, onTypeSelected: (Int) -> Unit) {
-    val options = listOf(0 to "最近活跃时间", 1 to "最近7天", 2 to "最近30天", 3 to "最近90天")
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFE8EAF6), RoundedCornerShape(12.dp))
-            .padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        options.forEach { (type, label) ->
-            val isSelected = selectedType == type
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(36.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (isSelected) Color.White else Color.Transparent)
-                    .clickable { onTypeSelected(type) }, contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = label,
-                    fontSize = 13.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) PrimaryBlue else Color.Gray
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun OfflineDeviceItem(
-    device: OfflineDevice, onClick: () -> Unit = {}
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        color = Color.White,
-        shadowElevation = 2.dp,
-        border = BorderStroke(1.dp, CardBorder)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(modifier = Modifier.weight(1f)) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF5F7FA)), contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Devices,
-                            contentDescription = null,
-                            tint = Color(0xFF3D5AFE)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column {
-                        Text(
-                            text = device.deviceName,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = TextTitle,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = device.productName,
-                            fontSize = 12.sp,
-                            color = TextSecondary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    if (device.alarmType == 1) {
-                        StatusChip(
-                            text = "告警",
-                            color = AlarmRed,
-                            bgColor = AlarmBg,
-                            icon = Icons.Rounded.Warning
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    val stateText = if (device.deviceState == 1) "已启用" else "已停用"
-                    val stateColor = if (device.deviceState == 1) SafeGreen else OfflineGray
-                    val stateBg = if (device.deviceState == 1) SafeBg else Color(0xFFF5F5F5)
-                    Text(
-                        text = stateText,
-                        fontSize = 11.sp,
-                        color = stateColor,
-                        modifier = Modifier
-                            .background(stateBg, RoundedCornerShape(4.dp))
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFEEEEEE))
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // --- 第二行：具体信息 (网格布局或流式布局) ---
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // 序列号
-                InfoRowItem(
-                    icon = Icons.Default.QrCode, label = "SN:", value = device.serialNum
-                )
-                // 厂商信息
-                InfoRowItem(
-                    icon = Icons.Default.Apartment,
-                    label = "厂商:",
-                    value = device.productFactoryName
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // --- 底部：最后上线时间 (强调离线背景) ---
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFFFF8E1), RoundedCornerShape(6.dp)) // 淡黄色背景提醒注意
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AccessTime,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = Color(0xFFFFA000)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "最后上线: ${device.lastActiveTime ?: "--"}",
-                    fontSize = 12.sp,
-                    color = Color(0xFFF57C00),
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-    }
-}
-
 // 辅助组件：信息行
 @Composable
 fun InfoRowItem(icon: ImageVector, label: String, value: String) {
@@ -1925,7 +1561,6 @@ fun DeviceStatusRow(
         StatusItem(
             label = "可用状态:", text = if (isDisable) "禁用" else "启用", isError = isDisable
         )
-
         // 工作状态 - 靠最右
         StatusItem(label = "工作状态:", text = if (hasAlarm) "告警" else "正常", isError = hasAlarm)
     }
@@ -2036,8 +1671,6 @@ fun CommonTopAppBar(
                             modifier = Modifier.size(24.dp)
                         )
                     }
-
-                    // 假设你已经有 ReferenceStyleDropdownMenu 的实现
                     ReferenceStyleDropdownMenu(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
@@ -2052,6 +1685,9 @@ fun CommonTopAppBar(
     }
 }
 
+/**
+ *  配置选择框
+ * */
 @Composable
 fun ReferenceStyleDropdownMenu(
     expanded: Boolean,
@@ -2275,7 +1911,7 @@ fun <T : Any> BaseLampListScreen(
 
 
 /**
- * 多选组件
+ * 多选组件，横向布局那种多选项
  * @param title 多选框全选名称
  * @param options  选项
  * @param selectedKeys 当前选项
@@ -2626,4 +2262,143 @@ private fun WeekDayChip(day: String) {
     }
 }
 
-data class Tuple4<A, B, C, D>(val v1: A, val v2: B, val v3: C, val v4: D)
+
+
+/**
+ * 单选下拉框
+ * @param items 数据源
+ * @param selectedItem 被选
+ * @param itemLabel  显示的名称(下拉数据列表对应的key)
+ * @param onItemSelected 选中事件
+ * */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun <T> CommonDropdownMenu(
+    items: List<T>,
+    selectedItem: T?,
+    itemLabel: (T) -> String,
+    onItemSelected: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "请选择",
+    placeholder: String = "请选择"
+) {
+    // 组件内部维护展开/收起的状态
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            // 使用传入的 itemLabel 函数提取显示文本
+            value = selectedItem?.let { itemLabel(it) } ?: "",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            placeholder = { Text(placeholder) },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            items.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(text = itemLabel(item)) },
+                    onClick = {
+                        onItemSelected(item)
+                        expanded = false // 选中后自动收起下拉框
+                    }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 通用步骤进度指示器组件
+ *
+ * @param steps 步骤的文案列表，例如 listOf("第一步", "第二步", "第三步")
+ * @param currentStep 当前进行到的步骤索引（从 0 开始）
+ * @param modifier 外部传入的修饰符
+ * @param dividerWidth 两个步骤圆圈之间的连接线长度
+ */
+@Composable
+fun StepProgressIndicator(
+    steps: List<String>,
+    currentStep: Int,
+    modifier: Modifier = Modifier,
+    dividerWidth: Dp = 40.dp
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        steps.forEachIndexed { index, label ->
+            StepCircle(
+                step = index + 1, // 显示给用户的数字从 1 开始
+                isActive = index <= currentStep,
+                label = label
+            )
+            if (index < steps.lastIndex) {
+                Box(
+                    modifier = Modifier
+                        .width(dividerWidth)
+                        .height(2.dp)
+                        .background(
+                            if (currentStep > index) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                        )
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 步骤小圆圈及其下方文字
+ */
+@Composable
+fun StepCircle(
+    step: Int,
+    isActive: Boolean,
+    label: String
+) {
+    val bgColor =
+        if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val textColor =
+        if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(bgColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = step.toString(),
+                color = textColor,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
