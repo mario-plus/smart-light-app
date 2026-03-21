@@ -13,16 +13,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -30,12 +26,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -50,7 +44,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -59,6 +52,7 @@ import com.unilumin.smartapp.client.data.StrategyProductVO
 import com.unilumin.smartapp.ui.components.CommonDropdownMenu
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.StepProgressIndicator
+import com.unilumin.smartapp.ui.screens.dialog.StrategyGroupBottomSheet
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 
@@ -73,10 +67,16 @@ fun LampStrategyOptContent(
         lampViewModel.getGroupProductList()
     }
 
-    // 分页与列表数据
+    // 策略可选择的分组列表
     val lampStrategyGroupInfoFlow =
         lampViewModel.lampStrategyGroupInfoFlow.collectAsLazyPagingItems()
+    // 策略可选择的分组产品列表
     val strategyGroupProductList by lampViewModel.strategyGroupProductList.collectAsState()
+
+    // 策略类型列表 (Pair<Long, String>)
+    val strategyTypeList by lampViewModel.strategyTypeList.collectAsState()
+    // 策略模式列表 (Pair<Long, String>)
+    val policyTypeList by lampViewModel.policyTypeList.collectAsState()
 
     // 步骤控制状态 (1: 基本信息, 2: 策略详情)
     var currentStep by remember { mutableIntStateOf(1) }
@@ -84,15 +84,20 @@ fun LampStrategyOptContent(
     // --- Step 1: 基本信息表单状态 ---
     var strategyName by remember { mutableStateOf("") }
     var remarkInfo by remember { mutableStateOf("") }
+    // 已选择的分组产品
     var selectedProduct by remember { mutableStateOf<StrategyProductVO?>(null) }
-    var showGroupBottomSheet by remember { mutableStateOf(false) }
-    val selectedGroups = remember { mutableStateListOf<StrategyGroupListVO>() }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // --- Step 2: 策略详情表单状态 (示例字段，可根据实际业务修改) ---
-    var executionTime by remember { mutableStateOf("18:00") } // 模拟时间选择
-    var targetBrightness by remember { mutableStateOf(50f) }   // 模拟亮度调节
-    var isStrategyEnabled by remember { mutableStateOf(true) } // 是否立即启用
+    //策略类型
+    var selectedStrategyType by remember { mutableStateOf<Pair<Long, String>?>(null) }
+    //策略模式
+    var selectedPolicyType by remember { mutableStateOf<Pair<Long, String>?>(null) }
+
+    var showGroupBottomSheet by remember { mutableStateOf(false) }
+    // 已选择的分组
+    val selectedGroups = remember { mutableStateListOf<StrategyGroupListVO>() }
+
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // 拦截系统返回键逻辑：如果在步骤2，则返回步骤1；否则退出页面
     BackHandler(enabled = true) {
@@ -144,6 +149,7 @@ fun LampStrategyOptContent(
                                 .padding(horizontal = 20.dp, vertical = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(20.dp)
                         ) {
+
                             OutlinedTextField(
                                 value = strategyName,
                                 onValueChange = { strategyName = it },
@@ -161,6 +167,7 @@ fun LampStrategyOptContent(
                                 label = "所属产品",
                                 placeholder = "请选择产品",
                                 onItemSelected = { product ->
+                                    //TODO 更换了产品，需要重置数据
                                     selectedProduct = product
                                     selectedGroups.clear()
                                     lampViewModel.updateCurrentProductId(product.productId)
@@ -183,7 +190,7 @@ fun LampStrategyOptContent(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { showGroupBottomSheet = true },
-                                    enabled = false,
+                                    enabled = false, // 禁用内部交互，将点击事件交给外层的 clickable
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
                                         disabledTextColor = MaterialTheme.colorScheme.onSurface,
@@ -217,6 +224,28 @@ fun LampStrategyOptContent(
                                     }
                                 }
                             }
+                            if (strategyTypeList.isNotEmpty()) {
+                                CommonDropdownMenu(
+                                    items = strategyTypeList,
+                                    selectedItem = selectedStrategyType,
+                                    // Pair 的 second 通常是名称/描述，用于展示
+                                    itemLabel = { it.second },
+                                    label = "策略类型",
+                                    placeholder = "请选择策略类型",
+                                    onItemSelected = { selectedStrategyType = it }
+                                )
+                            }
+                            if (policyTypeList.isNotEmpty()) {
+                                CommonDropdownMenu(
+                                    items = policyTypeList,
+                                    selectedItem = selectedPolicyType,
+                                    itemLabel = { it.second },
+                                    label = "策略模式",
+                                    placeholder = "请选择策略模式",
+                                    onItemSelected = { selectedPolicyType = it }
+                                )
+                            }
+
                             OutlinedTextField(
                                 value = remarkInfo,
                                 onValueChange = { remarkInfo = it },
@@ -228,13 +257,16 @@ fun LampStrategyOptContent(
                                 shape = RoundedCornerShape(12.dp),
                                 maxLines = 4
                             )
+
                             Spacer(modifier = Modifier.weight(1f))
+
                             // 下一步按钮
                             Button(
                                 onClick = {
                                     currentStep = 2
-                                    //TODO 初始化第二步需要的数据，如产品规则，用于创建
+                                    // 可以在这里通过 selectedStrategyType?.first 拿到选中的 ID 传给下一步
                                 },
+                                // 基础表单验证，根据业务需求，如果模式和类型是必选项，可以在此加上 && selectedStrategyType != null && selectedPolicyType != null
                                 enabled = strategyName.isNotBlank() && selectedProduct != null,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -258,7 +290,7 @@ fun LampStrategyOptContent(
                                 .padding(horizontal = 20.dp, vertical = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(24.dp)
                         ) {
-
+                            // 第二步内容...
                         }
                     }
                 }
@@ -266,70 +298,14 @@ fun LampStrategyOptContent(
         }
 
         if (showGroupBottomSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showGroupBottomSheet = false },
+            StrategyGroupBottomSheet(
                 sheetState = sheetState,
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .padding(bottom = 20.dp)
-                ) {
-                    Text(
-                        text = "选择分组",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
-                    LazyColumn(
-                        modifier = Modifier.fillMaxHeight(0.6f)
-                    ) {
-                        items(count = lampStrategyGroupInfoFlow.itemCount) { index ->
-                            val groupItem = lampStrategyGroupInfoFlow[index]
-                            if (groupItem != null) {
-                                val isSelected =
-                                    selectedGroups.any { it.groupId == groupItem.groupId }
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            if (isSelected) {
-                                                selectedGroups.removeAll { it.groupId == groupItem.groupId }
-                                            } else {
-                                                selectedGroups.add(groupItem)
-                                            }
-                                        }
-                                        .padding(vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Checkbox(
-                                        checked = isSelected,
-                                        onCheckedChange = null
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        text = groupItem.groupName ?: "未知分组",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = { showGroupBottomSheet = false },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                    ) {
-                        Text("确定")
-                    }
+                lampStrategyGroupInfoFlow = lampStrategyGroupInfoFlow,
+                selectedGroups = selectedGroups,
+                onDismissRequest = {
+                    showGroupBottomSheet = false
                 }
-            }
+            )
         }
     }
 }
-

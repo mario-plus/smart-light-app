@@ -1,5 +1,6 @@
 package com.unilumin.smartapp.client.service
 
+import com.google.gson.JsonObject
 import com.unilumin.smartapp.client.constant.RequestPathKey
 import com.unilumin.smartapp.client.data.CreateGroupDTO
 import com.unilumin.smartapp.client.data.DevSimpleInfo
@@ -170,7 +171,7 @@ interface RoadService {
      * 创建策略，可选产品
      * */
     @GET(RequestPathKey.KEY_GET_GROUP_PRODUCT_LIST)
-    fun getGroupProductList():Call<NewResponseData<List<StrategyProductVO>?>?>?
+    fun getGroupProductList(): Call<NewResponseData<List<StrategyProductVO>?>?>?
 
 
     /**
@@ -180,6 +181,11 @@ interface RoadService {
     fun getStrategyGroupInfoList(@Body requestBody: StrategyGroupDTO): Call<NewResponseData<PageResponse<StrategyGroupListVO>?>?>?
 
 
+    /**
+     * 当前规则
+     * */
+    @GET(RequestPathKey.KEY_PRODUCT_RULE)
+    fun getProductRule(@Query("productId") productId: Long): Call<NewResponseData<JsonObject?>?>?
 
 
 }

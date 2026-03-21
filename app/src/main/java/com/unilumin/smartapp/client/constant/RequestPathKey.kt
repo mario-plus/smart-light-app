@@ -17,6 +17,9 @@ object RequestPathKey {
         "$SMART_COMMON_APPLICATION/env/map_visualization_weather_condition"
     const val KEY_ENV_DATA_LIST: String = "$SMART_COMMON_APPLICATION/env/env_data"
     const val KEY_CAMERA_LIVE_URL: String = "$SMART_COMMON_APPLICATION/security/camera_live"
+    //产品规则
+    const val KEY_PRODUCT_RULE: String = "$SMART_COMMON_APPLICATION/base/protocol_rule"
+
     const val KEY_CAMERA_LIVE: String = "$ZLM/index/api/webrtc"
 
 

@@ -29,6 +29,7 @@ import com.unilumin.smartapp.client.data.StrategyProductVO
 import com.unilumin.smartapp.client.data.StrategyRequestParam
 import com.unilumin.smartapp.client.data.TaskIdRequest
 import com.unilumin.smartapp.client.service.RoadService
+import com.unilumin.smartapp.util.StrategyContentUtil
 import com.unilumin.smartapp.util.ToastUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -152,12 +153,37 @@ class LampViewModel(
     private val _strategyGroupProductList = MutableStateFlow<List<StrategyProductVO>>(emptyList())
     val strategyGroupProductList = _strategyGroupProductList.asStateFlow()
 
+    // 策略模式
+    private val _policyTypeList = MutableStateFlow<List<Pair<Long, String>>>(emptyList())
+    val policyTypeList = _policyTypeList.asStateFlow()
+
+    // 策略类型
+    private val _strategyTypeList = MutableStateFlow<List<Pair<Long, String>>>(emptyList())
+    val strategyTypeList = _strategyTypeList.asStateFlow()
+
+
     suspend fun getGroupProductList() {
         val parseDataNewSuspend = parseDataNewSuspend(
             roadService.getGroupProductList()
         )
         if (parseDataNewSuspend != null) {
             _strategyGroupProductList.value = parseDataNewSuspend
+        }
+    }
+
+
+    suspend fun getProductRule() {
+        val parseDataNewSuspend = parseDataNewSuspend(
+            roadService.getProductRule(productId = currentProductId.value)
+        )
+        if (parseDataNewSuspend != null) {
+            val policyObj = parseDataNewSuspend.getAsJsonObject("policy")
+            //策略类型
+            _policyTypeList.value =
+                StrategyContentUtil.getPolicyType(policyObj.getAsJsonObject("policyType"), "zh")
+            //策略模式
+            _strategyTypeList.value =
+                StrategyContentUtil.getPolicyType(policyObj.getAsJsonObject("strategyType"), "zh")
         }
     }
 
@@ -217,21 +243,19 @@ class LampViewModel(
         }
 
     //策略分组信息
-    val lampStrategyGroupInfoFlow =
-        createPagingFlow(
-            combine(currentProductId, searchQuery, ::Pair)
-        ) { (currentProductId, query), page, size ->
-            fetchPageData {
-                roadService.getStrategyGroupInfoList(
-                    StrategyGroupDTO(
-                        curPage = page,
-                        pageSize = size,
-                        keyword = query,
-                        productId = currentProductId
-                    )
+    val lampStrategyGroupInfoFlow = createPagingFlow(
+        combine(currentProductId, searchQuery, ::Pair)
+    ) { (currentProductId, query), page, size ->
+        fetchPageData {
+            //当选择产品后，需要加载产品规则，产品分组内容
+            getProductRule()
+            roadService.getStrategyGroupInfoList(
+                StrategyGroupDTO(
+                    curPage = page, pageSize = size, keyword = query, productId = currentProductId
                 )
-            }
+            )
         }
+    }
 
 
     val lampGateWayFlow =
@@ -312,10 +336,7 @@ class LampViewModel(
         fetchPageData {
             roadService.getGroupDevToAdd(
                 GroupDevParam(
-                    curPage = page,
-                    pageSize = size,
-                    keyword = searchQuery,
-                    id = groupId
+                    curPage = page, pageSize = size, keyword = searchQuery, id = groupId
                 )
             )
         }
