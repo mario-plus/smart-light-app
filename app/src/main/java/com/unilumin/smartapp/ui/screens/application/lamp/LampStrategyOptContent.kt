@@ -23,7 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.unilumin.smartapp.client.data.KeyValue
 import com.unilumin.smartapp.client.data.StrategyGroupListVO
 import com.unilumin.smartapp.client.data.StrategyProductVO
 import com.unilumin.smartapp.ui.components.CommonDropdownMenu
@@ -73,9 +74,9 @@ fun LampStrategyOptContent(
     // 策略可选择的分组产品列表
     val strategyGroupProductList by lampViewModel.strategyGroupProductList.collectAsState()
 
-    // 策略类型列表 (Pair<Long, String>)
+    // 策略类型列表 (Pair<Long, KeyValue>)
     val strategyTypeList by lampViewModel.strategyTypeList.collectAsState()
-    // 策略模式列表 (Pair<Long, String>)
+    // 策略模式列表 (Pair<Long, KeyValue>)
     val policyTypeList by lampViewModel.policyTypeList.collectAsState()
 
     // 步骤控制状态 (1: 基本信息, 2: 策略详情)
@@ -88,9 +89,9 @@ fun LampStrategyOptContent(
     var selectedProduct by remember { mutableStateOf<StrategyProductVO?>(null) }
 
     //策略类型
-    var selectedStrategyType by remember { mutableStateOf<Pair<Long, String>?>(null) }
+    var selectedStrategyType by remember { mutableStateOf<Pair<Long, KeyValue>?>(null) }
     //策略模式
-    var selectedPolicyType by remember { mutableStateOf<Pair<Long, String>?>(null) }
+    var selectedPolicyType by remember { mutableStateOf<Pair<Long, KeyValue>?>(null) }
 
     var showGroupBottomSheet by remember { mutableStateOf(false) }
     // 已选择的分组
@@ -170,6 +171,9 @@ fun LampStrategyOptContent(
                                     //TODO 更换了产品，需要重置数据
                                     selectedProduct = product
                                     selectedGroups.clear()
+                                    selectedStrategyType = null
+                                    selectedPolicyType = null
+
                                     lampViewModel.updateCurrentProductId(product.productId)
                                 }
                             )
@@ -214,8 +218,8 @@ fun LampStrategyOptContent(
                                                 label = { Text(group.groupName ?: "未知分组") },
                                                 trailingIcon = {
                                                     Icon(
-                                                        Icons.Default.Check,
-                                                        contentDescription = null,
+                                                        imageVector = Icons.Default.Close, // 替换为了 X 图标
+                                                        contentDescription = "移除该分组",
                                                         modifier = Modifier.size(16.dp)
                                                     )
                                                 }
@@ -228,8 +232,7 @@ fun LampStrategyOptContent(
                                 CommonDropdownMenu(
                                     items = strategyTypeList,
                                     selectedItem = selectedStrategyType,
-                                    // Pair 的 second 通常是名称/描述，用于展示
-                                    itemLabel = { it.second },
+                                    itemLabel = { (it.second as KeyValue).value },
                                     label = "策略类型",
                                     placeholder = "请选择策略类型",
                                     onItemSelected = { selectedStrategyType = it }
@@ -239,10 +242,13 @@ fun LampStrategyOptContent(
                                 CommonDropdownMenu(
                                     items = policyTypeList,
                                     selectedItem = selectedPolicyType,
-                                    itemLabel = { it.second },
+                                    itemLabel = { (it.second as KeyValue).value },
                                     label = "策略模式",
                                     placeholder = "请选择策略模式",
-                                    onItemSelected = { selectedPolicyType = it }
+                                    onItemSelected = {
+                                        selectedPolicyType = it
+
+                                    }
                                 )
                             }
 

@@ -13,6 +13,7 @@ import com.unilumin.smartapp.client.data.GroupMemberReq
 import com.unilumin.smartapp.client.data.GroupRequestParam
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
+import com.unilumin.smartapp.client.data.KeyValue
 import com.unilumin.smartapp.client.data.LampCtlReq
 import com.unilumin.smartapp.client.data.LampGroupInfo
 import com.unilumin.smartapp.client.data.LampGroupProduct
@@ -154,11 +155,11 @@ class LampViewModel(
     val strategyGroupProductList = _strategyGroupProductList.asStateFlow()
 
     // 策略模式
-    private val _policyTypeList = MutableStateFlow<List<Pair<Long, String>>>(emptyList())
+    private val _policyTypeList = MutableStateFlow<List<Pair<Long, KeyValue>>>(emptyList())
     val policyTypeList = _policyTypeList.asStateFlow()
 
     // 策略类型
-    private val _strategyTypeList = MutableStateFlow<List<Pair<Long, String>>>(emptyList())
+    private val _strategyTypeList = MutableStateFlow<List<Pair<Long, KeyValue>>>(emptyList())
     val strategyTypeList = _strategyTypeList.asStateFlow()
 
 
@@ -172,18 +173,39 @@ class LampViewModel(
     }
 
 
-    suspend fun getProductRule() {
+    suspend fun getProductRule(currentProductId: Long) {
+        //重置策略类型和策略模式
+        _policyTypeList.value = emptyList()
+        _strategyTypeList.value = emptyList()
         val parseDataNewSuspend = parseDataNewSuspend(
-            roadService.getProductRule(productId = currentProductId.value)
+            roadService.getProductRule(productId = currentProductId)
         )
         if (parseDataNewSuspend != null) {
-            val policyObj = parseDataNewSuspend.getAsJsonObject("policy")
-            //策略类型
-            _policyTypeList.value =
-                StrategyContentUtil.getPolicyType(policyObj.getAsJsonObject("policyType"), "zh")
-            //策略模式
-            _strategyTypeList.value =
-                StrategyContentUtil.getPolicyType(policyObj.getAsJsonObject("strategyType"), "zh")
+            try {
+                val policyObj = parseDataNewSuspend.getAsJsonObject("policy")
+                //策略模式
+                var strategyTypeObj = policyObj.get("strategyType")
+                if (strategyTypeObj != null) {
+                    _strategyTypeList.value =
+                        StrategyContentUtil.getPolicyTypeOrMode(
+                            currentProductId,
+                            strategyTypeObj.asJsonObject,
+                            "zh"
+                        )
+                }
+                //策略类型
+                var policyTypeObj = policyObj.get("policyType")
+                if (policyTypeObj != null) {
+                    _policyTypeList.value =
+                        StrategyContentUtil.getPolicyTypeOrMode(
+                            currentProductId,
+                            policyTypeObj.asJsonObject,
+                            "zh"
+                        )
+                }
+            } catch (ignore: Exception) {
+                ignore.printStackTrace()
+            }
         }
     }
 
@@ -248,7 +270,7 @@ class LampViewModel(
     ) { (currentProductId, query), page, size ->
         fetchPageData {
             //当选择产品后，需要加载产品规则，产品分组内容
-            getProductRule()
+            getProductRule(currentProductId)
             roadService.getStrategyGroupInfoList(
                 StrategyGroupDTO(
                     curPage = page, pageSize = size, keyword = query, productId = currentProductId

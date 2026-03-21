@@ -1456,6 +1456,6 @@ data class Tuple4<A, B, C, D>(val v1: A, val v2: B, val v3: C, val v4: D)
 
 
 data class KeyValue(
-    val key: Long,
+    val key: String,
     val value: String
 )
