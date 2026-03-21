@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
+import com.google.gson.JsonObject
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService.parseDataNewSuspend
 import com.unilumin.smartapp.client.constant.FILTER_NONE
@@ -162,6 +163,9 @@ class LampViewModel(
     private val _strategyTypeList = MutableStateFlow<List<Pair<Long, KeyValue>>>(emptyList())
     val strategyTypeList = _strategyTypeList.asStateFlow()
 
+    //缓存策略策略内容
+    private val _policyContent = MutableStateFlow(JsonObject())
+    val policyContent = _policyContent.asStateFlow()
 
     suspend fun getGroupProductList() {
         val parseDataNewSuspend = parseDataNewSuspend(
@@ -183,25 +187,19 @@ class LampViewModel(
         if (parseDataNewSuspend != null) {
             try {
                 val policyObj = parseDataNewSuspend.getAsJsonObject("policy")
+                //缓存策略信息
+                _policyContent.value = policyObj.asJsonObject
                 //策略模式
                 var strategyTypeObj = policyObj.get("strategyType")
                 if (strategyTypeObj != null) {
                     _strategyTypeList.value =
-                        StrategyContentUtil.getPolicyTypeOrMode(
-                            currentProductId,
-                            strategyTypeObj.asJsonObject,
-                            "zh"
-                        )
+                        StrategyContentUtil.getPolicyTypeOrMode(currentProductId, strategyTypeObj.asJsonObject, "zh")
                 }
                 //策略类型
                 var policyTypeObj = policyObj.get("policyType")
                 if (policyTypeObj != null) {
                     _policyTypeList.value =
-                        StrategyContentUtil.getPolicyTypeOrMode(
-                            currentProductId,
-                            policyTypeObj.asJsonObject,
-                            "zh"
-                        )
+                        StrategyContentUtil.getPolicyTypeOrMode(currentProductId, policyTypeObj.asJsonObject, "zh")
                 }
             } catch (ignore: Exception) {
                 ignore.printStackTrace()

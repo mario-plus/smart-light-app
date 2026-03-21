@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -2280,7 +2281,8 @@ fun <T> CommonDropdownMenu(
     onItemSelected: (T) -> Unit,
     modifier: Modifier = Modifier,
     label: String = "请选择",
-    placeholder: String = "请选择"
+    placeholder: String = "请选择",
+    maxHeight: Dp = 360.dp // 新增参数：默认限制在240dp，约展示4-5个选项
 ) {
     // 组件内部维护展开/收起的状态
     var expanded by remember { mutableStateOf(false) }
@@ -2300,6 +2302,8 @@ fun <T> CommonDropdownMenu(
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
+            // 推荐加上默认的颜色配置，确保展开时的状态颜色变化符合 Material 3 规范
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
             modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth(),
@@ -2308,15 +2312,18 @@ fun <T> CommonDropdownMenu(
 
         ExposedDropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            // 核心优化：限制下拉框的最大高度
+            modifier = Modifier.heightIn(max = maxHeight)
         ) {
             items.forEach { item ->
                 DropdownMenuItem(
                     text = { Text(text = itemLabel(item)) },
                     onClick = {
                         onItemSelected(item)
-                        expanded = false // 选中后自动收起下拉框
-                    }
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                 )
             }
         }

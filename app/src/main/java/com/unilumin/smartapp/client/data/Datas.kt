@@ -1459,3 +1459,11 @@ data class KeyValue(
     val key: String,
     val value: String
 )
+
+/**
+ * 策略优先级范围
+ * */
+data class PriorityRange(
+    val max: Int,
+    val min: Int
+)
