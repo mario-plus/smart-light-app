@@ -1504,29 +1504,31 @@ data class TimeStrategyCondition(
     //时间点：9:21
     val timePoint: String?,
     //时间类型（1每天，2星期，3连续时间区间（7月28--8月28））
-    val timeType: Int?,
+    val timeType: String?,
     //对应时间类型：星期（星期一，星期二用1,2表示）
-    val week: String? = null,
+    val week: String? = "",
     //对应时间类型：3 连续时间区间
-    val days: DayData? = null,
+    val days: DayData? = DayData(),
     //自研灯控策略优先级1-16
     val priority: Int?
 )
 
 data class TimeStrategyAction(
     //执行动作类型（1调光，2开关,3调色温，5自定义指令，对应值为customize）
-    val actionType: Int? = null,
+    val actionType: String? = null,
     //下发值（调光0-100，0关，1开）
     val actionValue: Int? = null,
     //色温值
-    val temperature: Int? = null,
+    val temperature: Int? = 0,
     //自定义指令
-    val customize: String? = null
+    val customize: String? = ""
 )
 
 //时间策略内容
 data class TimeStrategyContent(
-    val require: TimeStrategyCondition, val action: TimeStrategyAction
+    val id: Long,
+    val require: TimeStrategyCondition,
+    val action: TimeStrategyAction
 )
 
 data class LngLatStrategyCondition(

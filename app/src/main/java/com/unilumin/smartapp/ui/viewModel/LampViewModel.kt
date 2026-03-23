@@ -480,7 +480,8 @@ class LampViewModel(
             val call: Call<NewResponseData<Long?>?>? = roadService.saveStrategy(body)
             var parseDataNewSuspend = parseDataNewSuspend(call)
             if (parseDataNewSuspend != null) {
-                roadService.syncStrategy(IdBody(id = parseDataNewSuspend))
+                var syncStrategy = roadService.syncStrategy(IdBody(id = parseDataNewSuspend))
+                parseDataNewSuspend(syncStrategy)
             }
         }
     }

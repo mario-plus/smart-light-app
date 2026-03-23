@@ -190,9 +190,13 @@ fun LampStrategyOptContent(
                 modifier = Modifier.weight(1f),
                 transitionSpec = {
                     if (targetState > initialState) {
-                        slideInHorizontally(tween(300)) { it } + fadeIn() togetherWith slideOutHorizontally(tween(300)) { -it } + fadeOut()
+                        slideInHorizontally(tween(300)) { it } + fadeIn() togetherWith slideOutHorizontally(
+                            tween(300)
+                        ) { -it } + fadeOut()
                     } else {
-                        slideInHorizontally(tween(300)) { -it } + fadeIn() togetherWith slideOutHorizontally(tween(300)) { it } + fadeOut()
+                        slideInHorizontally(tween(300)) { -it } + fadeIn() togetherWith slideOutHorizontally(
+                            tween(300)
+                        ) { it } + fadeOut()
                     }
                 },
                 label = "step_transition"
@@ -238,8 +242,15 @@ fun LampStrategyOptContent(
                                     readOnly = true,
                                     label = { Text("关联分组 (多选)") },
                                     placeholder = { Text("请点击选择关联分组") },
-                                    trailingIcon = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
-                                    modifier = Modifier.fillMaxWidth().clickable { showGroupBottomSheet = true },
+                                    trailingIcon = {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                            null
+                                        )
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { showGroupBottomSheet = true },
                                     enabled = false,
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -262,7 +273,13 @@ fun LampStrategyOptContent(
                                                 selected = true,
                                                 onClick = { selectedGroups.removeAll { it.groupId == group.groupId } },
                                                 label = { Text(group.groupName ?: "未知分组") },
-                                                trailingIcon = { Icon(Icons.Default.Close, "移除", Modifier.size(16.dp)) }
+                                                trailingIcon = {
+                                                    Icon(
+                                                        Icons.Default.Close,
+                                                        "移除",
+                                                        Modifier.size(16.dp)
+                                                    )
+                                                }
                                             )
                                         }
                                     }
@@ -295,7 +312,9 @@ fun LampStrategyOptContent(
                                 onValueChange = { remarkInfo = it },
                                 label = { Text("备注信息") },
                                 placeholder = { Text("请输入备注信息 (选填)") },
-                                modifier = Modifier.fillMaxWidth().height(80.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(80.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 maxLines = 3
                             )
@@ -305,25 +324,31 @@ fun LampStrategyOptContent(
                             Button(
                                 onClick = { currentStep = 2 },
                                 enabled = strategyName.isNotBlank() && selectedProduct != null,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
                                 shape = RoundedCornerShape(24.dp)
                             ) {
-                                Text("下一步：配置策略详情", style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    "下一步：配置策略详情",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
                             }
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
 
                     2 -> {
-                        val policyActionTypes = remember(selectedProduct, selectedPolicyType, policyContent) {
-                            if (selectedProduct != null && selectedPolicyType != null) {
-                                getPolicyActionTypes(
-                                    productId = selectedProduct!!.productId,
-                                    jsonObject = policyContent,
-                                    key = selectedPolicyType!!.second.key
-                                )
-                            } else emptyList()
-                        }
+                        val policyActionTypes =
+                            remember(selectedProduct, selectedPolicyType, policyContent) {
+                                if (selectedProduct != null && selectedPolicyType != null) {
+                                    getPolicyActionTypes(
+                                        productId = selectedProduct!!.productId,
+                                        jsonObject = policyContent,
+                                        key = selectedPolicyType!!.second.key
+                                    )
+                                } else emptyList()
+                            }
 
                         Column(
                             modifier = Modifier
@@ -358,7 +383,8 @@ fun LampStrategyOptContent(
                             ) {
                                 if (policyPriorityRange != null) {
                                     Box(modifier = Modifier.weight(1f)) {
-                                        val priorityList = (policyPriorityRange.min..policyPriorityRange.max).toList()
+                                        val priorityList =
+                                            (policyPriorityRange.min..policyPriorityRange.max).toList()
                                         CommonDropdownMenu(
                                             items = priorityList,
                                             selectedItem = selectedPriority,
@@ -396,7 +422,11 @@ fun LampStrategyOptContent(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clip(RoundedCornerShape(12.dp))
-                                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                                .background(
+                                                    MaterialTheme.colorScheme.surfaceVariant.copy(
+                                                        alpha = 0.3f
+                                                    )
+                                                )
                                                 .padding(16.dp),
                                             verticalArrangement = Arrangement.spacedBy(16.dp)
                                         ) {
@@ -404,16 +434,27 @@ fun LampStrategyOptContent(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
-                                                val weekDays = listOf(1 to "一", 2 to "二", 3 to "三", 4 to "四", 5 to "五", 6 to "六", 7 to "日")
+                                                val weekDays = listOf(
+                                                    1 to "一",
+                                                    2 to "二",
+                                                    3 to "三",
+                                                    4 to "四",
+                                                    5 to "五",
+                                                    6 to "六",
+                                                    7 to "日"
+                                                )
                                                 weekDays.forEach { (dayValue, dayName) ->
-                                                    val isSelected = selectedDaysOfWeek.contains(dayValue)
+                                                    val isSelected =
+                                                        selectedDaysOfWeek.contains(dayValue)
                                                     Box(
                                                         modifier = Modifier
                                                             .size(36.dp)
                                                             .clip(CircleShape)
                                                             .background(color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
                                                             .clickable {
-                                                                if (isSelected) selectedDaysOfWeek.remove(dayValue)
+                                                                if (isSelected) selectedDaysOfWeek.remove(
+                                                                    dayValue
+                                                                )
                                                                 else selectedDaysOfWeek.add(dayValue)
                                                             },
                                                         contentAlignment = Alignment.Center
@@ -434,20 +475,41 @@ fun LampStrategyOptContent(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clip(RoundedCornerShape(12.dp))
-                                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                                .background(
+                                                    MaterialTheme.colorScheme.surfaceVariant.copy(
+                                                        alpha = 0.3f
+                                                    )
+                                                )
                                                 .padding(16.dp),
                                             verticalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { showDateRangePicker = true },
+                                                    .clickable(
+                                                        interactionSource = remember { MutableInteractionSource() },
+                                                        indication = null
+                                                    ) { showDateRangePicker = true },
                                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                                             ) {
                                                 OutlinedTextField(
-                                                    value = startDateMillis?.let { dateFormatter.format(Date(it)) } ?: "",
-                                                    onValueChange = {}, readOnly = true, label = { Text("开始日期") }, placeholder = { Text("请选择") },
-                                                    trailingIcon = { Icon(Icons.Default.DateRange, null) }, modifier = Modifier.weight(1f), enabled = false,
+                                                    value = startDateMillis?.let {
+                                                        dateFormatter.format(
+                                                            Date(it)
+                                                        )
+                                                    } ?: "",
+                                                    onValueChange = {},
+                                                    readOnly = true,
+                                                    label = { Text("开始日期") },
+                                                    placeholder = { Text("请选择") },
+                                                    trailingIcon = {
+                                                        Icon(
+                                                            Icons.Default.DateRange,
+                                                            null
+                                                        )
+                                                    },
+                                                    modifier = Modifier.weight(1f),
+                                                    enabled = false,
                                                     shape = RoundedCornerShape(12.dp),
                                                     colors = OutlinedTextFieldDefaults.colors(
                                                         disabledTextColor = MaterialTheme.colorScheme.onSurface,
@@ -458,9 +520,23 @@ fun LampStrategyOptContent(
                                                     )
                                                 )
                                                 OutlinedTextField(
-                                                    value = endDateMillis?.let { dateFormatter.format(Date(it)) } ?: "",
-                                                    onValueChange = {}, readOnly = true, label = { Text("结束日期") }, placeholder = { Text("请选择") },
-                                                    trailingIcon = { Icon(Icons.Default.DateRange, null) }, modifier = Modifier.weight(1f), enabled = false,
+                                                    value = endDateMillis?.let {
+                                                        dateFormatter.format(
+                                                            Date(it)
+                                                        )
+                                                    } ?: "",
+                                                    onValueChange = {},
+                                                    readOnly = true,
+                                                    label = { Text("结束日期") },
+                                                    placeholder = { Text("请选择") },
+                                                    trailingIcon = {
+                                                        Icon(
+                                                            Icons.Default.DateRange,
+                                                            null
+                                                        )
+                                                    },
+                                                    modifier = Modifier.weight(1f),
+                                                    enabled = false,
                                                     shape = RoundedCornerShape(12.dp),
                                                     colors = OutlinedTextFieldDefaults.colors(
                                                         disabledTextColor = MaterialTheme.colorScheme.onSurface,
@@ -498,7 +574,11 @@ fun LampStrategyOptContent(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .clip(RoundedCornerShape(12.dp))
-                                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                                    .background(
+                                                        MaterialTheme.colorScheme.surfaceVariant.copy(
+                                                            alpha = 0.3f
+                                                        )
+                                                    )
                                                     .padding(16.dp),
                                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                                             ) {
@@ -532,10 +612,18 @@ fun LampStrategyOptContent(
                                                     readOnly = true,
                                                     label = { requiredLabel("执行时间") },
                                                     placeholder = { Text("请点击选择时间") },
-                                                    trailingIcon = { Icon(Icons.Default.DateRange, "选择时间") },
+                                                    trailingIcon = {
+                                                        Icon(
+                                                            Icons.Default.DateRange,
+                                                            "选择时间"
+                                                        )
+                                                    },
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { editingTimeIndex = index },
+                                                        .clickable(
+                                                            interactionSource = remember { MutableInteractionSource() },
+                                                            indication = null
+                                                        ) { editingTimeIndex = index },
                                                     enabled = false,
                                                     shape = RoundedCornerShape(12.dp),
                                                     colors = OutlinedTextFieldDefaults.colors(
@@ -555,7 +643,8 @@ fun LampStrategyOptContent(
                                                         label = "执行动作",
                                                         placeholder = "请选择",
                                                         onItemSelected = { newActionType ->
-                                                            timeTasks[index] = task.copy(actionType = newActionType)
+                                                            timeTasks[index] =
+                                                                task.copy(actionType = newActionType)
                                                         }
                                                     )
                                                 }
@@ -563,7 +652,8 @@ fun LampStrategyOptContent(
                                                 OutlinedTextField(
                                                     value = task.actionValue,
                                                     onValueChange = { newValue ->
-                                                        timeTasks[index] = task.copy(actionValue = newValue)
+                                                        timeTasks[index] =
+                                                            task.copy(actionValue = newValue)
                                                     },
                                                     label = { requiredLabel("操作值") },
                                                     placeholder = { Text("请输入操作值") },
@@ -582,7 +672,9 @@ fun LampStrategyOptContent(
                                         ) {
                                             Text(
                                                 text = if (isAddEnabled) "+ 添加配置项(最大${maxSize}条)" else "已达到最大配置数量 (${maxSize})",
-                                                color = if (isAddEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                                color = if (isAddEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                    alpha = 0.5f
+                                                )
                                             )
                                         }
                                     }
@@ -604,7 +696,11 @@ fun LampStrategyOptContent(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clip(RoundedCornerShape(12.dp))
-                                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                                .background(
+                                                    MaterialTheme.colorScheme.surfaceVariant.copy(
+                                                        alpha = 0.3f
+                                                    )
+                                                )
                                                 .padding(16.dp),
                                             verticalArrangement = Arrangement.spacedBy(16.dp)
                                         ) {
@@ -617,7 +713,8 @@ fun LampStrategyOptContent(
                                             OutlinedTextField(
                                                 value = sunriseOffset,
                                                 onValueChange = { newValue ->
-                                                    if (newValue.isEmpty() || newValue == "-" || newValue.toIntOrNull() != null) sunriseOffset = newValue
+                                                    if (newValue.isEmpty() || newValue == "-" || newValue.toIntOrNull() != null) sunriseOffset =
+                                                        newValue
                                                 },
                                                 label = { requiredLabel("偏移量-分钟") },
                                                 placeholder = { Text("正延后/负提前") },
@@ -641,19 +738,25 @@ fun LampStrategyOptContent(
                                                             itemLabel = { it.second.value },
                                                             label = "执行动作 *",
                                                             placeholder = "请选择",
-                                                            onItemSelected = { sunriseActionType = it }
+                                                            onItemSelected = {
+                                                                sunriseActionType = it
+                                                            }
                                                         )
                                                     }
                                                     Box(modifier = Modifier.weight(1f)) {
                                                         OutlinedTextField(
                                                             value = sunriseActionValue,
-                                                            onValueChange = { sunriseActionValue = it },
+                                                            onValueChange = {
+                                                                sunriseActionValue = it
+                                                            },
                                                             label = { requiredLabel("操作值") },
                                                             placeholder = { Text("请输入数值") },
                                                             modifier = Modifier.fillMaxWidth(),
                                                             shape = RoundedCornerShape(12.dp),
                                                             singleLine = true,
-                                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                                            keyboardOptions = KeyboardOptions(
+                                                                keyboardType = KeyboardType.Number
+                                                            )
                                                         )
                                                     }
                                                 }
@@ -665,7 +768,11 @@ fun LampStrategyOptContent(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clip(RoundedCornerShape(12.dp))
-                                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                                .background(
+                                                    MaterialTheme.colorScheme.surfaceVariant.copy(
+                                                        alpha = 0.3f
+                                                    )
+                                                )
                                                 .padding(16.dp),
                                             verticalArrangement = Arrangement.spacedBy(16.dp)
                                         ) {
@@ -678,7 +785,8 @@ fun LampStrategyOptContent(
                                             OutlinedTextField(
                                                 value = sunsetOffset,
                                                 onValueChange = { newValue ->
-                                                    if (newValue.isEmpty() || newValue == "-" || newValue.toIntOrNull() != null) sunsetOffset = newValue
+                                                    if (newValue.isEmpty() || newValue == "-" || newValue.toIntOrNull() != null) sunsetOffset =
+                                                        newValue
                                                 },
                                                 label = { requiredLabel("偏移量-分钟") },
                                                 placeholder = { Text("正延后/负提前") },
@@ -702,19 +810,25 @@ fun LampStrategyOptContent(
                                                             itemLabel = { it.second.value },
                                                             label = "执行动作 *",
                                                             placeholder = "请选择",
-                                                            onItemSelected = { sunsetActionType = it }
+                                                            onItemSelected = {
+                                                                sunsetActionType = it
+                                                            }
                                                         )
                                                     }
                                                     Box(modifier = Modifier.weight(1f)) {
                                                         OutlinedTextField(
                                                             value = sunsetActionValue,
-                                                            onValueChange = { sunsetActionValue = it },
+                                                            onValueChange = {
+                                                                sunsetActionValue = it
+                                                            },
                                                             label = { requiredLabel("操作值") },
                                                             placeholder = { Text("请输入数值") },
                                                             modifier = Modifier.fillMaxWidth(),
                                                             shape = RoundedCornerShape(12.dp),
                                                             singleLine = true,
-                                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                                            keyboardOptions = KeyboardOptions(
+                                                                keyboardType = KeyboardType.Number
+                                                            )
                                                         )
                                                     }
                                                 }
@@ -732,41 +846,49 @@ fun LampStrategyOptContent(
                                     when (selectedPolicyType?.second?.key) {
                                         "timeStrategies" -> {
                                             val timeType = selectedPolicyPeriod?.first?.toInt()
-
-                                            // 优化点 1：将相同策略下重复计算的值提取到循环外部，提升性能
-                                            val weekString = if (timeType == 2) selectedDaysOfWeek.sorted().joinToString(",") else null
+                                            val weekString =
+                                                if (timeType == 2) selectedDaysOfWeek.sorted()
+                                                    .joinToString(",") else null
                                             val daysData = if (timeType == 3) {
                                                 DayData(
-                                                    startTime = startDateMillis?.let { dateFormatter.format(Date(it)) },
-                                                    endTime = endDateMillis?.let { dateFormatter.format(Date(it)) }
+                                                    startTime = startDateMillis?.let {
+                                                        dateFormatter.format(
+                                                            Date(it)
+                                                        )
+                                                    },
+                                                    endTime = endDateMillis?.let {
+                                                        dateFormatter.format(
+                                                            Date(it)
+                                                        )
+                                                    }
                                                 )
                                             } else null
-
                                             timeTasks.forEach { e ->
-                                                // 优化点 2：将 var 替换为 val，符合规范
                                                 val require = TimeStrategyCondition(
-                                                    timeType = timeType,
+                                                    timeType = timeType.toString(),
                                                     priority = selectedPriority,
                                                     timePoint = e.time,
                                                     week = weekString,
                                                     days = daysData
                                                 )
                                                 val action = TimeStrategyAction(
-                                                    actionType = e.actionType?.first?.toInt(),
+                                                    actionType = e.actionType?.first?.toString(),
                                                     actionValue = e.actionValue.toIntOrNull()
                                                 )
 
                                                 val timeStrategyContent = TimeStrategyContent(
+                                                    id = e.id.toLong(),
                                                     action = action,
                                                     require = require
                                                 )
-
                                                 // 优化点 3：统一使用 let 作用域函数添加对象
-                                                JsonUtils.toGsonJsonObject(timeStrategyContent)?.let {
-                                                    strategyContent.add(it)
-                                                }
+                                                JsonUtils.toGsonJsonObject(timeStrategyContent)
+                                                    ?.let {
+                                                        strategyContent.add(it)
+                                                    }
                                             }
                                         }
+
                                         "lngLatStrategies" -> {
                                             // TODO: 组装经纬度参数
                                         }
@@ -785,7 +907,9 @@ fun LampStrategyOptContent(
                                     lampViewModel.saveStrategyAndSync(strategyDTO)
                                 },
                                 enabled = true,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
                                 shape = RoundedCornerShape(24.dp)
                             ) {
                                 Text("提交并同步", style = MaterialTheme.typography.titleMedium)
@@ -836,12 +960,26 @@ fun LampStrategyOptContent(
                     },
                     headline = {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = dateRangePickerState.selectedStartDateMillis?.let { dateFormatter.format(Date(it)) } ?: "开始日期", style = MaterialTheme.typography.titleMedium)
-                            Text(text = " - ", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 4.dp))
-                            Text(text = dateRangePickerState.selectedEndDateMillis?.let { dateFormatter.format(Date(it)) } ?: "结束日期", style = MaterialTheme.typography.titleMedium)
+                            Text(text = dateRangePickerState.selectedStartDateMillis?.let {
+                                dateFormatter.format(
+                                    Date(it)
+                                )
+                            } ?: "开始日期", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                text = " - ",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                            Text(text = dateRangePickerState.selectedEndDateMillis?.let {
+                                dateFormatter.format(
+                                    Date(it)
+                                )
+                            } ?: "结束日期", style = MaterialTheme.typography.titleMedium)
                         }
                     }
                 )
