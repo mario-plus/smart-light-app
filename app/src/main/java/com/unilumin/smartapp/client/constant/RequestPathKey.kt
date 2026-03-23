@@ -17,6 +17,7 @@ object RequestPathKey {
         "$SMART_COMMON_APPLICATION/env/map_visualization_weather_condition"
     const val KEY_ENV_DATA_LIST: String = "$SMART_COMMON_APPLICATION/env/env_data"
     const val KEY_CAMERA_LIVE_URL: String = "$SMART_COMMON_APPLICATION/security/camera_live"
+
     //产品规则
     const val KEY_PRODUCT_RULE: String = "$SMART_COMMON_APPLICATION/base/protocol_rule"
 
@@ -81,9 +82,8 @@ object RequestPathKey {
     const val KEY_GET_GROUP_PRODUCT_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getGroupProductList"
 
     //分组产品下，可选分组
-    const val KEY_GET_STRATEGY_PRODUCT_LIST: String = "$SMART_ROAD_LAMPS/uni_light_getStrategyGroupInfoList"
-
-
+    const val KEY_GET_STRATEGY_PRODUCT_LIST: String =
+        "$SMART_ROAD_LAMPS/uni_light_getStrategyGroupInfoList"
 
 
     //亮灯率+在线率
@@ -121,6 +121,12 @@ object RequestPathKey {
 
     //任务详情
     const val KEY_GET_JOB_DETAIL: String = "$SMART_ROAD_LAMPS/uni_light_getTaskDetailById"
+
+    //提价策略
+    const val KEY_CREATE_STRATEGY: String = "$SMART_ROAD_LAMPS/uni_light_strategy"
+
+    //下发策略
+    const val KEY_SYNC_STRATEGY: String = "$SMART_ROAD_LAMPS/uni_light_send_strategy"
 
     //设备列表
     const val KEY_GET_DEVICE: String = "$IOT_HUB_MANAGER/iot_device_page"

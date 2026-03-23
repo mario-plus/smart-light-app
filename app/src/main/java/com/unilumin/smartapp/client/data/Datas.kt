@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.client.data
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.google.gson.JsonObject
 import java.math.BigDecimal
 
 data class ResponseData<T>(
@@ -922,9 +923,9 @@ data class TimeCondition(
 
 data class DayData(
     //对应时间类型：3连续时间区间的开始时间
-    val startTime: String,
+    val startTime: String? = null,
     //对应时间类型：3连续时间区间的结束时间
-    val endTime: String
+    val endTime: String? = null
 )
 
 //时间策略
@@ -1278,33 +1279,26 @@ data class CreateGroupDTO(
 
 //网关信息
 data class DevSimpleInfo(
-    val id: Long,
-    val deviceName: String? = null
+    val id: Long, val deviceName: String? = null
 )
 
 //操作分组设备
 data class OptGroupDev(
-    val groupId: Long,
-    val deviceIds: List<Long>,
+    val groupId: Long, val deviceIds: List<Long>,
     //0删除，1新增
     val type: Int
 )
 
 //强制删除分组设备
 data class ForceDelGroupDev(
-    val groupId: Long,
-    val deviceIds: List<Long>,
-    val subSystemType: Int? = 1
+    val groupId: Long, val deviceIds: List<Long>, val subSystemType: Int? = 1
 )
 
 //查询分组可添加的设备
 data class GroupDevParam(
-    val keyword: String,
-    val curPage: Int,
-    val pageSize: Int,
+    val keyword: String, val curPage: Int, val pageSize: Int,
     //分组id
-    val id: Long,
-    val subSystemType: Int? = 1
+    val id: Long, val subSystemType: Int? = 1
 )
 
 data class GroupOptDevVO(
@@ -1386,8 +1380,7 @@ data class TaskInfo(
  * 策略分组产品
  * */
 data class StrategyProductVO(
-    val productId: Long,
-    val productName: String
+    val productId: Long, val productName: String
 )
 
 data class StrategyGroupDTO(
@@ -1456,14 +1449,97 @@ data class Tuple4<A, B, C, D>(val v1: A, val v2: B, val v3: C, val v4: D)
 
 
 data class KeyValue(
-    val key: String,
-    val value: String
+    val key: String, val value: String
 )
 
 /**
  * 策略优先级范围
  * */
 data class PriorityRange(
-    val max: Int,
-    val min: Int
+    val max: Int, val min: Int
+)
+
+data class TimeTaskConfig(
+    val id: Int = 0,
+    //时间点
+    val time: String = "",
+    //动作类型
+    val actionType: Pair<Long, KeyValue>? = null,
+    //动作值
+    val actionValue: String = ""
+)
+
+
+//新增策略/更新策略
+data class StrategyDTO(
+    // 策略id
+    var id: Long? = null,
+    // 策略名称
+    var name: String? = null,
+    // 产品id
+    var productId: Long? = null,
+    // 分组id列表
+    var groupId: List<Long>? = null,
+    // 策略类型：1经纬度策略,2时间策略,5亮度传感器策略
+    var strategyClass: Int? = null,
+    // 策略类型：1 分组，2 广播策略，3 单灯-策略保存在单灯
+    var strategyType: Int? = null,
+    // 备注信息
+    var description: String? = null,
+    // 策略执行计划
+    var content: List<JsonObject>? = null,
+    // 执行类别：0手动触发，1指定时间
+    var executeType: Int? = null,
+    // 执行时间
+    var executeTime: String? = null,
+    // 子系统：1智慧路灯、2智慧景观、3智慧屏幕、4智慧光显、5光显控台、6智慧隧道
+    var subSystemType: Int? = null
+)
+
+data class IdBody(
+    val id: Long
+)
+
+data class TimeStrategyCondition(
+    //时间点：9:21
+    val timePoint: String?,
+    //时间类型（1每天，2星期，3连续时间区间（7月28--8月28））
+    val timeType: Int?,
+    //对应时间类型：星期（星期一，星期二用1,2表示）
+    val week: String? = null,
+    //对应时间类型：3 连续时间区间
+    val days: DayData? = null,
+    //自研灯控策略优先级1-16
+    val priority: Int?
+)
+
+data class TimeStrategyAction(
+    //执行动作类型（1调光，2开关,3调色温，5自定义指令，对应值为customize）
+    val actionType: Int? = null,
+    //下发值（调光0-100，0关，1开）
+    val actionValue: Int? = null,
+    //色温值
+    val temperature: Int? = null,
+    //自定义指令
+    val customize: String? = null
+)
+
+//时间策略内容
+data class TimeStrategyContent(
+    val require: TimeStrategyCondition, val action: TimeStrategyAction
+)
+
+data class LngLatStrategyCondition(
+    //时间类型（1每天，2星期，3连续时间区间（7月28--8月28））
+    val timeType: Int? = null,
+    //对应时间类型：星期（星期一，星期二用1,2表示）
+    val week: String? = null,
+    //对应时间类型：3 连续时间区间
+    val days: DayData? = null,
+    //自研灯控策略优先级1-16
+    val priority: Int? = null
+)
+
+data class LngLatStrategyContent(
+    val require: LngLatStrategyCondition, val action: TimeStrategyAction
 )

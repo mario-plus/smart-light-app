@@ -2,6 +2,7 @@ package com.unilumin.smartapp.util
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.json.JSONObject
 
@@ -17,6 +18,25 @@ object JsonUtils {
     fun <T> fromJson(json: String, classOfT: Class<T>): T? {
         return try {
             gson.fromJson(json, classOfT)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+     * 将任意对象转换为 com.google.gson.JsonObject
+     */
+    fun toGsonJsonObject(obj: Any?): JsonObject? {
+        if (obj == null) return null
+        return try {
+            // 直接转为 Gson 的 JsonTree，效率更高
+            val jsonElement = gson.toJsonTree(obj)
+            if (jsonElement.isJsonObject) {
+                jsonElement.asJsonObject
+            } else {
+                null // 如果传入的是基本类型或 List，它可能不是 JsonObject，这里做个安全判断
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             null
@@ -51,4 +71,6 @@ object JsonUtils {
             false
         }
     }
+
+
 }

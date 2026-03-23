@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
+import android.util.Log
 import com.google.gson.JsonObject
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService.parseDataNewSuspend
@@ -12,6 +13,7 @@ import com.unilumin.smartapp.client.data.ForceDelGroupDev
 import com.unilumin.smartapp.client.data.GroupDevParam
 import com.unilumin.smartapp.client.data.GroupMemberReq
 import com.unilumin.smartapp.client.data.GroupRequestParam
+import com.unilumin.smartapp.client.data.IdBody
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
 import com.unilumin.smartapp.client.data.KeyValue
@@ -26,11 +28,13 @@ import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OptGroupDev
 import com.unilumin.smartapp.client.data.Quadruple
 import com.unilumin.smartapp.client.data.RequestParam
+import com.unilumin.smartapp.client.data.StrategyDTO
 import com.unilumin.smartapp.client.data.StrategyGroupDTO
 import com.unilumin.smartapp.client.data.StrategyProductVO
 import com.unilumin.smartapp.client.data.StrategyRequestParam
 import com.unilumin.smartapp.client.data.TaskIdRequest
 import com.unilumin.smartapp.client.service.RoadService
+import com.unilumin.smartapp.util.JsonUtils
 import com.unilumin.smartapp.util.StrategyContentUtil
 import com.unilumin.smartapp.util.ToastUtil
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -192,14 +196,16 @@ class LampViewModel(
                 //策略模式
                 var strategyTypeObj = policyObj.get("strategyType")
                 if (strategyTypeObj != null) {
-                    _strategyTypeList.value =
-                        StrategyContentUtil.getPolicyTypeOrMode(currentProductId, strategyTypeObj.asJsonObject, "zh")
+                    _strategyTypeList.value = StrategyContentUtil.getPolicyTypeOrMode(
+                        currentProductId, strategyTypeObj.asJsonObject, "zh"
+                    )
                 }
                 //策略类型
                 var policyTypeObj = policyObj.get("policyType")
                 if (policyTypeObj != null) {
-                    _policyTypeList.value =
-                        StrategyContentUtil.getPolicyTypeOrMode(currentProductId, policyTypeObj.asJsonObject, "zh")
+                    _policyTypeList.value = StrategyContentUtil.getPolicyTypeOrMode(
+                        currentProductId, policyTypeObj.asJsonObject, "zh"
+                    )
                 }
             } catch (ignore: Exception) {
                 ignore.printStackTrace()
@@ -463,6 +469,19 @@ class LampViewModel(
             )
             parseDataNewSuspend(call)
             ToastUtil.showSuccess(context, "操作成功")
+        }
+    }
+
+    //保存并下发策略
+    fun saveStrategyAndSync(body: StrategyDTO) {
+        var toJson = JsonUtils.gson.toJson(body)
+        Log.e("TAG", "saveStrategyAndSync: $toJson")
+        launchWithLoading {
+            val call: Call<NewResponseData<Long?>?>? = roadService.saveStrategy(body)
+            var parseDataNewSuspend = parseDataNewSuspend(call)
+            if (parseDataNewSuspend != null) {
+                roadService.syncStrategy(IdBody(id = parseDataNewSuspend))
+            }
         }
     }
 

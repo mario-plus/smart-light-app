@@ -12,6 +12,7 @@ import com.unilumin.smartapp.client.data.GroupMemberInfo
 import com.unilumin.smartapp.client.data.GroupMemberReq
 import com.unilumin.smartapp.client.data.GroupOptDevVO
 import com.unilumin.smartapp.client.data.GroupRequestParam
+import com.unilumin.smartapp.client.data.IdBody
 import com.unilumin.smartapp.client.data.JobRequestParam
 import com.unilumin.smartapp.client.data.JobSceneElement
 import com.unilumin.smartapp.client.data.LampCtlReq
@@ -30,6 +31,7 @@ import com.unilumin.smartapp.client.data.NewResponseData
 import com.unilumin.smartapp.client.data.OptGroupDev
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RequestParam
+import com.unilumin.smartapp.client.data.StrategyDTO
 import com.unilumin.smartapp.client.data.StrategyGroupDTO
 import com.unilumin.smartapp.client.data.StrategyGroupListVO
 import com.unilumin.smartapp.client.data.StrategyProductVO
@@ -186,6 +188,18 @@ interface RoadService {
      * */
     @GET(RequestPathKey.KEY_PRODUCT_RULE)
     fun getProductRule(@Query("productId") productId: Long): Call<NewResponseData<JsonObject?>?>?
+
+    /**
+     * 创建策略
+     * */
+    @POST(RequestPathKey.KEY_CREATE_STRATEGY)
+    fun saveStrategy(@Body requestBody: StrategyDTO): Call<NewResponseData<Long?>?>?
+
+    /**
+     *同步策略
+     * */
+    @POST(RequestPathKey.KEY_SYNC_STRATEGY)
+    fun syncStrategy(@Body requestBody: IdBody): Call<NewResponseData<Void?>?>?
 
 
 }
