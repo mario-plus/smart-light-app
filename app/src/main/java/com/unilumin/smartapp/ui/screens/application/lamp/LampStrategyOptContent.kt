@@ -150,7 +150,7 @@ fun LampStrategyOptContent(
     )
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    val dateFormatter = remember { SimpleDateFormat("MM-dd", Locale.getDefault()) }
 
     // 帮助生成带必填星号的Label
     val requiredLabel: @Composable (String) -> Unit = { text ->
@@ -848,7 +848,7 @@ fun LampStrategyOptContent(
                                             val timeType = selectedPolicyPeriod?.first?.toInt()
                                             val weekString =
                                                 if (timeType == 2) selectedDaysOfWeek.sorted()
-                                                    .joinToString(",") else null
+                                                    .joinToString(",") else ""
                                             val daysData = if (timeType == 3) {
                                                 DayData(
                                                     startTime = startDateMillis?.let {
@@ -862,7 +862,7 @@ fun LampStrategyOptContent(
                                                         )
                                                     }
                                                 )
-                                            } else null
+                                            } else DayData()
                                             timeTasks.forEach { e ->
                                                 val require = TimeStrategyCondition(
                                                     timeType = timeType.toString(),
