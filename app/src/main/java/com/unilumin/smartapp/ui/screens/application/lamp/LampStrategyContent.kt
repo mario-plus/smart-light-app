@@ -226,12 +226,12 @@ private fun LngLatStrategyItem(strategy: LngLatStrategy) {
             BadgeTag(text = "条件", color = Color(0xFFE3F2FD), textColor = Color(0xFF1976D2))
             Spacer(modifier = Modifier.width(8.dp))
             val riseDown = strategy.require.riseDown
-            val isSunrise = riseDown.riseType?.toInt() == 1
+            val isSunrise = riseDown.riseType.toInt() == 1
             val eventName = if (isSunrise) "日出" else "日落"
             val offset = if (isSunrise) {
-                riseDown.sunrise.toInt() ?: 0
+                riseDown.sunrise.toInt()
             } else {
-                riseDown.sundown?.toInt() ?: 0
+                riseDown.sundown.toInt()
             }
             val offsetText = when {
                 offset > 0 -> "延后 $offset 分钟"
@@ -253,8 +253,10 @@ private fun LngLatStrategyItem(strategy: LngLatStrategy) {
             val actionType = strategy.action.actionType
             val actionValue = strategy.action.actionValue
             val actionDesc = when (actionType) {
-                2 -> if (actionValue == 1) "开启" else "关闭"
-                else -> "执行动作: $actionValue"
+                "1" -> "调光值: ${actionValue}%"
+                "2" -> " ${if (actionValue == 1) "开灯" else "关灯"}"
+                "3" -> "色温值:${actionValue}%"
+                else -> "日出关灯,日落开灯"
             }
             Text(
                 text = actionDesc,
@@ -457,10 +459,10 @@ private fun TimeStrategyItem(strategy: TimeStrategy) {
             val actionValue = strategy.action.actionValue
             val customize = strategy.action.customize
             val actionDesc = when (actionType) {
-                1 -> "调光值: ${actionValue}%"
-                2 -> " ${if (actionValue == 1) "开灯" else "关灯"}"
-                3 -> "色温值:${actionValue}%"
-                5 -> "$customize"
+                "1" -> "调光值: ${actionValue}%"
+                "2" -> " ${if (actionValue == 1) "开灯" else "关灯"}"
+                "3" -> "色温值:${actionValue}%"
+                "5" -> "$customize"
                 else -> "执行动作: ${actionValue ?: "未知"}"
             }
             Text(

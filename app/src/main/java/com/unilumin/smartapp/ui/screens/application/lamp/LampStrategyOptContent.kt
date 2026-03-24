@@ -70,10 +70,13 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.google.gson.JsonObject
 import com.unilumin.smartapp.client.data.DayData
 import com.unilumin.smartapp.client.data.KeyValue
+import com.unilumin.smartapp.client.data.LngLatStrategyCondition
+import com.unilumin.smartapp.client.data.LngLatStrategyContent
+import com.unilumin.smartapp.client.data.RiseDown
+import com.unilumin.smartapp.client.data.StrategyAction
 import com.unilumin.smartapp.client.data.StrategyDTO
 import com.unilumin.smartapp.client.data.StrategyGroupListVO
 import com.unilumin.smartapp.client.data.StrategyProductVO
-import com.unilumin.smartapp.client.data.TimeStrategyAction
 import com.unilumin.smartapp.client.data.TimeStrategyCondition
 import com.unilumin.smartapp.client.data.TimeStrategyContent
 import com.unilumin.smartapp.client.data.TimeTaskConfig
@@ -843,26 +846,26 @@ fun LampStrategyOptContent(
                             Button(
                                 onClick = {
                                     val strategyContent = mutableListOf<JsonObject>()
+                                    val timeType = selectedPolicyPeriod?.first?.toInt()
+                                    val weekString =
+                                        if (timeType == 2) selectedDaysOfWeek.sorted()
+                                            .joinToString(",") else ""
+                                    val daysData = if (timeType == 3) {
+                                        DayData(
+                                            startTime = startDateMillis?.let {
+                                                dateFormatter.format(
+                                                    Date(it)
+                                                )
+                                            },
+                                            endTime = endDateMillis?.let {
+                                                dateFormatter.format(
+                                                    Date(it)
+                                                )
+                                            }
+                                        )
+                                    } else DayData()
                                     when (selectedPolicyType?.second?.key) {
                                         "timeStrategies" -> {
-                                            val timeType = selectedPolicyPeriod?.first?.toInt()
-                                            val weekString =
-                                                if (timeType == 2) selectedDaysOfWeek.sorted()
-                                                    .joinToString(",") else ""
-                                            val daysData = if (timeType == 3) {
-                                                DayData(
-                                                    startTime = startDateMillis?.let {
-                                                        dateFormatter.format(
-                                                            Date(it)
-                                                        )
-                                                    },
-                                                    endTime = endDateMillis?.let {
-                                                        dateFormatter.format(
-                                                            Date(it)
-                                                        )
-                                                    }
-                                                )
-                                            } else DayData()
                                             timeTasks.forEach { e ->
                                                 val require = TimeStrategyCondition(
                                                     timeType = timeType.toString(),
@@ -871,40 +874,84 @@ fun LampStrategyOptContent(
                                                     week = weekString,
                                                     days = daysData
                                                 )
-                                                val action = TimeStrategyAction(
+                                                val action = StrategyAction(
                                                     actionType = e.actionType?.first?.toString(),
                                                     actionValue = e.actionValue.toIntOrNull()
                                                 )
-
                                                 val timeStrategyContent = TimeStrategyContent(
                                                     id = e.id.toLong(),
                                                     action = action,
                                                     require = require
                                                 )
-                                                // 优化点 3：统一使用 let 作用域函数添加对象
                                                 JsonUtils.toGsonJsonObject(timeStrategyContent)
                                                     ?.let {
                                                         strategyContent.add(it)
                                                     }
                                             }
                                         }
-
                                         "lngLatStrategies" -> {
-                                            // TODO: 组装经纬度参数
+                                            val sunRiseRequire = LngLatStrategyCondition(
+                                                timeType = timeType.toString(),
+                                                priority = selectedPriority,
+                                                week = weekString,
+                                                days = daysData,
+                                                riseDown = RiseDown(
+                                                    riseType = "1",
+                                                    sundown = 0,
+                                                    sunrise = sunriseOffset.toInt()
+                                                )
+                                            )
+                                            var sunRiseContent = LngLatStrategyContent(
+                                                require = sunRiseRequire, action = StrategyAction(
+                                                    actionType = sunriseActionType?.first.toString(),
+                                                    actionValue = sunriseActionValue.toIntOrNull()
+                                                )
+                                            )
+                                            JsonUtils.toGsonJsonObject(sunRiseContent)
+                                                ?.let {
+                                                    strategyContent.add(it)
+                                                }
+
+
+                                            //日落
+                                            val sunSetRequire = LngLatStrategyCondition(
+                                                timeType = timeType.toString(),
+                                                priority = selectedPriority,
+                                                week = weekString,
+                                                days = daysData,
+                                                riseDown = RiseDown(
+                                                    riseType = "2",
+                                                    sundown = sunsetOffset.toInt(),
+                                                    sunrise = 0
+                                                )
+                                            )
+                                            var sunSetContent = LngLatStrategyContent(
+                                                require = sunSetRequire, action = StrategyAction(
+                                                    actionType = sunsetActionType?.first.toString(),
+                                                    actionValue = sunsetActionValue.toIntOrNull()
+                                                )
+                                            )
+                                            JsonUtils.toGsonJsonObject(sunSetContent)
+                                                ?.let {
+                                                    strategyContent.add(it)
+                                                }
+
                                         }
                                     }
-                                    val strategyDTO = StrategyDTO(
-                                        name = strategyName,
-                                        productId = selectedProduct?.productId,
-                                        groupId = selectedGroups.map { it.groupId as Long },
-                                        strategyClass = selectedPolicyType?.first?.toInt(),
-                                        strategyType = selectedStrategyType?.first?.toInt(),
-                                        content = strategyContent,
-                                        description = remarkInfo,
-                                        executeType = 0,
-                                        subSystemType = 1
-                                    )
-                                    lampViewModel.saveStrategyAndSync(strategyDTO)
+                                    if (strategyContent.isNotEmpty()) {
+                                        val strategyDTO = StrategyDTO(
+                                            name = strategyName,
+                                            productId = selectedProduct?.productId,
+                                            groupId = selectedGroups.map { it.groupId as Long },
+                                            strategyClass = selectedPolicyType?.first?.toInt(),
+                                            strategyType = selectedStrategyType?.first?.toInt(),
+                                            content = strategyContent,
+                                            description = remarkInfo,
+                                            executeType = 0,
+                                            subSystemType = 1
+                                        )
+                                        lampViewModel.saveStrategyAndSync(strategyDTO)
+                                    }
                                 },
                                 enabled = true,
                                 modifier = Modifier

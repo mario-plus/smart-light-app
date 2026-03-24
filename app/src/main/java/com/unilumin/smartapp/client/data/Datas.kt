@@ -887,16 +887,16 @@ data class EnvTelBO(
     val type: String
 )
 
-data class StrategyAction(
-    //执行动作类型（1调光，2开关,3调色温，5自定义指令，对应值为customize）
-    var actionType: Int? = null,
-    //下发值（调光0-100，0关，1开）
-    var actionValue: Int? = null,
-    //色温值
-    var temperature: Int? = null,
-    //自定义指令
-    var customize: String? = null
-)
+//data class StrategyAction(
+//    //执行动作类型（1调光，2开关,3调色温，5自定义指令，对应值为customize）
+//    var actionType: Int? = null,
+//    //下发值（调光0-100，0关，1开）
+//    var actionValue: Int? = null,
+//    //色温值
+//    var temperature: Int? = null,
+//    //自定义指令
+//    var customize: String? = null
+//)
 
 data class TimeCondition(
     //时间点：9：21
@@ -945,16 +945,16 @@ data class LngLatCondition(
 
 data class RiseDown(
     //类型（日出：1 ，日落：2）
-    val riseType: Integer,
+    val riseType: String,
     //日出偏移（正数表示延后，负数表示提前
-    val sunrise: Integer,
+    val sunrise: Int,
     //日落偏移（正数表示延后，负数表示提前）
-    val sundown: Integer
+    val sundown: Int
 )
 
 data class LngLatData(
     //是否同步经纬度(0否，1是)
-    val isLngLat: Integer,
+    val isLngLat: Int,
     //经度 （前端没有设值，后端查数据库杆的经纬度）
     val lng: String,
     //纬度 （前端没有设值，后端查数据库杆的经纬度）
@@ -1513,7 +1513,7 @@ data class TimeStrategyCondition(
     val priority: Int?
 )
 
-data class TimeStrategyAction(
+data class StrategyAction(
     //执行动作类型（1调光，2开关,3调色温，5自定义指令，对应值为customize）
     val actionType: String? = null,
     //下发值（调光0-100，0关，1开）
@@ -1528,20 +1528,22 @@ data class TimeStrategyAction(
 data class TimeStrategyContent(
     val id: Long,
     val require: TimeStrategyCondition,
-    val action: TimeStrategyAction
+    val action: StrategyAction
 )
 
 data class LngLatStrategyCondition(
     //时间类型（1每天，2星期，3连续时间区间（7月28--8月28））
-    val timeType: Int? = null,
+    val timeType: String? = null,
     //对应时间类型：星期（星期一，星期二用1,2表示）
     val week: String? = null,
     //对应时间类型：3 连续时间区间
     val days: DayData? = null,
     //自研灯控策略优先级1-16
-    val priority: Int? = null
+    val priority: Int? = null,
+    val riseDown: RiseDown? = null,
+    val lngLatData: LngLatData? = null,
 )
 
 data class LngLatStrategyContent(
-    val require: LngLatStrategyCondition, val action: TimeStrategyAction
+    val require: LngLatStrategyCondition, val action: StrategyAction
 )
