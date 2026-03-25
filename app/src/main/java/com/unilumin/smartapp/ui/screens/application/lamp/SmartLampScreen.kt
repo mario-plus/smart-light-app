@@ -29,6 +29,7 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_LOOP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_STRATEGY
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LIGHT_GATEWAY
 import com.unilumin.smartapp.client.constant.DeviceConstant.getSmartAppName
+import com.unilumin.smartapp.client.data.LampStrategyInfo
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
 import com.unilumin.smartapp.ui.components.EmptyDataView
 import com.unilumin.smartapp.ui.theme.PageBackground
@@ -40,7 +41,9 @@ import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 fun SmartLampScreen(
     retrofitClient: RetrofitClient,
     onBack: () -> Unit,
-    toNew: (LampViewModel, String) -> Unit
+    toNew: (LampViewModel, String) -> Unit,
+    // 🔥 新增：用于处理编辑跳转的回调，外部调用处需要接收此回调并携带数据跳转至表单页
+    toEditStrategy: (LampViewModel, LampStrategyInfo) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
@@ -67,10 +70,8 @@ fun SmartLampScreen(
         }
     }
 
-
     val effectiveId = currentFunctionId ?: SMART_LAMP_LIGHT
 
-    // 动态获取当前页面的标题
     val currentTitle = remember(effectiveId, lampFunctions) {
         lampFunctions.find { it.id == effectiveId }?.name ?: getSmartAppName(SMART_LAMP)
     }
@@ -82,7 +83,6 @@ fun SmartLampScreen(
                 onBack = { onBack() },
                 menuItems = lampFunctions,
                 onMenuItemClick = { systemConfig ->
-                    // 更新 String 类型的 ID
                     currentFunctionId = systemConfig.id
                 })
         }, containerColor = PageBackground
@@ -92,47 +92,26 @@ fun SmartLampScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // 根据 String 类型的 effectiveId 判断
             when (effectiveId) {
-                // 单灯管理页面
-                SMART_LAMP_LIGHT -> {
-                    LampLightContent(lampViewModel)
-                }
-                // 集中控制器
-                SMART_LAMP_GATEWAY -> {
-                    LampGatewayContent(lampViewModel)
-                }
-                // 回路控制器
-                SMART_LAMP_LOOP -> {
-                    LampLoopCtlContent(lampViewModel)
-                }
-
-                SMART_LIGHT_GATEWAY -> {
-                    LampLightGwContent(lampViewModel)
-                }
-
-                // 分组管理
-                SMART_LAMP_GROUP -> {
-                    LampGroupContent(
-                        lampViewModel,
-                        toNew = { toNew(lampViewModel, SMART_LAMP_GROUP) })
-                }
-
-                SMART_LAMP_STRATEGY -> {
-                    LampStrategyContent(
-                        lampViewModel,
-                        toNew = { toNew(lampViewModel, SMART_LAMP_STRATEGY) })
-                }
-
-                SMART_LAMP_JOB -> {
-                    LampJobContent(
-                        lampViewModel,
-                        toNew = { toNew(lampViewModel, SMART_LAMP_JOB) })
-                }
-
-                else -> {
-                    EmptyDataView("未开发的功能")
-                }
+                SMART_LAMP_LIGHT -> LampLightContent(lampViewModel)
+                SMART_LAMP_GATEWAY -> LampGatewayContent(lampViewModel)
+                SMART_LAMP_LOOP -> LampLoopCtlContent(lampViewModel)
+                SMART_LIGHT_GATEWAY -> LampLightGwContent(lampViewModel)
+                SMART_LAMP_GROUP -> LampGroupContent(
+                    lampViewModel,
+                    toNew = { toNew(lampViewModel, SMART_LAMP_GROUP) }
+                )
+                SMART_LAMP_STRATEGY -> LampStrategyContent(
+                    lampViewModel = lampViewModel,
+                    toNew = { toNew(lampViewModel, SMART_LAMP_STRATEGY) },
+                    // 🔥 接入编辑跳转
+                    toEdit = { strategy -> toEditStrategy(lampViewModel, strategy) }
+                )
+                SMART_LAMP_JOB -> LampJobContent(
+                    lampViewModel,
+                    toNew = { toNew(lampViewModel, SMART_LAMP_JOB) }
+                )
+                else -> EmptyDataView("未开发的功能")
             }
         }
     }

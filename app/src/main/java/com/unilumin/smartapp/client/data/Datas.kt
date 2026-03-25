@@ -886,40 +886,28 @@ data class EnvTelBO(
     val ts: Long,
     val type: String
 )
-
-//data class StrategyAction(
-//    //执行动作类型（1调光，2开关,3调色温，5自定义指令，对应值为customize）
-//    var actionType: Int? = null,
-//    //下发值（调光0-100，0关，1开）
-//    var actionValue: Int? = null,
-//    //色温值
-//    var temperature: Int? = null,
-//    //自定义指令
-//    var customize: String? = null
+//data class TimeCondition(
+//    //时间点：9：21
+//    var timePoint: String? = null,
+//    //1:日出,2：日落,3：时间点
+//    var lngLatType: String? = null,
+//    //日出偏移量
+//    var sunrise: String? = null,
+//    //日落偏移量
+//    var sundown: String? = null,
+//    //策略下发间隔(天)
+//    var interval: Int? = null,
+//    //是否自动执行
+//    var isAutoExec: Int? = null,
+//    //时间类型（1每天，2星期，3连续时间区间（7月28--8月28））
+//    var timeType: Int? = null,
+//    //对应时间类型：星期（星期一，星期二用1,2表示）
+//    var week: String? = null,
+//    // 对应时间类型：3 连续时间区间
+//    var days: DayData? = null,
+//    //自研灯控策略优先级1-16
+//    var priority: Int? = null
 //)
-
-data class TimeCondition(
-    //时间点：9：21
-    var timePoint: String? = null,
-    //1:日出,2：日落,3：时间点
-    var lngLatType: String? = null,
-    //日出偏移量
-    var sunrise: String? = null,
-    //日落偏移量
-    var sundown: String? = null,
-    //策略下发间隔(天)
-    var interval: Int? = null,
-    //是否自动执行
-    var isAutoExec: Int? = null,
-    //时间类型（1每天，2星期，3连续时间区间（7月28--8月28））
-    var timeType: Int? = null,
-    //对应时间类型：星期（星期一，星期二用1,2表示）
-    var week: String? = null,
-    // 对应时间类型：3 连续时间区间
-    var days: DayData? = null,
-    //自研灯控策略优先级1-16
-    var priority: Int? = null
-)
 
 data class DayData(
     //对应时间类型：3连续时间区间的开始时间
@@ -928,21 +916,21 @@ data class DayData(
     val endTime: String? = null
 )
 
-//时间策略
-data class TimeStrategy(
-    val id: Long, val require: TimeCondition, val action: StrategyAction
-)
-
-//经纬度策略
-data class LngLatStrategy(
-    val id: Long, val require: LngLatCondition, val action: StrategyAction
-)
-
-//经纬度条件
-data class LngLatCondition(
-    val syncLngLat: Int, val riseDown: RiseDown, val lngLatData: LngLatData
-)
-
+////时间策略
+//data class TimeStrategy(
+//    val id: Long, val require: TimeCondition, val action: StrategyAction
+//)
+//
+////经纬度策略
+//data class LngLatStrategy(
+//    val id: Long, val require: LngLatCondition, val action: StrategyAction
+//)
+//
+////经纬度条件
+//data class LngLatCondition(
+//    val syncLngLat: Int, val riseDown: RiseDown, val lngLatData: LngLatData
+//)
+//
 data class RiseDown(
     //类型（日出：1 ，日落：2）
     val riseType: String,
@@ -1546,4 +1534,15 @@ data class LngLatStrategyCondition(
 
 data class LngLatStrategyContent(
     val require: LngLatStrategyCondition, val action: StrategyAction
+)
+
+data class PolicyConfig(
+    //策略周期
+    val periodTypes: List<Pair<Long, KeyValue>> = emptyList(),
+    //策略优先级
+    val priorityRange: PriorityRange? = null,
+    //执行动作类型
+    val actionTypes: List<Pair<Long, KeyValue>> = emptyList(),
+    //最大size
+    val maxSize: Long = 0L
 )

@@ -1,5 +1,6 @@
 package com.unilumin.smartapp.ui.screens.application.lamp
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ElevatedCard
@@ -74,8 +76,10 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.google.gson.JsonObject
 import com.unilumin.smartapp.client.data.DayData
 import com.unilumin.smartapp.client.data.KeyValue
+import com.unilumin.smartapp.client.data.LampStrategyInfo
 import com.unilumin.smartapp.client.data.LngLatStrategyCondition
 import com.unilumin.smartapp.client.data.LngLatStrategyContent
+import com.unilumin.smartapp.client.data.PolicyConfig
 import com.unilumin.smartapp.client.data.RiseDown
 import com.unilumin.smartapp.client.data.StrategyAction
 import com.unilumin.smartapp.client.data.StrategyDTO
@@ -92,19 +96,20 @@ import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.LampViewModel
 import com.unilumin.smartapp.util.JsonUtils
 import com.unilumin.smartapp.util.StrategyContentUtil
+import com.unilumin.smartapp.util.StrategyContentUtil.formatLngLatStrategy
+import com.unilumin.smartapp.util.StrategyContentUtil.formatTimeStrategy
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private const val TAG = "LampStrategyForm"
+
 // ==========================================
-// 1. 状态管理类 (State Holder) - 预留编辑功能入口
+// 1. 状态管理类 (支持回显与重置)
 // ==========================================
-class LampStrategyFormState(
-    // TODO: 接入编辑功能时，可在此处传入 initialStrategy: StrategyDTO? 进行数据回显初始化
-) {
+class LampStrategyFormState {
     var currentStep by mutableIntStateOf(1)
 
-    // --- Step 1: 基本信息 ---
     var strategyName by mutableStateOf("")
     var remarkInfo by mutableStateOf("")
     var selectedProduct by mutableStateOf<StrategyProductVO?>(null)
@@ -113,19 +118,16 @@ class LampStrategyFormState(
     var showGroupBottomSheet by mutableStateOf(false)
     val selectedGroups = mutableStateListOf<StrategyGroupListVO>()
 
-    // --- Step 2: 策略详情 ---
-    var selectedPolicyPeriod by mutableStateOf<Pair<Long, KeyValue>?>(null)
+    var selectedPolicyPeriod by mutableStateOf<Pair<Long?, KeyValue>?>(null)
     val selectedDaysOfWeek = mutableStateListOf<Int>()
     var startDateMillis by mutableStateOf<Long?>(null)
     var endDateMillis by mutableStateOf<Long?>(null)
     var selectedPriority by mutableStateOf<Int?>(null)
 
-    // --- 时间策略专属 ---
     var nextTaskId by mutableIntStateOf(1)
     val timeTasks = mutableStateListOf(TimeTaskConfig(id = 0))
     var editingTimeIndex by mutableStateOf<Int?>(null)
 
-    // --- 经纬度策略专属 ---
     var sunriseOffset by mutableStateOf("")
     var sunriseActionType by mutableStateOf<Pair<Long, KeyValue>?>(null)
     var sunriseActionValue by mutableStateOf("")
@@ -134,30 +136,291 @@ class LampStrategyFormState(
     var sunsetActionType by mutableStateOf<Pair<Long, KeyValue>?>(null)
     var sunsetActionValue by mutableStateOf("")
 
-    // 弹窗控制
     var showDateRangePicker by mutableStateOf(false)
+
+    var initializedStrategyId by mutableStateOf<Long?>(null)
+    var hasBoundProduct by mutableStateOf(false)
+    var hasBoundStrategyType by mutableStateOf(false)
+    var hasBoundPolicyType by mutableStateOf(false)
+
+    // 新增重置方法，避免脏数据残留
+    fun reset() {
+        currentStep = 1
+        strategyName = ""
+        remarkInfo = ""
+        selectedProduct = null
+        selectedStrategyType = null
+        selectedPolicyType = null
+        showGroupBottomSheet = false
+        selectedGroups.clear()
+
+        selectedPolicyPeriod = null
+        selectedDaysOfWeek.clear()
+        startDateMillis = null
+        endDateMillis = null
+        selectedPriority = null
+
+        nextTaskId = 1
+        timeTasks.clear()
+        timeTasks.add(TimeTaskConfig(id = 0))
+        editingTimeIndex = null
+
+        sunriseOffset = ""
+        sunriseActionType = null
+        sunriseActionValue = ""
+
+        sunsetOffset = ""
+        sunsetActionType = null
+        sunsetActionValue = ""
+
+        showDateRangePicker = false
+
+        initializedStrategyId = null
+        hasBoundProduct = false
+        hasBoundStrategyType = false
+        hasBoundPolicyType = false
+    }
+
+    fun initStaticData(info: LampStrategyInfo, dateFormatter: SimpleDateFormat) {
+        if (initializedStrategyId == info.id) return
+        Log.d(TAG, "initStaticData: Start initializing strategy ID = ${info.id}")
+
+        hasBoundProduct = false
+        hasBoundStrategyType = false
+        hasBoundPolicyType = false
+
+        strategyName = info.name ?: ""
+        remarkInfo = info.description ?: ""
+
+        selectedGroups.clear()
+        info.groups?.forEach { group ->
+            selectedGroups.add(StrategyGroupListVO(groupId = group.id, groupName = group.name))
+        }
+
+        if (selectedPolicyType == null) {
+            val fallbackKey = when (info.strategyClass) {
+                2 -> "timeStrategies"
+                1 -> "lngLatStrategies"
+                else -> ""
+            }
+            if (fallbackKey.isNotEmpty()) {
+                selectedPolicyType = Pair(info.strategyClass?.toLong() ?: 0L, KeyValue(fallbackKey, "模式(${info.strategyClass})"))
+            }
+        }
+
+        when (info.strategyClass) {
+            2 -> { // 时间策略
+                val timeStrategies = formatTimeStrategy(info.contents)
+                if (timeStrategies.isNotEmpty()) {
+                    val firstReq = timeStrategies.first().require
+                    selectedPriority = firstReq.priority
+
+                    val timeType = firstReq.timeType?.toLong()
+                    val periodName = when(timeType) {
+                        1L -> "永久生效"
+                        2L -> "按周生效"
+                        3L -> "按日期生效"
+                        else -> "类型($timeType)"
+                    }
+                    selectedPolicyPeriod = Pair(timeType, KeyValue(timeType.toString(), periodName))
+
+                    if (timeType == 2L) {
+                        selectedDaysOfWeek.clear()
+                        firstReq.week?.split(",")?.mapNotNull { it.toIntOrNull() }?.let { selectedDaysOfWeek.addAll(it) }
+                    } else if (timeType == 3L) {
+                        startDateMillis = firstReq.days?.startTime?.let { runCatching { dateFormatter.parse(it)?.time }.getOrNull() }
+                        endDateMillis = firstReq.days?.endTime?.let { runCatching { dateFormatter.parse(it)?.time }.getOrNull() }
+                    }
+
+                    timeTasks.clear()
+                    timeStrategies.forEachIndexed { index, ts ->
+                        val rawActionType = ts.action.actionType
+                        val fallbackActionPair = rawActionType?.let { Pair(it.toLongOrNull() ?: 0L, KeyValue(it, "动作($it)")) }
+
+                        timeTasks.add(
+                            TimeTaskConfig(
+                                id = index + 1,
+                                time = ts.require.timePoint ?: "",
+                                actionValue = ts.action.actionValue?.toString() ?: "",
+                                actionType = fallbackActionPair
+                            )
+                        )
+                    }
+                    nextTaskId = timeTasks.size + 1
+                }
+            }
+            1 -> { // 经纬度策略
+                val lngLatStrategies = formatLngLatStrategy(info.contents)
+                if (lngLatStrategies.isNotEmpty()) {
+                    val firstReq = lngLatStrategies.first().require
+                    selectedPriority = firstReq.priority
+
+                    val timeType = firstReq.timeType?.toLong()
+                    val periodName = when(timeType) { 1L -> "永久生效"; 2L -> "按周生效"; 3L -> "按日期生效"; else -> "类型($timeType)" }
+                    selectedPolicyPeriod = Pair(timeType, KeyValue(timeType.toString(), periodName))
+
+                    if (timeType == 2L) {
+                        selectedDaysOfWeek.clear()
+                        firstReq.week?.split(",")?.mapNotNull { it.toIntOrNull() }?.let { selectedDaysOfWeek.addAll(it) }
+                    }
+
+                    lngLatStrategies.forEach { ts ->
+                        val isSunrise = ts.require.riseDown?.riseType == "1"
+                        val rawActionType = ts.action.actionType
+                        val fallbackActionPair = rawActionType?.let { Pair(it.toLongOrNull() ?: 0L, KeyValue(it, "动作($it)")) }
+
+                        if (isSunrise) {
+                            sunriseOffset = ts.require.riseDown.sunrise.toString()
+                            sunriseActionValue = ts.action.actionValue?.toString() ?: ""
+                            sunriseActionType = fallbackActionPair
+                        } else {
+                            sunsetOffset = ts.require.riseDown?.sundown.toString()
+                            sunsetActionValue = ts.action.actionValue?.toString() ?: ""
+                            sunsetActionType = fallbackActionPair
+                        }
+                    }
+                }
+            }
+        }
+
+        initializedStrategyId = info.id
+    }
+
+    fun tryBindProduct(info: LampStrategyInfo, productList: List<StrategyProductVO>) {
+        if (!hasBoundProduct && productList.isNotEmpty()) {
+            selectedProduct = productList.find { it.productId == info.productId }
+            hasBoundProduct = true
+        }
+    }
+
+    fun tryBindTypes(info: LampStrategyInfo, strategyTypes: List<Pair<Long, KeyValue>>, policyTypes: List<Pair<Long, KeyValue>>) {
+        if (!hasBoundStrategyType && strategyTypes.isNotEmpty()) {
+            selectedStrategyType = strategyTypes.find { it.first.toInt() == info.strategyType }
+            hasBoundStrategyType = true
+        }
+        if (!hasBoundPolicyType && policyTypes.isNotEmpty()) {
+            val match = policyTypes.find { it.first.toInt() == info.strategyClass }
+            if (match != null) selectedPolicyType = match
+            hasBoundPolicyType = true
+        }
+    }
+
+    fun bindActions(policyActionTypes: List<Pair<Long, KeyValue>>) {
+        if (policyActionTypes.isEmpty()) return
+
+        timeTasks.forEachIndexed { index, task ->
+            val rawKey = task.actionType?.second?.key ?: task.actionType?.first?.toString()
+            if (rawKey != null) {
+                val match = policyActionTypes.find {
+                    it.first.toString() == rawKey || it.second.key == rawKey
+                }
+                if (match != null && task.actionType?.second?.value != match.second.value) {
+                    timeTasks[index] = task.copy(actionType = match)
+                }
+            }
+        }
+
+        val srRawKey = sunriseActionType?.second?.key ?: sunriseActionType?.first?.toString()
+        if (srRawKey != null) {
+            val match = policyActionTypes.find { it.first.toString() == srRawKey || it.second.key == srRawKey }
+            if (match != null && sunriseActionType?.second?.value != match.second.value) {
+                sunriseActionType = match
+            }
+        }
+
+        val ssRawKey = sunsetActionType?.second?.key ?: sunsetActionType?.first?.toString()
+        if (ssRawKey != null) {
+            val match = policyActionTypes.find { it.first.toString() == ssRawKey || it.second.key == ssRawKey }
+            if (match != null && sunsetActionType?.second?.value != match.second.value) {
+                sunsetActionType = match
+            }
+        }
+    }
 }
 
 @Composable
 fun rememberLampStrategyFormState() = remember { LampStrategyFormState() }
 
-
 // ==========================================
-// 2. 主页面骨架
+// 2. 主页面与自动绑定逻辑
 // ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LampStrategyOptContent(
     lampViewModel: LampViewModel,
+    initialStrategy: LampStrategyInfo? = null,
     onBack: () -> Unit
 ) {
+    val formState = rememberLampStrategyFormState()
+    val dateFormatter = remember { SimpleDateFormat("MM-dd", Locale.getDefault()) }
+
+    val strategyGroupProductList by lampViewModel.strategyGroupProductList.collectAsState()
+    val strategyTypeList by lampViewModel.strategyTypeList.collectAsState()
+    val policyTypeList by lampViewModel.policyTypeList.collectAsState()
+    val policyContent by lampViewModel.policyContent.collectAsState()
+
+    val currentProductId by lampViewModel.currentProductId.collectAsState()
+
+    LaunchedEffect(currentProductId) {
+        if (currentProductId != -1L) {
+            lampViewModel.getProductRule(currentProductId)
+        }
+    }
+
     LaunchedEffect(Unit) {
         lampViewModel.updateSearch("")
         lampViewModel.getGroupProductList()
     }
 
-    val formState = rememberLampStrategyFormState()
-    val dateFormatter = remember { SimpleDateFormat("MM-dd", Locale.getDefault()) }
+    // 处理初始化或重置逻辑
+    LaunchedEffect(initialStrategy) {
+        if (initialStrategy != null) {
+            initialStrategy.productId?.let {
+                lampViewModel.updateCurrentProductId(it)
+            }
+            formState.initStaticData(initialStrategy, dateFormatter)
+        } else {
+            // 新增页面：确保清空本地状态与 ViewModel 记录
+            formState.reset()
+            lampViewModel.updateCurrentProductId(-1L)
+        }
+    }
+
+    LaunchedEffect(initialStrategy, strategyGroupProductList) {
+        if (initialStrategy != null) formState.tryBindProduct(initialStrategy, strategyGroupProductList)
+    }
+
+    LaunchedEffect(initialStrategy, strategyTypeList, policyTypeList) {
+        if (initialStrategy != null) formState.tryBindTypes(initialStrategy, strategyTypeList, policyTypeList)
+    }
+
+    val policyConfig = remember(formState.selectedProduct, formState.selectedPolicyType, policyContent) {
+        val product = formState.selectedProduct
+        val policy = formState.selectedPolicyType
+
+        if (product != null && policy != null && policyContent != null) {
+            val classId = policy.first.toInt()
+            val realKey = when (classId) {
+                2 -> "timeStrategies"
+                1 -> "lngLatStrategies"
+                else -> policy.second.key
+            }
+
+            StrategyContentUtil.getPolicyConfig(
+                productId = product.productId,
+                jsonObject = policyContent,
+                key = realKey
+            )
+        } else {
+            PolicyConfig()
+        }
+    }
+
+    LaunchedEffect(policyConfig, formState.initializedStrategyId) {
+        if (formState.initializedStrategyId != null && policyConfig.actionTypes.isNotEmpty()) {
+            formState.bindActions(policyConfig.actionTypes)
+        }
+    }
 
     BackHandler(enabled = true) {
         if (formState.currentStep == 2) formState.currentStep = 1 else onBack()
@@ -166,7 +429,11 @@ fun LampStrategyOptContent(
     Scaffold(
         topBar = {
             CommonTopAppBar(
-                title = if (formState.currentStep == 1) "新建策略 (1/2)" else "策略详情 (2/2)",
+                title = if (initialStrategy != null) {
+                    if (formState.currentStep == 1) "编辑策略 (1/2)" else "编辑详情 (2/2)"
+                } else {
+                    if (formState.currentStep == 1) "新建策略 (1/2)" else "策略详情 (2/2)"
+                },
                 onBack = { if (formState.currentStep == 2) formState.currentStep = 1 else onBack() }
             )
         },
@@ -194,25 +461,29 @@ fun LampStrategyOptContent(
             ) { step ->
                 when (step) {
                     1 -> StepOneBasicInfo(formState, lampViewModel)
-                    2 -> StepTwoStrategyDetails(formState, lampViewModel, dateFormatter)
+                    2 -> StepTwoStrategyDetails(
+                        formState,
+                        lampViewModel,
+                        dateFormatter,
+                        policyConfig,
+                        policyContent == null,
+                        initialStrategy
+                    )
                 }
             }
         }
 
-        // 全局弹窗处理
         DialogAndBottomSheetHandler(formState, lampViewModel, dateFormatter)
     }
 }
 
-// ==========================================
-// 3. 步骤一：基本信息
-// ==========================================
+// ------------------------------------------
+// UI Components
+// ------------------------------------------
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StepOneBasicInfo(
-    state: LampStrategyFormState,
-    viewModel: LampViewModel
-) {
+private fun StepOneBasicInfo(state: LampStrategyFormState, viewModel: LampViewModel) {
     val strategyGroupProductList by viewModel.strategyGroupProductList.collectAsState()
     val strategyTypeList by viewModel.strategyTypeList.collectAsState()
     val policyTypeList by viewModel.policyTypeList.collectAsState()
@@ -251,25 +522,28 @@ private fun StepOneBasicInfo(
 
         GroupSelectionField(state)
 
-        if (strategyTypeList.isNotEmpty()) {
-            CommonDropdownMenu(
-                items = strategyTypeList,
-                selectedItem = state.selectedStrategyType,
-                itemLabel = { it.second.value },
-                label = "策略类型",
-                placeholder = "请选择策略类型",
-                onItemSelected = { state.selectedStrategyType = it }
-            )
-        }
-        if (policyTypeList.isNotEmpty()) {
-            CommonDropdownMenu(
-                items = policyTypeList,
-                selectedItem = state.selectedPolicyType,
-                itemLabel = { it.second.value },
-                label = "策略模式",
-                placeholder = "请选择策略模式",
-                onItemSelected = { state.selectedPolicyType = it }
-            )
+        // 仅当用户明确选择了所属产品后，才渲染类型和模式选项，避免复用脏数据！
+        if (state.selectedProduct != null) {
+            if (strategyTypeList.isNotEmpty()) {
+                CommonDropdownMenu(
+                    items = strategyTypeList,
+                    selectedItem = state.selectedStrategyType,
+                    itemLabel = { it.second.value },
+                    label = "策略类型",
+                    placeholder = "请选择策略类型",
+                    onItemSelected = { state.selectedStrategyType = it }
+                )
+            }
+            if (policyTypeList.isNotEmpty()) {
+                CommonDropdownMenu(
+                    items = policyTypeList,
+                    selectedItem = state.selectedPolicyType,
+                    itemLabel = { it.second.value },
+                    label = "策略模式",
+                    placeholder = "请选择策略模式",
+                    onItemSelected = { state.selectedPolicyType = it }
+                )
+            }
         }
 
         OutlinedTextField(
@@ -300,25 +574,27 @@ private fun StepOneBasicInfo(
     }
 }
 
-// ==========================================
-// 4. 步骤二：策略详情
-// ==========================================
 @Composable
 private fun StepTwoStrategyDetails(
     state: LampStrategyFormState,
     viewModel: LampViewModel,
-    dateFormatter: SimpleDateFormat
+    dateFormatter: SimpleDateFormat,
+    policyConfig: PolicyConfig,
+    isLoading: Boolean,
+    initialStrategy: LampStrategyInfo?
 ) {
-    val policyContent by viewModel.policyContent.collectAsState()
-
-    val policyActionTypes = remember(state.selectedProduct, state.selectedPolicyType, policyContent) {
-        if (state.selectedProduct != null && state.selectedPolicyType != null) {
-            StrategyContentUtil.getPolicyActionTypes(
-                productId = state.selectedProduct!!.productId,
-                jsonObject = policyContent,
-                key = state.selectedPolicyType!!.second.key
-            )
-        } else emptyList()
+    if (isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("正在加载产品策略配置，请稍候...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        return
     }
 
     Column(
@@ -328,40 +604,52 @@ private fun StepTwoStrategyDetails(
             .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // --- 优先级与生效周期设置 ---
-        PriorityAndPeriodSection(state, policyContent)
+        PriorityAndPeriodSection(state, policyConfig)
 
-        // --- 动态策略配置区 ---
-        when (state.selectedPolicyType?.second?.key) {
-            "timeStrategies" -> {
-                TimeStrategySection(state, policyContent, policyActionTypes)
-            }
-            "lngLatStrategies" -> {
-                LngLatStrategySection(state, policyActionTypes)
+        val renderKey = when(state.selectedPolicyType?.first?.toInt()) {
+            2 -> "timeStrategies"
+            1 -> "lngLatStrategies"
+            else -> state.selectedPolicyType?.second?.key
+        }
+
+        when (renderKey) {
+            "timeStrategies" -> TimeStrategySection(state, policyConfig)
+            "lngLatStrategies" -> LngLatStrategySection(state, policyConfig)
+            else -> {
+                OutlinedCard(
+                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "未知的策略模式配置。\n当前 Key: $renderKey",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = { submitStrategy(state, viewModel, dateFormatter) },
+            onClick = { submitStrategy(state, viewModel, dateFormatter, initialStrategy?.id) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
             shape = RoundedCornerShape(26.dp)
         ) {
-            Text("提交并同步", style = MaterialTheme.typography.titleMedium)
+            Text(
+                if (initialStrategy != null) "保存并同步" else "提交并同步",
+                style = MaterialTheme.typography.titleMedium
+            )
         }
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
-
-// ==========================================
-// 5. 局部的功能化组件 (增强复用性和可读性)
-// ==========================================
 @Composable
 private fun GroupSelectionField(state: LampStrategyFormState) {
+    @OptIn(ExperimentalLayoutApi::class)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
             value = if (state.selectedGroups.isEmpty()) "" else "已选择 ${state.selectedGroups.size} 个分组",
@@ -378,8 +666,6 @@ private fun GroupSelectionField(state: LampStrategyFormState) {
             colors = OutlinedTextFieldDefaults.colors(
                 disabledTextColor = MaterialTheme.colorScheme.onSurface,
                 disabledBorderColor = MaterialTheme.colorScheme.outline,
-                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         )
@@ -403,23 +689,20 @@ private fun GroupSelectionField(state: LampStrategyFormState) {
     }
 }
 
+// 修改后的优先级选项区块（修复了无配置强制显示且有默认值的问题）
 @Composable
-private fun PriorityAndPeriodSection(state: LampStrategyFormState, policyContent: JsonObject?) {
-    val policyPriorityRange = StrategyContentUtil.getPolicyPriorityRange(
-        policyContent,
-        state.selectedPolicyType?.second?.key.toString()
-    )
-    val policyPeriodTypes = StrategyContentUtil.getPolicyPeriodTypes(
-        policyContent,
-        state.selectedPolicyType?.second?.key.toString()
-    )
+private fun PriorityAndPeriodSection(state: LampStrategyFormState, policyConfig: PolicyConfig) {
+    val policyPriorityRange = policyConfig.priorityRange
+    val policyPeriodTypes = policyConfig.periodTypes
 
     LaunchedEffect(policyPriorityRange) {
         if (policyPriorityRange != null) {
-            if (state.selectedPriority == null || state.selectedPriority!! !in policyPriorityRange.min..policyPriorityRange.max) {
-                state.selectedPriority = policyPriorityRange.min
+            if (state.selectedPriority != null && state.selectedPriority!! !in policyPriorityRange.min..policyPriorityRange.max) {
+                Log.w(TAG, "⚠️ 优先级 ${state.selectedPriority} 超出限制范围，已重置为空以供重选")
+                state.selectedPriority = null
             }
         } else {
+            // 产品/策略未配置优先级范围时，强制清空可能回显或残留的优先级值
             state.selectedPriority = null
         }
     }
@@ -429,10 +712,13 @@ private fun PriorityAndPeriodSection(state: LampStrategyFormState, policyContent
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.Top
     ) {
+        // 只有获取到有效的 priorityRange 才会显示优先级下拉框
         if (policyPriorityRange != null) {
+            val displayPriorities = (policyPriorityRange.min..policyPriorityRange.max).toList()
+
             Box(modifier = Modifier.weight(1f)) {
                 CommonDropdownMenu(
-                    items = (policyPriorityRange.min..policyPriorityRange.max).toList(),
+                    items = displayPriorities,
                     selectedItem = state.selectedPriority,
                     itemLabel = { it.toString() },
                     label = "策略优先级",
@@ -442,26 +728,34 @@ private fun PriorityAndPeriodSection(state: LampStrategyFormState, policyContent
             }
         }
 
-        if (policyPeriodTypes.isNotEmpty()) {
-            Box(modifier = Modifier.weight(2f)) {
-                CommonDropdownMenu(
-                    items = policyPeriodTypes,
-                    selectedItem = state.selectedPolicyPeriod,
-                    itemLabel = { it.second.value },
-                    label = "生效周期",
-                    placeholder = "请选择",
-                    onItemSelected = { data ->
-                        state.selectedPolicyPeriod = data
-                        state.selectedDaysOfWeek.clear()
-                        state.startDateMillis = null
-                        state.endDateMillis = null
-                    }
-                )
-            }
+        val displayPeriods = if (policyPeriodTypes.isNotEmpty()) {
+            policyPeriodTypes
+        } else {
+            listOf(
+                Pair(1L, KeyValue("1", "永久生效")),
+                Pair(2L, KeyValue("2", "按周生效")),
+                Pair(3L, KeyValue("3", "按日期生效"))
+            )
+        }
+
+        // 如果优先级没显示，则周期自动占满整行（weight(1f)）
+        Box(modifier = Modifier.weight(if (policyPriorityRange != null) 2f else 1f)) {
+            CommonDropdownMenu(
+                items = displayPeriods,
+                selectedItem = state.selectedPolicyPeriod?.let { current -> displayPeriods.find { it.first == current.first } },
+                itemLabel = { it.second.value },
+                label = "生效周期",
+                placeholder = "请选择",
+                onItemSelected = { data ->
+                    state.selectedPolicyPeriod = data
+                    state.selectedDaysOfWeek.clear()
+                    state.startDateMillis = null
+                    state.endDateMillis = null
+                }
+            )
         }
     }
 
-    // 周/日期选择 UI
     if (state.selectedPolicyPeriod != null && state.selectedPolicyPeriod?.first!! > 1) {
         ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
@@ -480,10 +774,7 @@ private fun PriorityAndPeriodSection(state: LampStrategyFormState, policyContent
 
 @Composable
 private fun WeekSelectionUI(state: LampStrategyFormState) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         val weekDays = listOf(1 to "一", 2 to "二", 3 to "三", 4 to "四", 5 to "五", 6 to "六", 7 to "日")
         weekDays.forEach { (dayValue, dayName) ->
             val isSelected = state.selectedDaysOfWeek.contains(dayValue)
@@ -493,8 +784,7 @@ private fun WeekSelectionUI(state: LampStrategyFormState) {
                     .clip(CircleShape)
                     .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
                     .clickable {
-                        if (isSelected) state.selectedDaysOfWeek.remove(dayValue)
-                        else state.selectedDaysOfWeek.add(dayValue)
+                        if (isSelected) state.selectedDaysOfWeek.remove(dayValue) else state.selectedDaysOfWeek.add(dayValue)
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -522,31 +812,21 @@ private fun DateRangeSelectionUI(state: LampStrategyFormState) {
     ) {
         OutlinedTextField(
             value = state.startDateMillis?.let { dateFormatter.format(Date(it)) } ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("开始日期") },
+            onValueChange = {}, readOnly = true, label = { Text("开始日期") },
             trailingIcon = { Icon(Icons.Default.DateRange, null) },
-            modifier = Modifier.weight(1f),
-            enabled = false,
-            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.weight(1f), enabled = false, shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                disabledBorderColor = MaterialTheme.colorScheme.outline,
                 disabledTrailingIconColor = MaterialTheme.colorScheme.primary
             )
         )
         OutlinedTextField(
             value = state.endDateMillis?.let { dateFormatter.format(Date(it)) } ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("结束日期") },
+            onValueChange = {}, readOnly = true, label = { Text("结束日期") },
             trailingIcon = { Icon(Icons.Default.DateRange, null) },
-            modifier = Modifier.weight(1f),
-            enabled = false,
-            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.weight(1f), enabled = false, shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                disabledBorderColor = MaterialTheme.colorScheme.outline,
                 disabledTrailingIconColor = MaterialTheme.colorScheme.primary
             )
         )
@@ -556,99 +836,54 @@ private fun DateRangeSelectionUI(state: LampStrategyFormState) {
 @Composable
 private fun TimeStrategySection(
     state: LampStrategyFormState,
-    policyContent: JsonObject?,
-    policyActionTypes: List<Pair<Long, KeyValue>>
+    policyConfig: PolicyConfig
 ) {
-    Text(
-        text = "任务配置",
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurface
-    )
-    val maxSize = StrategyContentUtil.getPolicyItemMaxSize(
-        jsonObject = policyContent,
-        key = state.selectedPolicyType!!.second.key
-    )
+    Text("任务配置", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+
+    val parsedMaxSize = policyConfig.maxSize
+    val maxSize = if (parsedMaxSize > 0) parsedMaxSize else 10
 
     state.timeTasks.forEachIndexed { index, task ->
         OutlinedCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "时间节点 ${index + 1}",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("时间节点 ${index + 1}", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                     if (state.timeTasks.size > 1) {
                         IconButton(onClick = { state.timeTasks.removeAt(index) }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Default.Close, "删除配置", tint = MaterialTheme.colorScheme.error)
+                            Icon(Icons.Default.Close, "删除", tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
-
                 OutlinedTextField(
-                    value = task.time,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { RequiredLabel("执行时间") },
-                    placeholder = { Text("请点击选择") },
-                    trailingIcon = { Icon(Icons.Default.DateRange, "选择时间") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { state.editingTimeIndex = index },
-                    enabled = false,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledBorderColor = MaterialTheme.colorScheme.outline,
-                        disabledTrailingIconColor = MaterialTheme.colorScheme.primary
-                    )
+                    value = task.time, onValueChange = {}, readOnly = true, label = { RequiredLabel("执行时间") }, placeholder = { Text("请点击选择") },
+                    trailingIcon = { Icon(Icons.Default.DateRange, "选择时间") }, modifier = Modifier.fillMaxWidth().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { state.editingTimeIndex = index },
+                    enabled = false, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(disabledTextColor = MaterialTheme.colorScheme.onSurface, disabledTrailingIconColor = MaterialTheme.colorScheme.primary)
                 )
 
-                if (policyActionTypes.isNotEmpty()) {
-                    CommonDropdownMenu(
-                        items = policyActionTypes,
-                        selectedItem = task.actionType,
-                        itemLabel = { it.second.value },
-                        label = "执行动作",
-                        placeholder = "请选择",
-                        onItemSelected = { state.timeTasks[index] = task.copy(actionType = it) }
-                    )
+                val displayActionTypes = if (policyConfig.actionTypes.isNotEmpty()) policyConfig.actionTypes else {
+                    task.actionType?.let { listOf(it) } ?: emptyList()
                 }
 
+                CommonDropdownMenu(
+                    items = displayActionTypes, selectedItem = task.actionType,
+                    itemLabel = { it.second.value }, label = "执行动作", placeholder = "请选择",
+                    onItemSelected = { state.timeTasks[index] = task.copy(actionType = it) }
+                )
+
                 OutlinedTextField(
-                    value = task.actionValue,
-                    onValueChange = { state.timeTasks[index] = task.copy(actionValue = it) },
-                    label = { RequiredLabel("操作值") },
-                    placeholder = { Text("请输入数值") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    value = task.actionValue, onValueChange = { state.timeTasks[index] = task.copy(actionValue = it) },
+                    label = { RequiredLabel("操作值") }, placeholder = { Text("请输入数值") }, modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             }
         }
     }
 
     val isAddEnabled = state.timeTasks.size < maxSize
-    TextButton(
-        onClick = { state.timeTasks.add(TimeTaskConfig(id = state.nextTaskId++)) },
-        modifier = Modifier.fillMaxWidth(),
-        enabled = isAddEnabled
-    ) {
+    TextButton(onClick = { state.timeTasks.add(TimeTaskConfig(id = state.nextTaskId++)) }, modifier = Modifier.fillMaxWidth(), enabled = isAddEnabled) {
         Text(
             text = if (isAddEnabled) "+ 添加时间节点 (上限 ${maxSize} 个)" else "已达到最大配置数量 (${maxSize})",
             color = if (isAddEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -658,55 +893,30 @@ private fun TimeStrategySection(
 
 @Composable
 private fun LngLatStrategySection(
-    state: LampStrategyFormState,
-    policyActionTypes: List<Pair<Long, KeyValue>>
+    state: LampStrategyFormState, policyConfig: PolicyConfig
 ) {
-    Text(
-        text = "经纬度(日出日落)配置",
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurface
-    )
+    Text("经纬度(日出日落)配置", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
 
-    // 日出卡片
-    OutlinedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text("🌅 日出配置", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             LngLatConfigRow(
-                offset = state.sunriseOffset,
-                onOffsetChange = { state.sunriseOffset = it },
-                actionType = state.sunriseActionType,
-                onActionTypeChange = { state.sunriseActionType = it },
-                actionValue = state.sunriseActionValue,
-                onActionValueChange = { state.sunriseActionValue = it },
-                policyActionTypes = policyActionTypes
+                offset = state.sunriseOffset, onOffsetChange = { state.sunriseOffset = it },
+                actionType = state.sunriseActionType, onActionTypeChange = { state.sunriseActionType = it },
+                actionValue = state.sunriseActionValue, onActionValueChange = { state.sunriseActionValue = it },
+                policyActionTypes = policyConfig.actionTypes
             )
         }
     }
 
-    // 日落卡片
-    OutlinedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text("🌇 日落配置", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             LngLatConfigRow(
-                offset = state.sunsetOffset,
-                onOffsetChange = { state.sunsetOffset = it },
-                actionType = state.sunsetActionType,
-                onActionTypeChange = { state.sunsetActionType = it },
-                actionValue = state.sunsetActionValue,
-                onActionValueChange = { state.sunsetActionValue = it },
-                policyActionTypes = policyActionTypes
+                offset = state.sunsetOffset, onOffsetChange = { state.sunsetOffset = it },
+                actionType = state.sunsetActionType, onActionTypeChange = { state.sunsetActionType = it },
+                actionValue = state.sunsetActionValue, onActionValueChange = { state.sunsetActionValue = it },
+                policyActionTypes = policyConfig.actionTypes
             )
         }
     }
@@ -720,226 +930,102 @@ private fun LngLatConfigRow(
     policyActionTypes: List<Pair<Long, KeyValue>>
 ) {
     OutlinedTextField(
-        value = offset,
-        onValueChange = { if (it.isEmpty() || it == "-" || it.toIntOrNull() != null) onOffsetChange(it) },
-        label = { RequiredLabel("偏移量 (分钟)") },
-        placeholder = { Text("正为延后，负为提前") },
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        suffix = { Text("min") }
+        value = offset, onValueChange = { if (it.isEmpty() || it == "-" || it.toIntOrNull() != null) onOffsetChange(it) },
+        label = { RequiredLabel("偏移量 (分钟)") }, placeholder = { Text("正为延后，负为提前") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), suffix = { Text("min") }
     )
 
-    if (policyActionTypes.isNotEmpty()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
-                CommonDropdownMenu(
-                    items = policyActionTypes,
-                    selectedItem = actionType,
-                    itemLabel = { it.second.value },
-                    label = "执行动作 *",
-                    placeholder = "请选择",
-                    onItemSelected = onActionTypeChange
-                )
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                OutlinedTextField(
-                    value = actionValue,
-                    onValueChange = onActionValueChange,
-                    label = { RequiredLabel("操作值") },
-                    placeholder = { Text("请输入数值") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            }
+    val displayActionTypes = if (policyActionTypes.isNotEmpty()) policyActionTypes else {
+        actionType?.let { listOf(it) } ?: emptyList()
+    }
+
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(modifier = Modifier.weight(1f)) {
+            CommonDropdownMenu(
+                items = displayActionTypes, selectedItem = actionType, itemLabel = { it.second.value },
+                label = "执行动作 *", placeholder = "请选择", onItemSelected = onActionTypeChange
+            )
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            OutlinedTextField(
+                value = actionValue, onValueChange = onActionValueChange, label = { RequiredLabel("操作值") }, placeholder = { Text("请输入数值") },
+                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
         }
     }
 }
 
-
-// ==========================================
-// 6. 辅助工具与逻辑
-// ==========================================
 @Composable
 private fun RequiredLabel(text: String) {
-    Text(buildAnnotatedString {
-        append(text)
-        withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.error)) {
-            append(" *")
-        }
-    })
+    Text(buildAnnotatedString { append(text); withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.error)) { append(" *") } })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DialogAndBottomSheetHandler(
-    state: LampStrategyFormState,
-    viewModel: LampViewModel,
-    dateFormatter: SimpleDateFormat
-) {
-    // 1. 分组选择 BottomSheet
+private fun DialogAndBottomSheetHandler(state: LampStrategyFormState, viewModel: LampViewModel, dateFormatter: SimpleDateFormat) {
     if (state.showGroupBottomSheet) {
         val lampStrategyGroupInfoFlow = viewModel.lampStrategyGroupInfoFlow.collectAsLazyPagingItems()
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         StrategyGroupBottomSheet(
-            sheetState = sheetState,
-            lampStrategyGroupInfoFlow = lampStrategyGroupInfoFlow,
-            selectedGroups = state.selectedGroups,
-            onDismissRequest = { state.showGroupBottomSheet = false }
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            lampStrategyGroupInfoFlow = lampStrategyGroupInfoFlow, selectedGroups = state.selectedGroups, onDismissRequest = { state.showGroupBottomSheet = false }
         )
     }
 
-    // 2. 日期选择弹窗
     if (state.showDateRangePicker) {
-        val dateRangePickerState = rememberDateRangePickerState(
-            initialSelectedStartDateMillis = state.startDateMillis,
-            initialSelectedEndDateMillis = state.endDateMillis
-        )
+        val dateRangePickerState = rememberDateRangePickerState(initialSelectedStartDateMillis = state.startDateMillis, initialSelectedEndDateMillis = state.endDateMillis)
         DatePickerDialog(
             onDismissRequest = { state.showDateRangePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        state.startDateMillis = dateRangePickerState.selectedStartDateMillis
-                        state.endDateMillis = dateRangePickerState.selectedEndDateMillis
-                        state.showDateRangePicker = false
-                    },
-                    enabled = dateRangePickerState.selectedEndDateMillis != null
-                ) { Text("确定") }
-            },
-            dismissButton = {
-                TextButton(onClick = { state.showDateRangePicker = false }) { Text("取消") }
-            }
-        ) {
-            DateRangePicker(
-                state = dateRangePickerState,
-                modifier = Modifier.weight(1f),
-                title = { Text(text = "指定策略生效周期", modifier = Modifier.padding(start = 24.dp, top = 16.dp)) },
-                headline = {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = dateRangePickerState.selectedStartDateMillis?.let { dateFormatter.format(Date(it)) } ?: "开始日期",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(" - ", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 4.dp))
-                        Text(
-                            text = dateRangePickerState.selectedEndDateMillis?.let { dateFormatter.format(Date(it)) } ?: "结束日期",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                }
-            )
-        }
+            confirmButton = { TextButton(onClick = { state.startDateMillis = dateRangePickerState.selectedStartDateMillis; state.endDateMillis = dateRangePickerState.selectedEndDateMillis; state.showDateRangePicker = false }, enabled = dateRangePickerState.selectedEndDateMillis != null) { Text("确定") } },
+            dismissButton = { TextButton(onClick = { state.showDateRangePicker = false }) { Text("取消") } }
+        ) { DateRangePicker(state = dateRangePickerState, modifier = Modifier.weight(1f), title = { Text("指定策略生效周期", Modifier.padding(start = 24.dp, top = 16.dp)) }) }
     }
 
-    // 3. 时间选择弹窗
     if (state.editingTimeIndex != null) {
         val timePickerState = rememberTimePickerState(is24Hour = true)
         AlertDialog(
             onDismissRequest = { state.editingTimeIndex = null },
-            confirmButton = {
-                TextButton(onClick = {
-                    val newTime = "${timePickerState.hour.toString().padStart(2, '0')}:${timePickerState.minute.toString().padStart(2, '0')}"
-                    val currentIndex = state.editingTimeIndex!!
-                    state.timeTasks[currentIndex] = state.timeTasks[currentIndex].copy(time = newTime)
-                    state.editingTimeIndex = null
-                }) { Text("确定") }
-            },
-            dismissButton = {
-                TextButton(onClick = { state.editingTimeIndex = null }) { Text("取消") }
-            },
+            confirmButton = { TextButton(onClick = { val newTime = "${timePickerState.hour.toString().padStart(2, '0')}:${timePickerState.minute.toString().padStart(2, '0')}"; state.timeTasks[state.editingTimeIndex!!] = state.timeTasks[state.editingTimeIndex!!].copy(time = newTime); state.editingTimeIndex = null }) { Text("确定") } },
+            dismissButton = { TextButton(onClick = { state.editingTimeIndex = null }) { Text("取消") } },
             text = { TimePicker(state = timePickerState, modifier = Modifier.fillMaxWidth()) }
         )
     }
 }
 
-// ==========================================
-// 7. 数据构建与提交逻辑提取
-// ==========================================
-private fun submitStrategy(
-    state: LampStrategyFormState,
-    viewModel: LampViewModel,
-    dateFormatter: SimpleDateFormat
-) {
+private fun submitStrategy(state: LampStrategyFormState, viewModel: LampViewModel, dateFormatter: SimpleDateFormat, editId: Long?) {
     val strategyContent = mutableListOf<JsonObject>()
-    val timeType = state.selectedPolicyPeriod?.first?.toInt()
-    val weekString = if (timeType == 2) state.selectedDaysOfWeek.sorted().joinToString(",") else ""
+    val timeTypeStr = state.selectedPolicyPeriod?.first?.toString() ?: "1"
+    val timeTypeInt = state.selectedPolicyPeriod?.first?.toInt() ?: 1
 
-    val daysData = if (timeType == 3) {
-        DayData(
-            startTime = state.startDateMillis?.let { dateFormatter.format(Date(it)) },
-            endTime = state.endDateMillis?.let { dateFormatter.format(Date(it)) }
-        )
-    } else DayData()
+    val weekString = if (timeTypeInt == 2) state.selectedDaysOfWeek.sorted().joinToString(",") else ""
+    val daysData = if (timeTypeInt == 3) DayData(startTime = state.startDateMillis?.let { dateFormatter.format(Date(it)) }, endTime = state.endDateMillis?.let { dateFormatter.format(Date(it)) }) else DayData()
 
-    when (state.selectedPolicyType?.second?.key) {
+    val submitKey = when(state.selectedPolicyType?.first?.toInt()) {
+        2 -> "timeStrategies"
+        1 -> "lngLatStrategies"
+        else -> state.selectedPolicyType?.second?.key
+    }
+
+    when (submitKey) {
         "timeStrategies" -> {
             state.timeTasks.forEach { e ->
-                val require = TimeStrategyCondition(
-                    timeType = timeType.toString(),
-                    priority = state.selectedPriority,
-                    timePoint = e.time,
-                    week = weekString,
-                    days = daysData
-                )
-                val action = StrategyAction(
-                    actionType = e.actionType?.first?.toString(),
-                    actionValue = e.actionValue.toIntOrNull()
-                )
-                val content = TimeStrategyContent(id = e.id.toLong(), action = action, require = require)
-                JsonUtils.toGsonJsonObject(content)?.let { strategyContent.add(it) }
+                val require = TimeStrategyCondition(timeType = timeTypeStr, priority = state.selectedPriority, timePoint = e.time, week = weekString, days = daysData)
+                val actionTypeStr = e.actionType?.second?.key ?: e.actionType?.first?.toString()
+                val action = StrategyAction(actionType = actionTypeStr, actionValue = e.actionValue.toIntOrNull())
+                JsonUtils.toGsonJsonObject(TimeStrategyContent(id = e.id.toLong(), action = action, require = require))?.let { strategyContent.add(it) }
             }
         }
         "lngLatStrategies" -> {
-            // 构造日出
-            val sunRiseRequire = LngLatStrategyCondition(
-                timeType = timeType.toString(), priority = state.selectedPriority,
-                week = weekString, days = daysData,
-                riseDown = RiseDown(riseType = "1", sundown = 0, sunrise = state.sunriseOffset.toIntOrNull() ?: 0)
-            )
-            val sunRiseContent = LngLatStrategyContent(
-                require = sunRiseRequire,
-                action = StrategyAction(actionType = state.sunriseActionType?.first.toString(), actionValue = state.sunriseActionValue.toIntOrNull())
-            )
-            JsonUtils.toGsonJsonObject(sunRiseContent)?.let { strategyContent.add(it) }
+            val sunRiseActionStr = state.sunriseActionType?.second?.key ?: state.sunriseActionType?.first?.toString()
+            val sunRiseRequire = LngLatStrategyCondition(timeType = timeTypeStr, priority = state.selectedPriority, week = weekString, days = daysData, riseDown = RiseDown(riseType = "1", sundown = 0, sunrise = state.sunriseOffset.toIntOrNull() ?: 0))
+            JsonUtils.toGsonJsonObject(LngLatStrategyContent(require = sunRiseRequire, action = StrategyAction(actionType = sunRiseActionStr, actionValue = state.sunriseActionValue.toIntOrNull())))?.let { strategyContent.add(it) }
 
-            // 构造日落
-            val sunSetRequire = LngLatStrategyCondition(
-                timeType = timeType.toString(), priority = state.selectedPriority,
-                week = weekString, days = daysData,
-                riseDown = RiseDown(riseType = "2", sundown = state.sunsetOffset.toIntOrNull() ?: 0, sunrise = 0)
-            )
-            val sunSetContent = LngLatStrategyContent(
-                require = sunSetRequire,
-                action = StrategyAction(actionType = state.sunsetActionType?.first.toString(), actionValue = state.sunsetActionValue.toIntOrNull())
-            )
-            JsonUtils.toGsonJsonObject(sunSetContent)?.let { strategyContent.add(it) }
+            val sunSetActionStr = state.sunsetActionType?.second?.key ?: state.sunsetActionType?.first?.toString()
+            val sunSetRequire = LngLatStrategyCondition(timeType = timeTypeStr, priority = state.selectedPriority, week = weekString, days = daysData, riseDown = RiseDown(riseType = "2", sundown = state.sunsetOffset.toIntOrNull() ?: 0, sunrise = 0))
+            JsonUtils.toGsonJsonObject(LngLatStrategyContent(require = sunSetRequire, action = StrategyAction(actionType = sunSetActionStr, actionValue = state.sunsetActionValue.toIntOrNull())))?.let { strategyContent.add(it) }
         }
     }
 
     if (strategyContent.isNotEmpty()) {
-        val strategyDTO = StrategyDTO(
-            name = state.strategyName,
-            productId = state.selectedProduct?.productId,
-            groupId = state.selectedGroups.map { it.groupId as Long },
-            strategyClass = state.selectedPolicyType?.first?.toInt(),
-            strategyType = state.selectedStrategyType?.first?.toInt(),
-            content = strategyContent,
-            description = state.remarkInfo,
-            executeType = 0,
-            subSystemType = 1
-        )
+        val strategyDTO = StrategyDTO(id = editId, name = state.strategyName, productId = state.selectedProduct?.productId, groupId = state.selectedGroups.map { it.groupId as Long }, strategyClass = state.selectedPolicyType?.first?.toInt(), strategyType = state.selectedStrategyType?.first?.toInt(), content = strategyContent, description = state.remarkInfo, executeType = 0, subSystemType = 1)
         viewModel.saveStrategyAndSync(strategyDTO)
     }
 }

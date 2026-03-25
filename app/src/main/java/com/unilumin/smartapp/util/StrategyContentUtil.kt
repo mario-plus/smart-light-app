@@ -4,11 +4,26 @@ import android.util.Log
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.unilumin.smartapp.client.data.KeyValue
+import com.unilumin.smartapp.client.data.LngLatStrategyContent
+import com.unilumin.smartapp.client.data.PolicyConfig
 import com.unilumin.smartapp.client.data.PriorityRange
+import com.unilumin.smartapp.client.data.TimeStrategyContent
 
 object StrategyContentUtil {
-
     private const val TAG = "StrategyContentUtil"
+
+    // 👇 新增：一站式解析方法
+    fun getPolicyConfig(
+        productId: Long, jsonObject: JsonObject?, key: String, language: String? = "zh"
+    ): PolicyConfig {
+        if (jsonObject == null) return PolicyConfig()
+        return PolicyConfig(
+            periodTypes = getPolicyPeriodTypes(jsonObject, key, language),
+            priorityRange = getPolicyPriorityRange(jsonObject, key),
+            actionTypes = getPolicyActionTypes(productId, jsonObject, key, language),
+            maxSize = getPolicyItemMaxSize(jsonObject, key)
+        )
+    }
 
     // --- 公共业务方法 ---
 
@@ -72,28 +87,24 @@ object StrategyContentUtil {
     }
 
     fun getPolicyItemMaxSize(jsonObject: JsonObject?, key: String): Long {
-        return jsonObject?.getAsJsonObject(key)
-            ?.getAsJsonObject("contents")?.get("maxNum")?.asLong ?: 0L
-    }
+        return try {
+            val contentsObj = jsonObject?.getAsJsonObject(key)?.getAsJsonObject("contents")
+            val maxNumElement = contentsObj?.get("maxNum")
+            val maxNum = if (maxNumElement != null && !maxNumElement.isJsonNull) maxNumElement.asLong else 0L
 
+            // 👇 强力排查日志：把解析路径和拿到的 JSON 片段全打印出来
+            Log.d("StrategyContentUtil", "🔍 Check maxSize -> key: $key, parsed maxNum: $maxNum. \nContents JSON snippet: ${contentsObj?.toString()?.take(300)}")
+
+            maxNum
+        } catch (e: Exception) {
+            Log.e("StrategyContentUtil", "❌ getPolicyItemMaxSize 解析失败, key: $key", e)
+            0L
+        }
+    }
     fun getPolicyItemCanBeDeleted(jsonObject: JsonObject, key: String): Boolean {
         return jsonObject.getAsJsonObject(key)
             ?.getAsJsonObject("contents")?.get("canBeDelete")?.asBoolean == true
     }
-
-    // 日出和日落选项
-//    fun getPolicyLngLatTypes(
-//        jsonObject: JsonObject, key: String, language: String? = "zh"
-//    ): List<Pair<Long, KeyValue>> = safeParse("getPolicyLngLatTypes", emptyList()) {
-//        val array = jsonObject.getAsJsonObject(key)
-//            ?.getAsJsonObject("contents")
-//            ?.getAsJsonObject("require")
-//            ?.getAsJsonObject("riseDown")
-//            ?.getAsJsonObject("riseType")
-//            ?.getAsJsonArray("select")
-//        parseSelectArray(array, language)
-//    }
-
 
     /**
      * 通用的异常捕获与日志打印执行块
@@ -109,11 +120,6 @@ object StrategyContentUtil {
 
     /**
      * 通用的 "select" 数组解析器
-     *
-     * @param jsonArray    需要解析的 select 数组
-     * @param language     语言标识 (zh / en)
-     * @param productId    产品ID（用于过滤逻辑，可空）
-     * @param exclusionKey 触发过滤的字段名（如 "filter", "exclude"）
      */
     private fun parseSelectArray(
         jsonArray: JsonArray?,
@@ -140,5 +146,59 @@ object StrategyContentUtil {
         }
 
         return results
+    }
+
+    fun formatTimeStrategy(contents: List<Any>?): List<TimeStrategyContent> {
+        if (contents.isNullOrEmpty()) return emptyList()
+        return contents.mapNotNull { item ->
+            try {
+                when (item) {
+                    is String -> if (item.isNotBlank()) JsonUtils.fromJson(
+                        item,
+                        TimeStrategyContent::class.java
+                    ) else null
+
+                    is Map<*, *> -> {
+                        val jsonString = JsonUtils.gson.toJson(item)
+                        JsonUtils.fromJson(jsonString, TimeStrategyContent::class.java)
+                    }
+                    is JsonObject -> {
+                        JsonUtils.fromJson(item.toString(), TimeStrategyContent::class.java)
+                    }
+
+                    is TimeStrategyContent -> item
+                    else -> null
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+    }
+
+    fun formatLngLatStrategy(contents: List<Any>?): List<LngLatStrategyContent> {
+        if (contents.isNullOrEmpty()) return emptyList()
+        return contents.mapNotNull { item ->
+            try {
+                when (item) {
+                    is String -> if (item.isNotBlank()) JsonUtils.fromJson(
+                        item,
+                        LngLatStrategyContent::class.java
+                    ) else null
+                    is Map<*, *> -> {
+                        val jsonString = JsonUtils.gson.toJson(item)
+                        JsonUtils.fromJson(jsonString, LngLatStrategyContent::class.java)
+                    }
+                    is JsonObject -> {
+                        JsonUtils.fromJson(item.toString(), LngLatStrategyContent::class.java)
+                    }
+                    is LngLatStrategyContent -> item
+                    else -> null
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
     }
 }

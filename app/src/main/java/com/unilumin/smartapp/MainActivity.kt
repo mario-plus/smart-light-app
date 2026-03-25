@@ -42,6 +42,7 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_STRATEGY
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_MONITOR
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_PLAY_BOX
 import com.unilumin.smartapp.client.data.IotDevice
+import com.unilumin.smartapp.client.data.LampStrategyInfo
 import com.unilumin.smartapp.config.ServerConfig
 import com.unilumin.smartapp.ui.components.BottomNavBar
 import com.unilumin.smartapp.ui.screens.application.broadcast.SmartBroadScreen
@@ -108,6 +109,9 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
         key(sessionKey) {
             var cachedProfileViewModel by remember { mutableStateOf<ProfileViewModel?>(null) }
             var cachedLampViewModel by remember { mutableStateOf<LampViewModel?>(null) }
+            var cachedLampStrategyInfo by remember { mutableStateOf<LampStrategyInfo?>(null) }
+
+
             var cacheScreenViewModel by remember { mutableStateOf<ScreenViewModel?>(null) }
             val navController = rememberNavController()
             if (!isLoggedIn) {
@@ -170,8 +174,16 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                     when (name) {
                                         SMART_LAMP_GROUP -> navController.navigate("groupMemberScreen")
                                         SMART_LAMP_JOB -> navController.navigate("jobDetailScreen")
-                                        SMART_LAMP_STRATEGY -> navController.navigate("strategyOptScreen")
+                                        SMART_LAMP_STRATEGY -> {
+                                            cachedLampStrategyInfo = null // 💡 必须清空缓存，否则会带入上次编辑的内容！
+                                            navController.navigate("strategyOptScreen")
+                                        }
                                     }
+                                },
+                                toEditStrategy = { lampViewModel, strategy ->
+                                    cachedLampViewModel = lampViewModel
+                                    cachedLampStrategyInfo = strategy
+                                    navController.navigate("strategyOptScreen")
                                 })
                         }
                         //分组成员页面
@@ -193,9 +205,12 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
 
                         composable("strategyOptScreen") { e ->
                             cachedLampViewModel?.let {
-                                LampStrategyOptContent(cachedLampViewModel!!, onBack = {
-                                    navController.popBackStack()
-                                })
+                                LampStrategyOptContent(
+                                    cachedLampViewModel!!,
+                                    cachedLampStrategyInfo,
+                                    onBack = {
+                                        navController.popBackStack()
+                                    })
                             }
                         }
 

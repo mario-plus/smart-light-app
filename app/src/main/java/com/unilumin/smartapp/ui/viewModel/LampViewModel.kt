@@ -168,7 +168,7 @@ class LampViewModel(
     val strategyTypeList = _strategyTypeList.asStateFlow()
 
     //缓存策略策略内容
-    private val _policyContent = MutableStateFlow(JsonObject())
+    private val _policyContent = MutableStateFlow<JsonObject?>(null)
     val policyContent = _policyContent.asStateFlow()
 
     suspend fun getGroupProductList() {
@@ -181,34 +181,38 @@ class LampViewModel(
     }
 
 
-    suspend fun getProductRule(currentProductId: Long) {
-        //重置策略类型和策略模式
-        _policyTypeList.value = emptyList()
-        _strategyTypeList.value = emptyList()
-        val parseDataNewSuspend = parseDataNewSuspend(
-            roadService.getProductRule(productId = currentProductId)
-        )
-        if (parseDataNewSuspend != null) {
-            try {
-                val policyObj = parseDataNewSuspend.getAsJsonObject("policy")
-                //缓存策略信息
-                _policyContent.value = policyObj.asJsonObject
-                //策略模式
-                var strategyTypeObj = policyObj.get("strategyType")
-                if (strategyTypeObj != null) {
-                    _strategyTypeList.value = StrategyContentUtil.getPolicyTypeOrMode(
-                        currentProductId, strategyTypeObj.asJsonObject, "zh"
-                    )
+    // 💥 修复点 2：改为普通方法，内部触发 loading 并重置状态
+    fun getProductRule(currentProductId: Long) {
+        launchWithLoading {
+            // 请求前重置状态，避免遗留上一个产品的脏数据，同时让 UI 转圈
+            _policyTypeList.value = emptyList()
+            _strategyTypeList.value = emptyList()
+            _policyContent.value = null
+            val parseDataNewSuspend = parseDataNewSuspend(
+                roadService.getProductRule(productId = currentProductId)
+            )
+            if (parseDataNewSuspend != null) {
+                try {
+                    val policyObj = parseDataNewSuspend.getAsJsonObject("policy")
+                    // 缓存策略信息
+                    _policyContent.value = policyObj.asJsonObject
+                    // 策略模式
+                    var strategyTypeObj = policyObj.get("strategyType")
+                    if (strategyTypeObj != null) {
+                        _strategyTypeList.value = StrategyContentUtil.getPolicyTypeOrMode(
+                            currentProductId, strategyTypeObj.asJsonObject, "zh"
+                        )
+                    }
+                    // 策略类型
+                    var policyTypeObj = policyObj.get("policyType")
+                    if (policyTypeObj != null) {
+                        _policyTypeList.value = StrategyContentUtil.getPolicyTypeOrMode(
+                            currentProductId, policyTypeObj.asJsonObject, "zh"
+                        )
+                    }
+                } catch (ignore: Exception) {
+                    ignore.printStackTrace()
                 }
-                //策略类型
-                var policyTypeObj = policyObj.get("policyType")
-                if (policyTypeObj != null) {
-                    _policyTypeList.value = StrategyContentUtil.getPolicyTypeOrMode(
-                        currentProductId, policyTypeObj.asJsonObject, "zh"
-                    )
-                }
-            } catch (ignore: Exception) {
-                ignore.printStackTrace()
             }
         }
     }
@@ -273,8 +277,6 @@ class LampViewModel(
         combine(currentProductId, searchQuery, ::Pair)
     ) { (currentProductId, query), page, size ->
         fetchPageData {
-            //当选择产品后，需要加载产品规则，产品分组内容
-            getProductRule(currentProductId)
             roadService.getStrategyGroupInfoList(
                 StrategyGroupDTO(
                     curPage = page, pageSize = size, keyword = query, productId = currentProductId
