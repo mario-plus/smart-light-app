@@ -24,9 +24,9 @@ object StrategyContentUtil {
     }
 
     fun getPolicyPeriodTypes(
-        jsonObject: JsonObject, key: String, language: String? = "zh"
+        jsonObject: JsonObject?, key: String, language: String? = "zh"
     ): List<Pair<Long, KeyValue>> = safeParse("getPolicyPeriodTypes", emptyList()) {
-        val array = jsonObject.getAsJsonObject(key)
+        val array = jsonObject?.getAsJsonObject(key)
             ?.getAsJsonObject("contents")
             ?.getAsJsonObject("require")
             ?.getAsJsonObject("timeType")
@@ -34,9 +34,9 @@ object StrategyContentUtil {
         parseSelectArray(array, language)
     }
 
-    fun getPolicyPriorityRange(jsonObject: JsonObject, key: String): PriorityRange? =
+    fun getPolicyPriorityRange(jsonObject: JsonObject?, key: String): PriorityRange? =
         safeParse("getPolicyPriorityRange", null) {
-            val priorityObj = jsonObject.getAsJsonObject(key)?.getAsJsonObject("priority")
+            val priorityObj = jsonObject?.getAsJsonObject(key)?.getAsJsonObject("priority")
             val min = priorityObj?.get("min")?.asInt
             val max = priorityObj?.get("max")?.asInt
 
@@ -71,8 +71,8 @@ object StrategyContentUtil {
         parseSelectArray(array, language)
     }
 
-    fun getPolicyItemMaxSize(jsonObject: JsonObject, key: String): Long {
-        return jsonObject.getAsJsonObject(key)
+    fun getPolicyItemMaxSize(jsonObject: JsonObject?, key: String): Long {
+        return jsonObject?.getAsJsonObject(key)
             ?.getAsJsonObject("contents")?.get("maxNum")?.asLong ?: 0L
     }
 
