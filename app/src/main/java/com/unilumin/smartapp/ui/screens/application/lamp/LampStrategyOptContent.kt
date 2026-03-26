@@ -367,6 +367,7 @@ class LampStrategyFormState {
 
     fun bindActions(policyActionTypes: List<Pair<Long, KeyValue>>) {
         if (policyActionTypes.isEmpty()) return
+        Log.d(TAG, "bindActions: Binding with ${policyActionTypes.size} available actions.")
         timeTasks.forEachIndexed { index, task ->
             val rawKey = task.actionType?.second?.key ?: task.actionType?.first?.toString()
             if (rawKey != null) {
@@ -421,6 +422,7 @@ fun LampStrategyOptContent(
     //产品变化，需要变更产品规则
     LaunchedEffect(currentProductId) {
         if (currentProductId != -1L) {
+            Log.d(TAG, "Fetching product rule for productId: $currentProductId")
             lampViewModel.getProductRule(currentProductId)
         }
     }
@@ -459,29 +461,50 @@ fun LampStrategyOptContent(
         )
     }
 
+    // === 【增加核心日志块：追踪 policyConfig 的生成与获取过程】 ===
     val policyConfig =
         remember(formState.selectedProduct, formState.selectedPolicyType, policyContent) {
             val product = formState.selectedProduct
             val policy = formState.selectedPolicyType
+
+            Log.d(TAG, "=> policyConfig Recomposition triggered.")
+            Log.d(TAG, "Product Name/ID: ${product?.productName} / ${product?.productId}")
+            Log.d(TAG, "Policy Type: ${policy?.second?.value} (classId: ${policy?.first})")
+            Log.d(TAG, "Is PolicyContent null? ${policyContent == null}")
+
             if (product != null && policy != null && policyContent != null) {
-                // 【修复核心点】：优先取后端返回在 policy.second.key 的实际配置节点名称，避免硬编码导致拿不到规则
                 val classId = policy.first.toInt()
                 val realKey = policy.second.key.takeIf { !it.isNullOrBlank() } ?: when (classId) {
                     2 -> "timeStrategies"
                     1 -> "lngLatStrategies"
                     else -> ""
                 }
-                StrategyContentUtil.getPolicyConfig(
+
+                Log.d(TAG, "Extracting PolicyConfig with realKey: '$realKey'")
+
+                val config = StrategyContentUtil.getPolicyConfig(
                     productId = product.productId,
                     jsonObject = policyContent,
                     key = realKey
                 )
+
+                Log.d(TAG, "Parsed PolicyConfig result -> ActionTypes Size: ${config.actionTypes.size}, PeriodTypes Size: ${config.periodTypes.size}")
+
+                if (config.actionTypes.isEmpty()) {
+                    Log.w(TAG, "⚠️ 警告: 该产品 (${product.productName}) 获取到的动作类型为空！请检查下发的 JSON 是否包含正确的节点 [$realKey]。")
+                    // 如果数据不大，可以把获取到的完整 Json 打印一部分出来观察
+                    Log.w(TAG, "JSON 截断内容: ${policyContent.toString().take(1000)}")
+                }
+
+                config
             } else {
+                Log.d(TAG, "Returning empty PolicyConfig because dependent state is incomplete.")
                 PolicyConfig()
             }
         }
 
     LaunchedEffect(policyConfig, formState.initializedStrategyId) {
+        Log.d(TAG, "LaunchedEffect(policyConfig check): formId=${formState.initializedStrategyId}, actionSize=${policyConfig.actionTypes.size}")
         if (formState.initializedStrategyId != null && policyConfig.actionTypes.isNotEmpty()) {
             formState.bindActions(policyConfig.actionTypes)
         }
@@ -674,6 +697,8 @@ private fun StepTwoStrategyDetails(
             1 -> "lngLatStrategies"
             else -> state.selectedPolicyType?.second?.key
         }
+
+        Log.d(TAG, "StepTwo rendering logic -> renderKey determined as: $renderKey")
 
         when (renderKey) {
             "timeStrategies" -> TimeStrategySection(state, policyConfig)

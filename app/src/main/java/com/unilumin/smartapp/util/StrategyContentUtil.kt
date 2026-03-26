@@ -66,7 +66,8 @@ object StrategyContentUtil {
         val actionJsonObj = jsonObject.getAsJsonObject(key)
             ?.getAsJsonObject("contents")
             ?.getAsJsonObject("action")
-        if (actionJsonObj?.get("hide")?.asInt == 1) {
+        //经纬度的hide才有效
+        if (key == "lngLatStrategies" && actionJsonObj?.get("hide")?.asInt == 1) {
             return@safeParse emptyList()
         }
         val array = actionJsonObj
@@ -90,10 +91,16 @@ object StrategyContentUtil {
         return try {
             val contentsObj = jsonObject?.getAsJsonObject(key)?.getAsJsonObject("contents")
             val maxNumElement = contentsObj?.get("maxNum")
-            val maxNum = if (maxNumElement != null && !maxNumElement.isJsonNull) maxNumElement.asLong else 0L
+            val maxNum =
+                if (maxNumElement != null && !maxNumElement.isJsonNull) maxNumElement.asLong else 0L
 
             // 👇 强力排查日志：把解析路径和拿到的 JSON 片段全打印出来
-            Log.d("StrategyContentUtil", "🔍 Check maxSize -> key: $key, parsed maxNum: $maxNum. \nContents JSON snippet: ${contentsObj?.toString()?.take(300)}")
+            Log.d(
+                "StrategyContentUtil",
+                "🔍 Check maxSize -> key: $key, parsed maxNum: $maxNum. \nContents JSON snippet: ${
+                    contentsObj?.toString()?.take(300)
+                }"
+            )
 
             maxNum
         } catch (e: Exception) {
@@ -101,6 +108,7 @@ object StrategyContentUtil {
             0L
         }
     }
+
     fun getPolicyItemCanBeDeleted(jsonObject: JsonObject, key: String): Boolean {
         return jsonObject.getAsJsonObject(key)
             ?.getAsJsonObject("contents")?.get("canBeDelete")?.asBoolean == true
@@ -162,6 +170,7 @@ object StrategyContentUtil {
                         val jsonString = JsonUtils.gson.toJson(item)
                         JsonUtils.fromJson(jsonString, TimeStrategyContent::class.java)
                     }
+
                     is JsonObject -> {
                         JsonUtils.fromJson(item.toString(), TimeStrategyContent::class.java)
                     }
@@ -185,13 +194,16 @@ object StrategyContentUtil {
                         item,
                         LngLatStrategyContent::class.java
                     ) else null
+
                     is Map<*, *> -> {
                         val jsonString = JsonUtils.gson.toJson(item)
                         JsonUtils.fromJson(jsonString, LngLatStrategyContent::class.java)
                     }
+
                     is JsonObject -> {
                         JsonUtils.fromJson(item.toString(), LngLatStrategyContent::class.java)
                     }
+
                     is LngLatStrategyContent -> item
                     else -> null
                 }
