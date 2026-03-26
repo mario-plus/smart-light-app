@@ -474,7 +474,7 @@ class LampViewModel(
         }
     }
 
-    //保存并下发策略
+    //创建并同步
     fun saveStrategyAndSync(body: StrategyDTO) {
         var toJson = JsonUtils.gson.toJson(body)
         Log.e("TAG", "saveStrategyAndSync: $toJson")
@@ -488,6 +488,16 @@ class LampViewModel(
         }
     }
 
+
+    //更新并同步
+    fun updateStrategyAndSync(body: StrategyDTO) {
+        var toJson = JsonUtils.gson.toJson(body)
+        Log.e("TAG", "updateStrategyAndSync: $toJson")
+        launchWithLoading {
+            parseDataNewSuspend(roadService.updateStrategy(body))
+            parseDataNewSuspend(roadService.syncStrategy(IdBody(id = body.id!!)))
+        }
+    }
 
     //设备控制按钮
     fun loopCtl(id: Long, numList: List<Int>, onOff: Int) {

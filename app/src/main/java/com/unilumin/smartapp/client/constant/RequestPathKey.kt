@@ -122,8 +122,10 @@ object RequestPathKey {
     //任务详情
     const val KEY_GET_JOB_DETAIL: String = "$SMART_ROAD_LAMPS/uni_light_getTaskDetailById"
 
-    //提价策略
+    //创建策略
     const val KEY_CREATE_STRATEGY: String = "$SMART_ROAD_LAMPS/uni_light_strategy"
+    //更新策略
+    const val KEY_UPDATE_STRATEGY: String = "$SMART_ROAD_LAMPS/uni_light_updateStrategy"
 
     //下发策略
     const val KEY_SYNC_STRATEGY: String = "$SMART_ROAD_LAMPS/uni_light_send_strategy"

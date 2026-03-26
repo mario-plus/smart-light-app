@@ -201,5 +201,7 @@ interface RoadService {
     @POST(RequestPathKey.KEY_SYNC_STRATEGY)
     fun syncStrategy(@Body requestBody: IdBody): Call<NewResponseData<Void?>?>?
 
+    @POST(RequestPathKey.KEY_UPDATE_STRATEGY)
+    fun updateStrategy(@Body requestBody: StrategyDTO): Call<NewResponseData<Void?>?>?
 
 }
