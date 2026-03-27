@@ -10,6 +10,7 @@ import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.EnvTelBO
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
+import com.unilumin.smartapp.client.data.IdsBody
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.IotProductDetail
 import com.unilumin.smartapp.client.data.NewResponseData
@@ -23,6 +24,7 @@ import com.unilumin.smartapp.client.data.WebRTCResponse
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -122,5 +124,10 @@ interface DeviceService {
 
     @PUT(RequestPathKey.KEY_ADD_DEVICE)
     fun updateDevice(@Body requestBody: UpdateDevice): Call<NewResponseData<Void?>?>?
+
+
+    @HTTP(method = "DELETE", path = RequestPathKey.KEY_ADD_DEVICE, hasBody = true)
+    fun deleteDevice(@Body requestBody: IdsBody): Call<NewResponseData<Void?>?>?
+
 
 }

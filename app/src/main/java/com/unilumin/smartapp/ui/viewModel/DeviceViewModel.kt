@@ -15,6 +15,7 @@ import com.unilumin.smartapp.client.data.EnvDataReq
 import com.unilumin.smartapp.client.data.EnvReq
 import com.unilumin.smartapp.client.data.HistoryData
 import com.unilumin.smartapp.client.data.HistoryDataReq
+import com.unilumin.smartapp.client.data.IdsBody
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.PagingState
 import com.unilumin.smartapp.client.data.RealTimeDataTs
@@ -218,6 +219,12 @@ class DeviceViewModel(
     fun updateDevice(device: UpdateDevice) {
         launchWithLoading {
             UniCallbackService.parseDataNewSuspend(deviceService.updateDevice(device))
+        }
+    }
+
+    fun deleteDevice(ids: IdsBody) {
+        launchWithLoading {
+            UniCallbackService.parseDataNewSuspend(deviceService.deleteDevice(ids))
         }
     }
 

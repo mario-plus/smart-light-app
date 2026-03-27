@@ -5,6 +5,7 @@ import android.app.Application
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -45,10 +47,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -75,6 +79,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.constant.DeviceConstant
 import com.unilumin.smartapp.client.data.AddDevice
+import com.unilumin.smartapp.client.data.IdsBody
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.SimpleProduct
 import com.unilumin.smartapp.client.data.SystemConfig
@@ -134,9 +139,21 @@ fun DevicesScreen(
                 val scannedText = result.content.rawValue ?: ""
                 pendingScanCallback?.invoke(scannedText)
             }
-            is QRResult.QRUserCanceled -> Toast.makeText(context, "已取消扫码", Toast.LENGTH_SHORT).show()
-            is QRResult.QRMissingPermission -> Toast.makeText(context, "需要相机权限才能扫码", Toast.LENGTH_LONG).show()
-            is QRResult.QRError -> Toast.makeText(context, "扫码出错: ${result.exception.message}", Toast.LENGTH_SHORT).show()
+
+            is QRResult.QRUserCanceled -> Toast.makeText(context, "已取消扫码", Toast.LENGTH_SHORT)
+                .show()
+
+            is QRResult.QRMissingPermission -> Toast.makeText(
+                context,
+                "需要相机权限才能扫码",
+                Toast.LENGTH_LONG
+            ).show()
+
+            is QRResult.QRError -> Toast.makeText(
+                context,
+                "扫码出错: ${result.exception.message}",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -204,6 +221,11 @@ fun DevicesScreen(
                 onScanClick = { onScanResult ->
                     pendingScanCallback = onScanResult
                     scanQrCodeLauncher.launch(null)
+                },
+                onDelete = {
+                    showManageDeviceSheet = false
+                    deviceViewModel.deleteDevice(IdsBody(idList = listOf(editingDevice!!.id)))
+                    lazyPagingItems.refresh()
                 }
             )
         }
@@ -266,7 +288,8 @@ fun DevicesScreen(
                                 .padding(start = 12.dp, end = 8.dp),
                             verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = DeviceConstant.statusOptions.find { it.first == deviceState }?.second ?: "状态",
+                                text = DeviceConstant.statusOptions.find { it.first == deviceState }?.second
+                                    ?: "状态",
                                 fontSize = 14.sp,
                                 color = Gray900,
                                 fontWeight = FontWeight.Medium
@@ -397,7 +420,10 @@ fun DeviceFilterSection(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            12.dp,
+                            Alignment.CenterHorizontally
+                        ),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         maxItemsInEachRow = 4
                     ) {
@@ -493,6 +519,7 @@ fun DeviceManageBottomSheetContent(
     productList: List<SimpleProduct>,
     onDismiss: () -> Unit,
     onSubmit: (name: String, productId: Long?, serial: String, remark: String) -> Unit,
+    onDelete: () -> Unit = {}, // 删除回调
     onScanClick: ((String) -> Unit) -> Unit
 ) {
     val isEditMode = editDevice != null
@@ -504,20 +531,79 @@ fun DeviceManageBottomSheetContent(
         mutableStateOf(productList.find { it.id == editDevice?.productId })
     }
 
-    // 表单校验：新增需全填，编辑仅需名称非空 (备注本身是可选的，所以校验逻辑无需修改)
+    // 控制删除确认弹窗的显示状态
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // 表单校验：新增需全填，编辑仅需名称非空
     val isFormValid = if (isEditMode) {
         deviceName.isNotBlank()
     } else {
         deviceName.isNotBlank() && serialNumber.isNotBlank() && selectedProduct != null
     }
 
+    // 统一提交逻辑，避免代码重复
+    val handleSubmit = {
+        if (isFormValid) {
+            onSubmit(
+                deviceName,
+                selectedProduct?.id ?: editDevice?.productId,
+                serialNumber,
+                remark
+            )
+        }
+    }
+
     // 禁用状态下的统一样式
     val disabledColors = OutlinedTextFieldDefaults.colors(
-        disabledContainerColor = Color(0xFFF9FAFB), // 非常淡的灰色，类似 Gray50
+        disabledContainerColor = Color(0xFFF9FAFB),
         disabledBorderColor = Color.Transparent,
         disabledTextColor = Gray500,
         disabledLabelColor = Gray500
     )
+
+    // 危险操作（删除）的主题色
+    val colorDanger = Color(0xFFEF4444)
+    val colorDangerBg = Color(0xFFFEF2F2)
+
+    // --- 删除确认弹窗 ---
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = {
+                Text(
+                    "确认删除设备",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Gray900
+                )
+            },
+            text = {
+                Text(
+                    text = "您确定要删除设备 \"${editDevice?.deviceName ?: ""}\" 吗？此操作不可逆，相关的设备数据将被清除。",
+                    color = Gray500,
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDelete() // 触发删除回调
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = colorDanger)
+                ) {
+                    Text("确认删除", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("取消", color = Gray500)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -594,8 +680,16 @@ fun DeviceManageBottomSheetContent(
             singleLine = true,
             trailingIcon = {
                 if (!isEditMode) {
-                    IconButton(onClick = { onScanClick { scannedCode -> serialNumber = scannedCode } }) {
-                        Icon(Icons.Default.QrCodeScanner, contentDescription = "扫码", tint = Blue600)
+                    IconButton(onClick = {
+                        onScanClick { scannedCode ->
+                            serialNumber = scannedCode
+                        }
+                    }) {
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = "扫码",
+                            tint = Blue600
+                        )
                     }
                 }
             },
@@ -605,55 +699,83 @@ fun DeviceManageBottomSheetContent(
             )
         )
 
-        // 4. 备注信息 (修改点：放开限制，无论新增还是编辑均可修改)
+        // 4. 备注信息
         OutlinedTextField(
             value = remark,
             onValueChange = { remark = it },
             label = { Text("备注信息 (可选)") },
             placeholder = { Text("请输入设备部署位置或其他备注", color = Gray400) },
-            // 移除了 enabled = !isEditMode，默认为 true
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             minLines = 3,
             maxLines = 5,
-            // 移除了 if (isEditMode) 判断，始终使用可编辑状态的颜色
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Blue600,
                 unfocusedBorderColor = Gray100,
-                focusedLabelColor = Blue600 // 保持与设备名称一致的选中高亮色
+                focusedLabelColor = Blue600
             )
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
-        // 提交按钮
-        Button(
-            onClick = {
-                if (isFormValid) {
-                    onSubmit(
-                        deviceName,
-                        selectedProduct?.id ?: editDevice?.productId,
-                        serialNumber,
-                        remark
+        // --- 底部操作按钮区域 ---
+        if (isEditMode) {
+            // 编辑模式：左右双按钮布局
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp), // 中间保留16dp的间距
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 左侧：删除按钮
+                OutlinedButton(
+                    onClick = { showDeleteDialog = true },
+                    modifier = Modifier
+                        .weight(1f) // 占据一半宽度
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, colorDanger.copy(alpha = 0.5f)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = colorDanger,
+                        containerColor = colorDangerBg
                     )
+                ) {
+                    Text(text = "删除", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Blue600,
-                disabledContainerColor = Gray100,
-                disabledContentColor = Gray400
-            ),
-            enabled = isFormValid
-        ) {
-            Text(
-                text = if (isEditMode) "保存修改" else "确认添加",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+
+                // 右侧：保存按钮
+                Button(
+                    onClick = handleSubmit,
+                    modifier = Modifier
+                        .weight(1f) // 占据另一半宽度
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Blue600,
+                        disabledContainerColor = Gray100,
+                        disabledContentColor = Gray400
+                    ),
+                    enabled = isFormValid
+                ) {
+                    Text(text = "保存修改", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        } else {
+            // 新增模式：单按钮通栏布局
+            Button(
+                onClick = handleSubmit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Blue600,
+                    disabledContainerColor = Gray100,
+                    disabledContentColor = Gray400
+                ),
+                enabled = isFormValid
+            ) {
+                Text(text = "确认添加", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }

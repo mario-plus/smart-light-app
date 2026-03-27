@@ -1489,6 +1489,11 @@ data class IdBody(
     val id: Long
 )
 
+data class IdsBody(
+    val idList: List<Long>
+)
+
+
 data class TimeStrategyCondition(
     //时间点：9:21
     val timePoint: String?,
