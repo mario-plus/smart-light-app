@@ -78,6 +78,7 @@ import com.unilumin.smartapp.client.data.AddDevice
 import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.SimpleProduct
 import com.unilumin.smartapp.client.data.SystemConfig
+import com.unilumin.smartapp.client.data.UpdateDevice
 import com.unilumin.smartapp.ui.components.CommonDropdownMenu
 import com.unilumin.smartapp.ui.components.FilterChip
 import com.unilumin.smartapp.ui.components.LoadingContent
@@ -86,6 +87,7 @@ import com.unilumin.smartapp.ui.components.ReferenceStyleDropdownMenu
 import com.unilumin.smartapp.ui.components.SearchBar
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray100
+import com.unilumin.smartapp.ui.theme.Gray400
 import com.unilumin.smartapp.ui.theme.Gray500
 import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.White
@@ -102,11 +104,11 @@ fun DevicesScreen(
     onDetailClick: (IotDevice) -> Unit,
     onMenuClick: (String) -> Unit
 ) {
-
     var showMenu by remember { mutableStateOf(false) }
 
-    // 添加设备 BottomSheet 状态控制
-    var showAddDeviceSheet by remember { mutableStateOf(false) }
+    // --- 核心：设备管理 BottomSheet 状态控制 ---
+    var showManageDeviceSheet by remember { mutableStateOf(false) }
+    var editingDevice by remember { mutableStateOf<IotDevice?>(null) } // null 表示新增，非 null 表示编辑
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val context = LocalContext.current
@@ -125,26 +127,16 @@ fun DevicesScreen(
 
     var pendingScanCallback by remember { mutableStateOf<((String) -> Unit)?>(null) }
 
-    //二维码扫码结果
+    // 二维码扫码结果
     val scanQrCodeLauncher = rememberLauncherForActivityResult(ScanQRCode()) { result ->
         when (result) {
             is QRResult.QRSuccess -> {
                 val scannedText = result.content.rawValue ?: ""
                 pendingScanCallback?.invoke(scannedText)
             }
-
-            is QRResult.QRUserCanceled -> {
-                Toast.makeText(context, "已取消扫码", Toast.LENGTH_SHORT).show()
-            }
-
-            is QRResult.QRMissingPermission -> {
-                Toast.makeText(context, "需要相机权限才能扫码", Toast.LENGTH_LONG).show()
-            }
-
-            is QRResult.QRError -> {
-                Toast.makeText(context, "扫码出错: ${result.exception.message}", Toast.LENGTH_SHORT)
-                    .show()
-            }
+            is QRResult.QRUserCanceled -> Toast.makeText(context, "已取消扫码", Toast.LENGTH_SHORT).show()
+            is QRResult.QRMissingPermission -> Toast.makeText(context, "需要相机权限才能扫码", Toast.LENGTH_LONG).show()
+            is QRResult.QRError -> Toast.makeText(context, "扫码出错: ${result.exception.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -153,78 +145,70 @@ fun DevicesScreen(
     }
 
     val smartApps by systemViewModel.smartApps.collectAsState()
-
     val productTypes by systemViewModel.productTypes.collectAsState()
-
     val activeTypes = remember(productTypes) { productTypes.filter { it.isSelected } }
 
-    // 产品类型选择
     val productType by deviceViewModel.productType.collectAsState()
     val totalCount = deviceViewModel.totalCount.collectAsState()
-
-    // 搜索条件
     val searchQuery by deviceViewModel.searchQuery.collectAsState()
-
-    // 设备状态 (-1:全部, 0:离线, 1:在线)
     val deviceState by deviceViewModel.state.collectAsState()
-
-    // 分页数据
     val lazyPagingItems = deviceViewModel.devicePagingFlow.collectAsLazyPagingItems()
-
-    // 产品列表数据
     val simpleProductList by deviceViewModel.simpleProductList.collectAsState()
-
     val isLoading by deviceViewModel.isLoading.collectAsState()
 
-    // 状态下拉框控制
     var statusExpanded by remember { mutableStateOf(false) }
 
-//    // --- Loading 状态控制逻辑 ---
-//    var lastSyncedParams by remember {
-//        mutableStateOf(
-//            Triple(
-//                productType, searchQuery, deviceState
-//            )
-//        )
-//    }
-//
-//    val isSwitching = lastSyncedParams != Triple(productType, searchQuery, deviceState)
-//
-//    LaunchedEffect(lazyPagingItems.loadState.refresh) {
-//        if (lazyPagingItems.loadState.refresh is LoadState.NotLoading || lazyPagingItems.loadState.refresh is LoadState.Error) {
-//            lastSyncedParams = Triple(productType, searchQuery, deviceState)
-//        }
-//    }
-
-    // --- 底部弹出层 ---
-    if (showAddDeviceSheet) {
+    // --- 底部弹出层 (新增与编辑共用) ---
+    if (showManageDeviceSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showAddDeviceSheet = false },
+            onDismissRequest = {
+                showManageDeviceSheet = false
+                editingDevice = null
+            },
             sheetState = sheetState,
             containerColor = Color.White,
-            dragHandle = { BottomSheetDefaults.DragHandle() }) {
-            AddDeviceBottomSheetContent(
-                productList = simpleProductList, // 传入获取到的真实产品数据
-                onDismiss = { showAddDeviceSheet = false },
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            DeviceManageBottomSheetContent(
+                editDevice = editingDevice,
+                productList = simpleProductList,
+                onDismiss = {
+                    showManageDeviceSheet = false
+                    editingDevice = null
+                },
                 onSubmit = { deviceName, productId, serial, remark ->
-                    var addDevice = AddDevice(
-                        deviceName = deviceName,
-                        productId = productId,
-                        serialNum = serial,
-                        description = remark,
-                        productTypeId = productType.toLong()
-                    )
-                    deviceViewModel.createDevice(addDevice)
-                    showAddDeviceSheet = false
+                    if (editingDevice != null) {
+                        val updateDevice = UpdateDevice(
+                            deviceName = deviceName,
+                            productId = productId ?: 0L,
+                            serialNum = serial,
+                            description = remark,
+                            productTypeId = productType.toLong(),
+                            id = editingDevice!!.id
+                        )
+                        deviceViewModel.updateDevice(updateDevice)
+                    } else {
+                        val addDevice = AddDevice(
+                            deviceName = deviceName,
+                            productId = productId ?: 0L,
+                            serialNum = serial,
+                            description = remark,
+                            productTypeId = productType.toLong()
+                        )
+                        deviceViewModel.createDevice(addDevice)
+                    }
+                    showManageDeviceSheet = false
+                    editingDevice = null
                     lazyPagingItems.refresh()
                 },
                 onScanClick = { onScanResult ->
                     pendingScanCallback = onScanResult
-                    //扫码结果，需要填充
                     scanQrCodeLauncher.launch(null)
-                })
+                }
+            )
         }
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -265,14 +249,13 @@ fun DevicesScreen(
                     }
                 }
 
-                // 2. 状态筛选 + 搜索框 (合并在一行)
+                // 2. 状态筛选 + 搜索框
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // --- 状态选择下拉框 ---
                     Box {
                         Row(
                             modifier = Modifier
@@ -283,8 +266,7 @@ fun DevicesScreen(
                                 .padding(start = 12.dp, end = 8.dp),
                             verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = DeviceConstant.statusOptions.find { it.first == deviceState }?.second
-                                    ?: "状态",
+                                text = DeviceConstant.statusOptions.find { it.first == deviceState }?.second ?: "状态",
                                 fontSize = 14.sp,
                                 color = Gray900,
                                 fontWeight = FontWeight.Medium
@@ -320,7 +302,6 @@ fun DevicesScreen(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // --- 搜索框 ---
                     SearchBar(
                         query = searchQuery,
                         onQueryChange = { deviceViewModel.updateSearch(it) },
@@ -346,15 +327,22 @@ fun DevicesScreen(
                 itemKey = { device -> device.id },
                 emptyMessage = "未找到相关设备",
                 onAddClick = {
+                    editingDevice = null // 确保是新增模式
                     deviceViewModel.getSimpleProductList()
-                    showAddDeviceSheet = true
+                    showManageDeviceSheet = true
                 },
                 contentPadding = PaddingValues(vertical = 12.dp, horizontal = 16.dp)
             ) { device ->
                 DeviceCardItem(
                     iotDevice = device,
                     productType = productType.toLong(),
-                    onDetailClick = { onDetailClick(device) })
+                    onDetailClick = { onDetailClick(device) },
+                    onEditClick = {
+                        editingDevice = device // 存入当前点击的设备，触发编辑模式
+                        deviceViewModel.getSimpleProductList() // 同样获取产品列表用于回显名称（如需要）
+                        showManageDeviceSheet = true
+                    }
+                )
             }
         }
     }
@@ -409,9 +397,7 @@ fun DeviceFilterSection(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(
-                            12.dp, Alignment.CenterHorizontally
-                        ),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         maxItemsInEachRow = 4
                     ) {
@@ -465,9 +451,7 @@ fun DeviceFilterSection(
 }
 
 @Composable
-fun GridFilterItem(
-    type: SystemConfig, isSelected: Boolean, onClick: () -> Unit
-) {
+fun GridFilterItem(type: SystemConfig, isSelected: Boolean, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -504,114 +488,151 @@ fun GridFilterItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddDeviceBottomSheetContent(
+fun DeviceManageBottomSheetContent(
+    editDevice: IotDevice? = null,
     productList: List<SimpleProduct>,
     onDismiss: () -> Unit,
-    onSubmit: (String/*设备名称*/, Long/*产品型号*/, String, String) -> Unit,
+    onSubmit: (name: String, productId: Long?, serial: String, remark: String) -> Unit,
     onScanClick: ((String) -> Unit) -> Unit
 ) {
-    var deviceName by remember { mutableStateOf("") }
-    var serialNumber by remember { mutableStateOf("") }
-    var remark by remember { mutableStateOf("") }
-    var selectedProduct by remember { mutableStateOf<SimpleProduct?>(null) }
+    val isEditMode = editDevice != null
+
+    var deviceName by remember(editDevice) { mutableStateOf(editDevice?.deviceName ?: "") }
+    var serialNumber by remember(editDevice) { mutableStateOf(editDevice?.serialNum ?: "") }
+    var remark by remember(editDevice) { mutableStateOf(editDevice?.description ?: "") }
+    var selectedProduct by remember(editDevice) {
+        mutableStateOf(productList.find { it.id == editDevice?.productId })
+    }
+
+    // 表单校验：新增需全填，编辑仅需名称非空 (备注本身是可选的，所以校验逻辑无需修改)
+    val isFormValid = if (isEditMode) {
+        deviceName.isNotBlank()
+    } else {
+        deviceName.isNotBlank() && serialNumber.isNotBlank() && selectedProduct != null
+    }
+
+    // 禁用状态下的统一样式
+    val disabledColors = OutlinedTextFieldDefaults.colors(
+        disabledContainerColor = Color(0xFFF9FAFB), // 非常淡的灰色，类似 Gray50
+        disabledBorderColor = Color.Transparent,
+        disabledTextColor = Gray500,
+        disabledLabelColor = Gray500
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
             .padding(bottom = 32.dp, top = 8.dp)
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // 标题与关闭按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("添加新设备", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Gray900)
-            IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+            Text(
+                text = if (isEditMode) "编辑设备" else "添加新设备",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Gray900
+            )
+            IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.Close, contentDescription = "关闭", tint = Gray500)
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        // 1. 设备名称
+
+        // 1. 设备名称 (均可编辑)
         OutlinedTextField(
             value = deviceName,
             onValueChange = { deviceName = it },
             label = { Text("设备名称") },
-            placeholder = { Text("请输入设备名称", color = Gray500) },
+            placeholder = { Text("请输入设备名称", color = Gray400) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Blue600,
                 unfocusedBorderColor = Gray100,
+                focusedLabelColor = Blue600
             )
         )
-        CommonDropdownMenu(
-            items = productList,
-            selectedItem = selectedProduct,
-            // 统一提供展示的文本格式
-            itemLabel = { product -> product.name },
-            onItemSelected = { product ->
-                selectedProduct = product
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = "产品型号",
-            placeholder = "请选择产品"
-        )
+
+        // 2. 产品型号
+        if (isEditMode) {
+            OutlinedTextField(
+                value = editDevice?.productName ?: "--",
+                onValueChange = {},
+                label = { Text("产品型号") },
+                enabled = false,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = disabledColors
+            )
+        } else {
+            CommonDropdownMenu(
+                items = productList,
+                selectedItem = selectedProduct,
+                itemLabel = { product -> product.name },
+                onItemSelected = { product -> selectedProduct = product },
+                modifier = Modifier.fillMaxWidth(),
+                label = "产品型号",
+                placeholder = "请选择产品"
+            )
+        }
+
+        // 3. 设备序列号 (编辑时不可修改)
         OutlinedTextField(
             value = serialNumber,
             onValueChange = { serialNumber = it },
             label = { Text("设备序列码 (SN)") },
-            placeholder = { Text("手动输入或扫码读取", color = Gray500) },
+            placeholder = { Text("手动输入或扫码读取", color = Gray400) },
+            enabled = !isEditMode,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
             trailingIcon = {
-                IconButton(onClick = {
-                    onScanClick { scannedCode ->
-                        serialNumber = scannedCode
+                if (!isEditMode) {
+                    IconButton(onClick = { onScanClick { scannedCode -> serialNumber = scannedCode } }) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = "扫码", tint = Blue600)
                     }
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.QrCodeScanner,
-                        contentDescription = "扫码",
-                        tint = Blue600
-                    )
                 }
             },
-            colors = OutlinedTextFieldDefaults.colors(
+            colors = if (isEditMode) disabledColors else OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Blue600,
                 unfocusedBorderColor = Gray100,
             )
         )
 
-        // 4. 备注信息
+        // 4. 备注信息 (修改点：放开限制，无论新增还是编辑均可修改)
         OutlinedTextField(
             value = remark,
             onValueChange = { remark = it },
             label = { Text("备注信息 (可选)") },
-            placeholder = { Text("请输入设备部署位置或其他备注", color = Gray500) },
+            placeholder = { Text("请输入设备部署位置或其他备注", color = Gray400) },
+            // 移除了 enabled = !isEditMode，默认为 true
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             minLines = 3,
             maxLines = 5,
+            // 移除了 if (isEditMode) 判断，始终使用可编辑状态的颜色
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Blue600,
                 unfocusedBorderColor = Gray100,
+                focusedLabelColor = Blue600 // 保持与设备名称一致的选中高亮色
             )
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // 提交按钮
         Button(
             onClick = {
-                if (deviceName.isNotBlank() && serialNumber.isNotBlank() && selectedProduct != null) {
+                if (isFormValid) {
                     onSubmit(
                         deviceName,
-                        selectedProduct!!.id,
+                        selectedProduct?.id ?: editDevice?.productId,
                         serialNumber,
                         remark
                     )
@@ -623,11 +644,16 @@ fun AddDeviceBottomSheetContent(
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Blue600,
-                disabledContainerColor = Gray500
+                disabledContainerColor = Gray100,
+                disabledContentColor = Gray400
             ),
-            enabled = deviceName.isNotBlank() && serialNumber.isNotBlank() && selectedProduct != null
+            enabled = isFormValid
         ) {
-            Text("确认添加", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(
+                text = if (isEditMode) "保存修改" else "确认添加",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

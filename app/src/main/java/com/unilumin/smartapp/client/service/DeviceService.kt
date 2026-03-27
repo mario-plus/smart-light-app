@@ -18,12 +18,14 @@ import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RealTimeDataTs
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.data.SimpleProduct
+import com.unilumin.smartapp.client.data.UpdateDevice
 import com.unilumin.smartapp.client.data.WebRTCResponse
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Query
 
 
@@ -117,5 +119,8 @@ interface DeviceService {
 
     @POST(RequestPathKey.KEY_ADD_DEVICE)
     fun addDevice(@Body requestBody: AddDevice): Call<NewResponseData<Void?>?>?
+
+    @PUT(RequestPathKey.KEY_ADD_DEVICE)
+    fun updateDevice(@Body requestBody: UpdateDevice): Call<NewResponseData<Void?>?>?
 
 }

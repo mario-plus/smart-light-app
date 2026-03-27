@@ -20,6 +20,7 @@ import com.unilumin.smartapp.client.data.PagingState
 import com.unilumin.smartapp.client.data.RealTimeDataTs
 import com.unilumin.smartapp.client.data.SequenceTsl
 import com.unilumin.smartapp.client.data.SimpleProduct
+import com.unilumin.smartapp.client.data.UpdateDevice
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.util.TimeUtil
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -104,40 +105,31 @@ class DeviceViewModel(
     private val _deviceStatusAnalysis = MutableStateFlow<DeviceStatusAnalysisResp?>(null)
     val deviceStatusAnalysisData = _deviceStatusAnalysis.asStateFlow()
 
-    val devicePagingFlow =
-        createPagingFlow(
-            combine(
-                state,
-                productType,
-                searchQuery,
-                ::Triple
-            )
-        ) { (state, productType, keywords), page, size ->
-            fetchPageData {
-                deviceService.getDeviceList(
-                    keywords, page, size, productType.toLong(), state.takeIf { it != -1 }
-                )
-            }
+    val devicePagingFlow = createPagingFlow(
+        combine(
+            state, productType, searchQuery, ::Triple
+        )
+    ) { (state, productType, keywords), page, size ->
+        fetchPageData {
+            deviceService.getDeviceList(
+                keywords, page, size, productType.toLong(), state.takeIf { it != -1 })
         }
+    }
 
 
-    val envDevicePagingFlow =
-        createPagingFlow(
-            combine(
-                state,
-                productType,
-                searchQuery,
-                ::Triple
-            )
-        ) { (state, productType, keywords), page, size ->
-            getEnvDevices(
-                state = state,
-                productType = productType.toLong(),
-                searchQuery = keywords,
-                page = page,
-                pageSize = size
-            )
-        }
+    val envDevicePagingFlow = createPagingFlow(
+        combine(
+            state, productType, searchQuery, ::Triple
+        )
+    ) { (state, productType, keywords), page, size ->
+        getEnvDevices(
+            state = state,
+            productType = productType.toLong(),
+            searchQuery = keywords,
+            page = page,
+            pageSize = size
+        )
+    }
 
 
     val offlineDeviceList =
@@ -218,16 +210,16 @@ class DeviceViewModel(
 
     fun createDevice(device: AddDevice) {
         launchWithLoading {
-            try {
-                UniCallbackService.parseDataNewSuspend(
-                    deviceService.addDevice(device)
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            UniCallbackService.parseDataNewSuspend(deviceService.addDevice(device))
         }
     }
 
+
+    fun updateDevice(device: UpdateDevice) {
+        launchWithLoading {
+            UniCallbackService.parseDataNewSuspend(deviceService.updateDevice(device))
+        }
+    }
 
     fun loadChartData(
         deviceId: Long, startTime: String, endTime: String, key: String, type: Int

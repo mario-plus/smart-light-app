@@ -48,6 +48,7 @@ fun DeviceCardItem(
     iotDevice: IotDevice,
     productType: Long,
     onDetailClick: (IotDevice) -> Unit,
+    onEditClick: (IotDevice) -> Unit, // 新增：向外暴露编辑事件
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
@@ -70,12 +71,8 @@ fun DeviceCardItem(
                 iconBg = iconBg,
                 iconTint = iconTint,
                 onClick = { onDetailClick(iotDevice) },
-                onLongClick = {
-                    //TODO 编辑设备
-
-                }
+                onLongClick = { onEditClick(iotDevice) }
             )
-            // 动态内容区域 (比如设备特有的控制面板)
             content()
         }
     }
@@ -94,7 +91,7 @@ fun DeviceHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .combinedClickable(onClick = onClick, onLongClick = { onLongClick })
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick) // 修复：正确绑定方法引用
     ) {
         // --- 第一部分：上半区核心信息 (图标 + 文字 + 状态标签) ---
         Row(

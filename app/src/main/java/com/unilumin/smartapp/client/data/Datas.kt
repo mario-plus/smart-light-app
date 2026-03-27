@@ -51,7 +51,8 @@ data class IotDevice(
     //工作状态: 1告警 0正常
     var alarmType: Int? = null,
     //遥测实时信息
-    var telemetryList: List<EnvTelBO>
+    var telemetryList: List<EnvTelBO>,
+    var description: String
 )
 
 data class LoopInfo(
@@ -1559,6 +1560,15 @@ data class AddDevice(
     val deviceName: String,
     val description: String,
     val serialNum: String,
-    val productId:Long,
+    val productId: Long,
+    val productTypeId: Long
+)
+
+data class UpdateDevice(
+    val id: Long,
+    val deviceName: String,
+    val description: String,
+    val serialNum: String,
+    val productId: Long,
     val productTypeId: Long
 )
