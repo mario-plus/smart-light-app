@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
+import com.unilumin.smartapp.client.data.AddDevice
 import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceDetail
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
@@ -16,6 +17,7 @@ import com.unilumin.smartapp.client.data.OfflineDevice
 import com.unilumin.smartapp.client.data.PageResponse
 import com.unilumin.smartapp.client.data.RealTimeDataTs
 import com.unilumin.smartapp.client.data.SequenceTsl
+import com.unilumin.smartapp.client.data.SimpleProduct
 import com.unilumin.smartapp.client.data.WebRTCResponse
 import retrofit2.Call
 import retrofit2.http.Body
@@ -107,5 +109,13 @@ interface DeviceService {
      * */
     @GET(RequestPathKey.KEY_GET_PRODUCT_LIST)
     fun getProductList(productTypeId: Int): Call<NewResponseData<List<IotProductDetail>?>?>?
+
+
+    @GET(RequestPathKey.KEY_GET_SIMPLE_PRODUCT_LIST)
+    fun getSimpleProductList(@Query("productTypeId") productTypeId: Int): Call<NewResponseData<List<SimpleProduct>?>?>?
+
+
+    @POST(RequestPathKey.KEY_ADD_DEVICE)
+    fun addDevice(@Body requestBody: AddDevice): Call<NewResponseData<Void?>?>?
 
 }

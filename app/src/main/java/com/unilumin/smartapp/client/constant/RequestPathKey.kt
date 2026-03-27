@@ -124,6 +124,7 @@ object RequestPathKey {
 
     //创建策略
     const val KEY_CREATE_STRATEGY: String = "$SMART_ROAD_LAMPS/uni_light_strategy"
+
     //更新策略
     const val KEY_UPDATE_STRATEGY: String = "$SMART_ROAD_LAMPS/uni_light_updateStrategy"
 
@@ -159,6 +160,12 @@ object RequestPathKey {
 
     //产品详情
     const val KEY_GET_PRODUCT_LIST: String = "$IOT_HUB_MANAGER/iot_product_list"
+
+    //产品列表
+    const val KEY_GET_SIMPLE_PRODUCT_LIST: String = "$IOT_HUB_MANAGER/simple_product_list"
+
+    //添加设备
+    const val KEY_ADD_DEVICE: String = "$IOT_HUB_MANAGER/iot_device"
 
 
 }

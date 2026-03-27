@@ -100,5 +100,7 @@ dependencies {
     implementation(libs.androidx.media3.ui.v121)
     implementation(libs.androidx.media3.datasource.okhttp)
 
+    implementation (libs.quickie)
+
 
 }

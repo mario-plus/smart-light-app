@@ -7,6 +7,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
+import com.unilumin.smartapp.client.data.AddDevice
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
@@ -18,6 +19,7 @@ import com.unilumin.smartapp.client.data.IotDevice
 import com.unilumin.smartapp.client.data.PagingState
 import com.unilumin.smartapp.client.data.RealTimeDataTs
 import com.unilumin.smartapp.client.data.SequenceTsl
+import com.unilumin.smartapp.client.data.SimpleProduct
 import com.unilumin.smartapp.client.service.DeviceService
 import com.unilumin.smartapp.util.TimeUtil
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,6 +83,9 @@ class DeviceViewModel(
     private val _historyDataList = MutableStateFlow<List<HistoryData>>(emptyList())
     val historyDataList = _historyDataList.asStateFlow()
 
+    private val _simpleProductList = MutableStateFlow<List<SimpleProduct>>(emptyList())
+    val simpleProductList = _simpleProductList.asStateFlow()
+
     private val _pagingState = MutableStateFlow(PagingState())
     val pagingState = _pagingState.asStateFlow()
 
@@ -114,6 +119,7 @@ class DeviceViewModel(
                 )
             }
         }
+
 
     val envDevicePagingFlow =
         createPagingFlow(
@@ -194,6 +200,34 @@ class DeviceViewModel(
             }
         }
     }
+
+    fun getSimpleProductList() {
+        launchWithLoading {
+            try {
+                var parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+                    deviceService.getSimpleProductList(productType.value.toInt())
+                )
+                if (parseDataNewSuspend != null) {
+                    _simpleProductList.value = parseDataNewSuspend
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun createDevice(device: AddDevice) {
+        launchWithLoading {
+            try {
+                UniCallbackService.parseDataNewSuspend(
+                    deviceService.addDevice(device)
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
 
     fun loadChartData(
         deviceId: Long, startTime: String, endTime: String, key: String, type: Int

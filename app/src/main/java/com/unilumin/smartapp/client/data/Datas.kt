@@ -1546,3 +1546,19 @@ data class PolicyConfig(
     //最大size
     val maxSize: Long = 0L
 )
+
+data class SimpleProduct(
+    val id: Long,
+    val name: String,
+    val productTypeId: Long,
+    val functionId: Long,
+    val model: String
+)
+
+data class AddDevice(
+    val deviceName: String,
+    val description: String,
+    val serialNum: String,
+    val productId:Long,
+    val productTypeId: Long
+)
