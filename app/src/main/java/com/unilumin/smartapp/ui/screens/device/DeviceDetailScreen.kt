@@ -10,21 +10,39 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,8 +51,11 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -58,10 +79,14 @@ import com.unilumin.smartapp.ui.components.FilterChip
 import com.unilumin.smartapp.ui.components.HistoryDataListView
 import com.unilumin.smartapp.ui.components.LoadingContent
 import com.unilumin.smartapp.ui.screens.dialog.ChartDataDialog
+import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.CardWhite
+import com.unilumin.smartapp.ui.theme.Gray100
+import com.unilumin.smartapp.ui.theme.Gray400
+import com.unilumin.smartapp.ui.theme.Gray500
+import com.unilumin.smartapp.ui.theme.Gray900
 import com.unilumin.smartapp.ui.theme.PageBackground
 import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
-
 
 /**
  * 设备详情页面
@@ -72,7 +97,6 @@ import com.unilumin.smartapp.ui.viewModel.DeviceViewModel
 fun DeviceDetailScreen(
     iotDevice: IotDevice, retrofitClient: RetrofitClient, onBack: () -> Unit
 ) {
-
     val context = LocalContext.current
     val application = context.applicationContext as Application
 
@@ -81,40 +105,35 @@ fun DeviceDetailScreen(
             return DeviceViewModel(retrofitClient, application) as T
         }
     })
+
     // 状态管理
     var selectedLabel by remember { mutableStateOf(DETAIL) }
 
-    //卡片-遥测，属性历史数据
+    // 卡片-遥测，属性历史数据
     var selectedDeviceModelData by remember { mutableStateOf<DeviceModelData?>(null) }
     var showChartDialog by remember { mutableStateOf(false) }
 
-    //记录时间区间
+    // 编辑配置弹窗控制状态
+    var showEditConfigSheet by remember { mutableStateOf(false) }
+    val configSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // 记录时间区间
     val tabDatesMap = remember { mutableStateMapOf<String, Pair<String, String>>() }
     val currentRange = tabDatesMap[selectedLabel] ?: ("" to "")
     val currentStart = currentRange.first
     val currentEnd = currentRange.second
 
-    //服务
+    // 服务状态收集
     val chartDataList by deviceViewModel.chartDataList.collectAsState()
-    //基础信息
     val baseInfoList by deviceViewModel.baseInfoList.collectAsState()
-    //设备认证配置
     val deviceConfigList by deviceViewModel.deviceConfigList.collectAsState()
-    //服务
     val deviceServiceDataList by deviceViewModel.deviceServiceDataList.collectAsState()
-    //属性
     val devicePropertiesDataList by deviceViewModel.devicePropertiesDataList.collectAsState()
-    //事件
     val deviceEventsDataList by deviceViewModel.deviceEventsDataList.collectAsState()
-    //遥测
     val deviceTelemetryDataList by deviceViewModel.deviceTelemetryDataList.collectAsState()
-    //历史数据
     val historyDataList by deviceViewModel.historyDataList.collectAsState()
-    //分页状态
     val pagingState by deviceViewModel.pagingState.collectAsState()
-    // 观察 ViewModel 状态
     val isLoading by deviceViewModel.isLoading.collectAsState()
-
 
     // 自动触发数据加载
     LaunchedEffect(selectedLabel) {
@@ -135,6 +154,30 @@ fun DeviceDetailScreen(
                 currentRange.second,
                 true,
                 listOf("onLine", "offLine")
+            )
+        }
+    }
+    if (showEditConfigSheet) {
+        val editableConfigs = remember(deviceConfigList) {
+            deviceConfigList.map { (_, value) ->
+                value.key to (value.value?.toString() ?: "")
+            }
+        }
+
+        ModalBottomSheet(
+            onDismissRequest = { showEditConfigSheet = false },
+            sheetState = configSheetState,
+            containerColor = Color.White,
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            EditConfigBottomSheetContent(
+                initialConfigs = editableConfigs,
+                onDismiss = { showEditConfigSheet = false },
+                onSubmit = { updatedConfigs ->
+                    deviceViewModel.saveDeviceConfig(iotDevice.id, updatedConfigs, onSuccess = {
+                        showEditConfigSheet = false
+                    })
+                }
             )
         }
     }
@@ -185,20 +228,46 @@ fun DeviceDetailScreen(
                                             item {
                                                 DetailCard(title = "基础信息") {
                                                     baseInfoList.forEach { (key, value) ->
-                                                        DetailRow(
-                                                            key, value
-                                                        )
+                                                        DetailRow(key, value)
                                                     }
                                                 }
                                             }
                                         }
                                         if (deviceConfigList.isNotEmpty()) {
                                             item {
-                                                DetailCard(title = "设备配置信息") {
+                                                DetailCard(
+                                                    title = "设备配置信息",
+                                                    titleAction = {
+                                                        TextButton(
+                                                            onClick = {
+                                                                showEditConfigSheet = true
+                                                            },
+                                                            contentPadding = PaddingValues(
+                                                                horizontal = 8.dp,
+                                                                vertical = 0.dp
+                                                            ),
+                                                            modifier = Modifier.height(32.dp)
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Edit,
+                                                                contentDescription = "编辑配置",
+                                                                modifier = Modifier.size(16.dp),
+                                                                tint = Blue600
+                                                            )
+                                                            Spacer(modifier = Modifier.width(4.dp))
+                                                            Text(
+                                                                text = "编辑配置",
+                                                                fontSize = 13.sp,
+                                                                fontWeight = FontWeight.Medium,
+                                                                color = Blue600
+                                                            )
+                                                        }
+                                                    }
+                                                ) {
                                                     deviceConfigList.forEach { (key, value) ->
                                                         DetailRow(
                                                             label = key ?: "未知",
-                                                            value = value ?: "--"
+                                                            value = value.value?.toString() ?: "--"
                                                         )
                                                     }
                                                 }
@@ -219,15 +288,14 @@ fun DeviceDetailScreen(
                                                         )
                                                     ) {
                                                         deviceServiceDataList.forEach { e ->
-                                                            DeviceTag(
-                                                                e.name
-                                                            )
+                                                            DeviceTag(e.name)
                                                         }
                                                     }
                                                 }
                                             }
                                         }
                                     }
+
                                     PROPERTY, TELEMETRY -> {
                                         val (dataList, emptyText) = if (selectedLabel == PROPERTY) {
                                             devicePropertiesDataList to "暂无属性数据"
@@ -256,7 +324,7 @@ fun DeviceDetailScreen(
                     }
 
                     NETWORK -> {
-                        var keys = listOf("onLine", "offLine")
+                        val keys = listOf("onLine", "offLine")
                         HistoryDataListView(
                             limitDays = 14,
                             startDate = currentStart,
@@ -277,7 +345,7 @@ fun DeviceDetailScreen(
                     }
 
                     EVENT -> {
-                        var keys = deviceEventsDataList.map { it.key }
+                        val keys = deviceEventsDataList.map { it.key }
                         HistoryDataListView(
                             limitDays = 14,
                             startDate = currentStart,
@@ -299,10 +367,11 @@ fun DeviceDetailScreen(
                             })
                     }
                 }
-
             }
         }
     }
+
+    // 图表弹窗
     if (showChartDialog && selectedDeviceModelData != null) {
         ChartDataDialog(selectedDeviceModelData = selectedDeviceModelData, onDismiss = {
             showChartDialog = false
@@ -313,7 +382,6 @@ fun DeviceDetailScreen(
         })
     }
 }
-
 
 /**
  * 美观的标签组件
@@ -334,3 +402,95 @@ fun DeviceTag(text: String) {
     }
 }
 
+/**
+ * 设备配置编辑 BottomSheet 动态表单组件
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditConfigBottomSheetContent(
+    initialConfigs: List<Pair<String, String>>,
+    onDismiss: () -> Unit,
+    onSubmit: (Map<String, String>) -> Unit
+) {
+    // 动态管理多个表单域的状态
+    val formState = remember {
+        mutableStateMapOf<String, String>().apply {
+            initialConfigs.forEach { (key, value) -> put(key, value) }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 32.dp, top = 8.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
+        // --- 头部标题与关闭按钮 ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "编辑设备配置",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Gray900
+            )
+            IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Close, contentDescription = "关闭", tint = Gray500)
+            }
+        }
+
+        // --- 动态渲染配置项输入框 ---
+        if (initialConfigs.isEmpty()) {
+            Text(
+                text = "暂无可编辑的配置项",
+                color = Gray400,
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
+        } else {
+            initialConfigs.forEach { (key, _) ->
+                OutlinedTextField(
+                    value = formState[key] ?: "",
+                    onValueChange = { newValue -> formState[key] = newValue },
+                    label = { Text(key) },
+                    placeholder = { Text("请输入 $key", color = Gray400) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Blue600,
+                        unfocusedBorderColor = Gray100,
+                        focusedLabelColor = Blue600
+                    )
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // --- 提交按钮 ---
+        Button(
+            onClick = { onSubmit(formState.toMap()) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Blue600,
+                disabledContainerColor = Gray100,
+                disabledContentColor = Gray400
+            ),
+            enabled = initialConfigs.isNotEmpty() // 无配置项时不可提交
+        ) {
+            Text(
+                text = "保存配置",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}

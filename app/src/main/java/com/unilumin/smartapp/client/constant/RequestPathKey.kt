@@ -167,5 +167,7 @@ object RequestPathKey {
     //添加设备
     const val KEY_ADD_DEVICE: String = "$IOT_HUB_MANAGER/iot_device"
 
+    const val KEY_SAVE_DEVICE_CONFIG: String = "$IOT_HUB_MANAGER/setDeviceConfig"
+
 
 }

@@ -8,6 +8,7 @@ import com.google.gson.JsonParser
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.data.AddDevice
+import com.unilumin.smartapp.client.data.DeviceConfig
 import com.unilumin.smartapp.client.data.DeviceModelData
 import com.unilumin.smartapp.client.data.DeviceRealTimeDataReq
 import com.unilumin.smartapp.client.data.DeviceStatusAnalysisResp
@@ -100,7 +101,8 @@ class DeviceViewModel(
         _chartDataList.value = emptyList()
     }
 
-    private val _deviceConfigList = MutableStateFlow<Map<String, String>>(emptyMap())
+    //设备配置信息
+    private val _deviceConfigList = MutableStateFlow<Map<String, DeviceConfig>>(emptyMap())
     val deviceConfigList = _deviceConfigList.asStateFlow()
 
     private val _deviceStatusAnalysis = MutableStateFlow<DeviceStatusAnalysisResp?>(null)
@@ -228,6 +230,18 @@ class DeviceViewModel(
         }
     }
 
+    fun saveDeviceConfig(
+        deviceId: Long,
+        config: Map<String, String>,
+        onSuccess: (() -> Unit)? = null,
+    ) {
+        launchWithLoading(onSuccess = onSuccess) {
+            UniCallbackService.parseDataNewSuspend(deviceService.saveDeviceConfig(deviceId, config))
+
+            refreshDeviceConfig(deviceId)
+        }
+    }
+
     fun loadChartData(
         deviceId: Long, startTime: String, endTime: String, key: String, type: Int
     ) {
@@ -311,17 +325,27 @@ class DeviceViewModel(
                     _telemetryList.value = getDeviceModelData(jsonObject, "telemetry")
                     _eventList.value = getDeviceModelData(jsonObject, "events")
                 }
-                val deviceConfig = UniCallbackService.parseDataNewSuspend(
-                    deviceService.getDeviceConfig(deviceId)
-                )
-                deviceConfig?.let { configs ->
-                    val newConfigMap = mutableMapOf<String, String>()
-                    configs.forEach { config ->
-                        newConfigMap[config.keyDes] = config.value
-                    }
-                    _deviceConfigList.value = newConfigMap
-                }
+                refreshDeviceConfig(deviceId)
             }
+        }
+    }
+
+
+    // 单独拉取并刷新设备配置
+    suspend fun refreshDeviceConfig(deviceId: Long) {
+        try {
+            val deviceConfig = UniCallbackService.parseDataNewSuspend(
+                deviceService.getDeviceConfig(deviceId)
+            )
+            deviceConfig?.let { configs ->
+                val newConfigMap = mutableMapOf<String, DeviceConfig>()
+                configs.forEach { config ->
+                    newConfigMap[config.keyDes] = config
+                }
+                _deviceConfigList.value = newConfigMap
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -376,15 +400,31 @@ class DeviceViewModel(
         val list = mutableListOf<DeviceModelData>()
         jsonObject.getAsJsonArray(type)?.forEach { element ->
             val asJsonObject = element.asJsonObject
-            val specsObject = asJsonObject.get("specs")?.asJsonObject
-            val unit = specsObject?.get("unit")?.takeIf { it.isJsonPrimitive }?.asString ?: ""
+            val specsElement = asJsonObject.get("specs")
+            val specsObject = when {
+                specsElement == null || specsElement.isJsonNull -> null
+                specsElement.isJsonObject -> specsElement.asJsonObject
+                specsElement.isJsonArray -> {
+                    val array = specsElement.asJsonArray
+                    if (array.size() > 0 && array[0].isJsonObject) {
+                        array[0].asJsonObject
+                    } else null
+                }
+
+                else -> null
+            }
+            val unit =
+                specsObject?.get("unit")?.takeIf { !it.isJsonNull && it.isJsonPrimitive }?.asString
+                    ?: ""
             list.add(
                 DeviceModelData(
-                    key = asJsonObject.get("id").asString,
-                    name = asJsonObject.get("name").asString,
-                    keyDes = asJsonObject.get("description").asString,
+                    key = asJsonObject.get("id")?.takeIf { !it.isJsonNull }?.asString
+                        ?: "",
+                    name = asJsonObject.get("name")?.takeIf { !it.isJsonNull }?.asString ?: "",
+                    keyDes = asJsonObject.get("description")?.takeIf { !it.isJsonNull }?.asString
+                        ?: "",
                     unit = unit,
-                    type = asJsonObject.get("type")?.asString ?: ""
+                    type = asJsonObject.get("type")?.takeIf { !it.isJsonNull }?.asString ?: ""
                 )
             )
         }

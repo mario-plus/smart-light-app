@@ -167,7 +167,6 @@ import com.unilumin.smartapp.ui.theme.Blue50
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.BluePrimary
 import com.unilumin.smartapp.ui.theme.Border
-import com.unilumin.smartapp.ui.theme.CardWhite
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.DividerColor
 import com.unilumin.smartapp.ui.theme.Gray100
@@ -406,22 +405,41 @@ fun DeviceStatus(
 
 
 @Composable
-fun DetailCard(title: String, content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier
+fun DetailCard(
+    title: String,
+    modifier: Modifier = Modifier,
+    titleAction: (@Composable () -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        color = Color.White,
+        shape = RoundedCornerShape(6.dp),
+        shadowElevation = 0.5.dp,
+        modifier = modifier
             .fillMaxWidth()
-            .shadow(elevation = 0.5.dp, shape = RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardWhite)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = title,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = ControlBlue, // 标题使用品牌色突出
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
+        Column(
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween, // 左右两端对齐
+                verticalAlignment = Alignment.CenterVertically // 垂直居中对齐
+            ) {
+                // 左侧标题
+                Text(
+                    text = title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1F2937) // 比如 Gray900
+                )
+                if (titleAction != null) {
+                    titleAction()
+                }
+            }
             content()
         }
     }

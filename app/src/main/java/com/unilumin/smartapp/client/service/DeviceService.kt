@@ -129,5 +129,11 @@ interface DeviceService {
     @HTTP(method = "DELETE", path = RequestPathKey.KEY_ADD_DEVICE, hasBody = true)
     fun deleteDevice(@Body requestBody: IdsBody): Call<NewResponseData<Void?>?>?
 
+    @POST(RequestPathKey.KEY_SAVE_DEVICE_CONFIG)
+    fun saveDeviceConfig(
+        @Query("deviceId") deviceId: Long,
+        @Body data: Map<String, String>
+    ): Call<NewResponseData<Void?>?>?
+
 
 }
