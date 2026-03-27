@@ -3,7 +3,7 @@ package com.unilumin.smartapp.ui.screens.device
 import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,7 +69,11 @@ fun DeviceCardItem(
                 productType = productType,
                 iconBg = iconBg,
                 iconTint = iconTint,
-                onClick = { onDetailClick(iotDevice) }
+                onClick = { onDetailClick(iotDevice) },
+                onLongClick = {
+                    //TODO 编辑设备
+
+                }
             )
             // 动态内容区域 (比如设备特有的控制面板)
             content()
@@ -83,13 +87,14 @@ fun DeviceHeader(
     productType: Long,
     iconBg: Color,
     iconTint: Color,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = { onLongClick })
     ) {
         // --- 第一部分：上半区核心信息 (图标 + 文字 + 状态标签) ---
         Row(

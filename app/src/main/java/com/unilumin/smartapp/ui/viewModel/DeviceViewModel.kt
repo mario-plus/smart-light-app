@@ -202,7 +202,7 @@ class DeviceViewModel(
     }
 
     fun getSimpleProductList() {
-        launchWithLoading {
+        launchDirect {
             try {
                 var parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
                     deviceService.getSimpleProductList(productType.value.toInt())

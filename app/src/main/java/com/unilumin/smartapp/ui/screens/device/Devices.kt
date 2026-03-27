@@ -225,130 +225,127 @@ fun DevicesScreen(
                 })
         }
     }
-
-    LoadingContent(isLoading) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Gray100)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Gray100)
+    ) {
+        Surface(
+            color = White, shadowElevation = 2.dp, modifier = Modifier
+                .fillMaxWidth()
+                .zIndex(1f)
         ) {
-            Surface(
-                color = White, shadowElevation = 2.dp, modifier = Modifier
-                    .fillMaxWidth()
-                    .zIndex(1f)
-            ) {
-                Column(modifier = Modifier.padding(bottom = 8.dp)) {
-                    // 1. 标题栏
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "设备列表",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Gray900
-                        )
+            Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                // 1. 标题栏
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "设备列表",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Gray900
+                    )
 
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Rounded.FilterList, null, tint = Gray500)
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Rounded.FilterList, null, tint = Gray500)
 
-                            ReferenceStyleDropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false },
-                                items = smartApps,
-                                onItemClick = { systemConfig ->
-                                    showMenu = false
-                                    onMenuClick(systemConfig.id)
-                                })
-                        }
+                        ReferenceStyleDropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            items = smartApps,
+                            onItemClick = { systemConfig ->
+                                showMenu = false
+                                onMenuClick(systemConfig.id)
+                            })
                     }
-
-                    // 2. 状态筛选 + 搜索框 (合并在一行)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // --- 状态选择下拉框 ---
-                        Box {
-                            Row(
-                                modifier = Modifier
-                                    .height(48.dp)
-                                    .clip(RoundedCornerShape(24.dp))
-                                    .background(Gray100)
-                                    .clickable { statusExpanded = true }
-                                    .padding(start = 12.dp, end = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = DeviceConstant.statusOptions.find { it.first == deviceState }?.second
-                                        ?: "状态",
-                                    fontSize = 14.sp,
-                                    color = Gray900,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.ArrowDropDown,
-                                    contentDescription = null,
-                                    tint = Gray500,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            DropdownMenu(
-                                expanded = statusExpanded,
-                                onDismissRequest = { statusExpanded = false },
-                                modifier = Modifier.background(Color.White)
-                            ) {
-                                DeviceConstant.statusOptions.forEach { (value, label) ->
-                                    DropdownMenuItem(text = {
-                                        Text(
-                                            text = label,
-                                            fontSize = 14.sp,
-                                            color = if (value == deviceState) Blue600 else Gray900,
-                                            fontWeight = if (value == deviceState) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    }, onClick = {
-                                        deviceViewModel.updateState(value)
-                                        statusExpanded = false
-                                    })
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        // --- 搜索框 ---
-                        SearchBar(
-                            query = searchQuery,
-                            onQueryChange = { deviceViewModel.updateSearch(it) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // 3. 筛选区域
-                    DeviceFilterSection(
-                        activeTypes = activeTypes,
-                        selectedId = productType.toLong(),
-                        onSelect = { id -> deviceViewModel.updateFilter(id) })
                 }
+
+                // 2. 状态筛选 + 搜索框 (合并在一行)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // --- 状态选择下拉框 ---
+                    Box {
+                        Row(
+                            modifier = Modifier
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(Gray100)
+                                .clickable { statusExpanded = true }
+                                .padding(start = 12.dp, end = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = DeviceConstant.statusOptions.find { it.first == deviceState }?.second
+                                    ?: "状态",
+                                fontSize = 14.sp,
+                                color = Gray900,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = null,
+                                tint = Gray500,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = statusExpanded,
+                            onDismissRequest = { statusExpanded = false },
+                            modifier = Modifier.background(Color.White)
+                        ) {
+                            DeviceConstant.statusOptions.forEach { (value, label) ->
+                                DropdownMenuItem(text = {
+                                    Text(
+                                        text = label,
+                                        fontSize = 14.sp,
+                                        color = if (value == deviceState) Blue600 else Gray900,
+                                        fontWeight = if (value == deviceState) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }, onClick = {
+                                    deviceViewModel.updateState(value)
+                                    statusExpanded = false
+                                })
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // --- 搜索框 ---
+                    SearchBar(
+                        query = searchQuery,
+                        onQueryChange = { deviceViewModel.updateSearch(it) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // 3. 筛选区域
+                DeviceFilterSection(
+                    activeTypes = activeTypes,
+                    selectedId = productType.toLong(),
+                    onSelect = { id -> deviceViewModel.updateFilter(id) })
             }
-            // 分页列表展示
+        }
+        LoadingContent(isLoading) {
             PagingList(
                 totalCount = totalCount.value,
                 lazyPagingItems = lazyPagingItems,
-                forceLoading = isLoading,
+                forceLoading = false,
                 modifier = Modifier.weight(1f),
                 itemKey = { device -> device.id },
                 emptyMessage = "未找到相关设备",
                 onAddClick = {
-                    // 触发弹出层前先拉取产品列表数据
                     deviceViewModel.getSimpleProductList()
                     showAddDeviceSheet = true
                 },
@@ -361,7 +358,6 @@ fun DevicesScreen(
             }
         }
     }
-
 }
 
 @OptIn(ExperimentalLayoutApi::class)
