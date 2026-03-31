@@ -131,6 +131,10 @@ object RequestPathKey {
     //下发策略
     const val KEY_SYNC_STRATEGY: String = "$SMART_ROAD_LAMPS/uni_light_send_strategy"
 
+    //取消任务
+    const val KEY_CANCEL_TASK: String = "$SMART_ROAD_LAMPS/uni_light_cancelTaskById"
+
+
     //设备列表
     const val KEY_GET_DEVICE: String = "$IOT_HUB_MANAGER/iot_device_page"
 

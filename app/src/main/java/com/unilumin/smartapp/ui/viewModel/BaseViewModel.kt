@@ -45,6 +45,7 @@ open class BaseViewModel(application: Application) : AndroidViewModel(applicatio
     protected fun launchWithLoading(
         showErrorToast: Boolean = true,
         onSuccess: (() -> Unit)? = null,
+        onFailed: (() -> Unit)? = null,
         consumer: suspend () -> Unit
     ) {
         viewModelScope.launch {
@@ -58,6 +59,7 @@ open class BaseViewModel(application: Application) : AndroidViewModel(applicatio
                     val errorMsg = e.message ?: "未知错误"
                     ToastUtil.showError(context, "操作失败: $errorMsg")
                 }
+                onFailed?.invoke()
             } finally {
                 _isLoading.value = false
             }

@@ -475,10 +475,10 @@ class LampViewModel(
     }
 
     //创建并同步
-    fun saveStrategyAndSync(body: StrategyDTO) {
+    fun saveStrategyAndSync(body: StrategyDTO, onSuccess: (() -> Unit)? = null) {
         var toJson = JsonUtils.gson.toJson(body)
         Log.e("TAG", "saveStrategyAndSync: $toJson")
-        launchWithLoading {
+        launchWithLoading(onSuccess = onSuccess) {
             val call: Call<NewResponseData<Long?>?>? = roadService.saveStrategy(body)
             var parseDataNewSuspend = parseDataNewSuspend(call)
             if (parseDataNewSuspend != null) {
@@ -490,12 +490,19 @@ class LampViewModel(
 
 
     //更新并同步
-    fun updateStrategyAndSync(body: StrategyDTO) {
+    fun updateStrategyAndSync(body: StrategyDTO, onSuccess: (() -> Unit)? = null) {
         var toJson = JsonUtils.gson.toJson(body)
         Log.e("TAG", "updateStrategyAndSync: $toJson")
-        launchWithLoading {
+        launchWithLoading(onSuccess = onSuccess) {
             parseDataNewSuspend(roadService.updateStrategy(body))
             parseDataNewSuspend(roadService.syncStrategy(IdBody(id = body.id!!)))
+        }
+    }
+
+    //取消任务
+    fun cancelTaskById(id: Long, onSuccess: (() -> Unit)? = null) {
+        launchWithLoading(onSuccess = onSuccess) {
+            parseDataNewSuspend(roadService.cancelTask(id))
         }
     }
 

@@ -488,10 +488,16 @@ fun LampStrategyOptContent(
                     key = realKey
                 )
 
-                Log.d(TAG, "Parsed PolicyConfig result -> ActionTypes Size: ${config.actionTypes.size}, PeriodTypes Size: ${config.periodTypes.size}")
+                Log.d(
+                    TAG,
+                    "Parsed PolicyConfig result -> ActionTypes Size: ${config.actionTypes.size}, PeriodTypes Size: ${config.periodTypes.size}"
+                )
 
                 if (config.actionTypes.isEmpty()) {
-                    Log.w(TAG, "⚠️ 警告: 该产品 (${product.productName}) 获取到的动作类型为空！请检查下发的 JSON 是否包含正确的节点 [$realKey]。")
+                    Log.w(
+                        TAG,
+                        "⚠️ 警告: 该产品 (${product.productName}) 获取到的动作类型为空！请检查下发的 JSON 是否包含正确的节点 [$realKey]。"
+                    )
                     // 如果数据不大，可以把获取到的完整 Json 打印一部分出来观察
                     Log.w(TAG, "JSON 截断内容: ${policyContent.toString().take(1000)}")
                 }
@@ -504,7 +510,10 @@ fun LampStrategyOptContent(
         }
 
     LaunchedEffect(policyConfig, formState.initializedStrategyId) {
-        Log.d(TAG, "LaunchedEffect(policyConfig check): formId=${formState.initializedStrategyId}, actionSize=${policyConfig.actionTypes.size}")
+        Log.d(
+            TAG,
+            "LaunchedEffect(policyConfig check): formId=${formState.initializedStrategyId}, actionSize=${policyConfig.actionTypes.size}"
+        )
         if (formState.initializedStrategyId != null && policyConfig.actionTypes.isNotEmpty()) {
             formState.bindActions(policyConfig.actionTypes)
         }
@@ -666,6 +675,8 @@ private fun StepTwoStrategyDetails(
     initialStrategy: LampStrategyInfo?,
     onBack: () -> Unit
 ) {
+    val lampStrategyFlow = viewModel.lampStrategyFlow.collectAsLazyPagingItems()
+
     if (isLoading) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -718,7 +729,16 @@ private fun StepTwoStrategyDetails(
         }
         Spacer(modifier = Modifier.weight(1f))
         Button(
-            onClick = { submitStrategy(state, viewModel, dateFormatter, initialStrategy?.id, onBack) },
+            onClick = {
+                submitStrategy(
+                    state,
+                    viewModel,
+                    dateFormatter,
+                    initialStrategy?.id,
+                    onSuccess = { lampStrategyFlow.refresh() },
+                    onBack = onBack
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
@@ -1212,6 +1232,7 @@ private fun submitStrategy(
     viewModel: LampViewModel,
     dateFormatter: SimpleDateFormat,
     editId: Long?,
+    onSuccess: (() -> Unit)? = null,
     onBack: () -> Unit
 ) {
     val strategyContent = mutableListOf<JsonObject>()
@@ -1240,7 +1261,7 @@ private fun submitStrategy(
                     week = weekString,
                     days = daysData
                 )
-                val actionTypeStr =  e.actionType?.first?.toString()
+                val actionTypeStr = e.actionType?.first?.toString()
                 val action = StrategyAction(
                     actionType = actionTypeStr,
                     actionValue = e.actionValue.toIntOrNull()
@@ -1314,11 +1335,10 @@ private fun submitStrategy(
             subSystemType = 1
         )
         if (editId == null) {
-            viewModel.saveStrategyAndSync(strategyDTO)
+            viewModel.saveStrategyAndSync(strategyDTO, onSuccess = onSuccess)
         } else {
-            viewModel.updateStrategyAndSync(strategyDTO)
+            viewModel.updateStrategyAndSync(strategyDTO, onSuccess = onSuccess)
         }
-
         onBack()
     }
 }
