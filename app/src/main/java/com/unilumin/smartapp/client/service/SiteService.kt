@@ -33,6 +33,12 @@ interface SiteService {
     ): Call<NewResponseData<PageResponse<SiteInfo>?>?>?
 
 
+    //站点聚合
     @POST(RequestPathKey.LEY_SITE_MAP_POINT)
     fun getSiteAggPoint(@Body req: PoleMapPointReq): Call<NewResponseData<List<PoleMapPointRes>?>?>?
+
+    //站点详情信息
+    @GET(RequestPathKey.KEY_SITE_DETAIL)
+    fun getSiteDetail(@Query("id") id: Long): Call<NewResponseData<SiteInfo?>?>?
+
 }

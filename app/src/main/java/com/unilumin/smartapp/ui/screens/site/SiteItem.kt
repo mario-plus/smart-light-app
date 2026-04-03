@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.ui.screens.site
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -44,26 +46,24 @@ import com.unilumin.smartapp.ui.theme.Gray900
 fun SiteCardItem(siteInfo: SiteInfo, onClick: () -> Unit) {
     ElevatedCard(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp), // 保持大圆角
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), // 降低阴影，更扁平
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // ================== 1. 头部：图标 + 标题 + 胶囊标签 ==================
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // 图标容器：增加一点渐变感或更柔和的背景
                 Surface(
                     shape = CircleShape,
-                    color = Blue50, // 浅蓝色背景
+                    color = Blue50,
                     modifier = Modifier.size(44.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = Icons.Rounded.Business, // 或其他图标
+                            imageVector = Icons.Rounded.Business,
                             contentDescription = null,
                             tint = Blue600,
                             modifier = Modifier.size(24.dp)
@@ -73,11 +73,10 @@ fun SiteCardItem(siteInfo: SiteInfo, onClick: () -> Unit) {
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // 标题与编号
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = siteInfo.name ?: "未知站点",
-                        fontSize = 17.sp, // 稍微加大
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = Gray900,
                         maxLines = 1,
@@ -87,32 +86,39 @@ fun SiteCardItem(siteInfo: SiteInfo, onClick: () -> Unit) {
                     Text(
                         text = "NO.${siteInfo.number ?: "-"}",
                         fontSize = 13.sp,
-                        color = Gray400, // 颜色更淡一点，拉开层次
-                        fontFamily = FontFamily.Monospace // 等宽字体显示编号更有科技感
+                        color = Gray400,
+                        fontFamily = FontFamily.Monospace
                     )
                 }
 
-                // 数量标签：改为实心胶囊，去边框
+                val deviceCount = siteInfo.deviceNum ?: 0
+                val hasDevices = deviceCount > 0
+
                 Surface(
-                    color = if ((siteInfo.deviceNum ?: 0) > 0) Blue50 else Gray100, // 有设备亮蓝，无设备置灰
-                    shape = RoundedCornerShape(50), // 完全圆角
-                    modifier = Modifier.padding(start = 8.dp)
+                    color = if (hasDevices) Blue50 else Gray100,
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .clip(RoundedCornerShape(50))
+                        .clickable(enabled = hasDevices) {
+                            onClick()
+                        }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "${siteInfo.deviceNum ?: 0}",
+                            text = "$deviceCount",
                             fontWeight = FontWeight.Bold,
-                            color = if ((siteInfo.deviceNum ?: 0) > 0) Blue600 else Gray500,
+                            color = if (hasDevices) Blue600 else Gray500,
                             fontSize = 14.sp
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
                             text = "台",
                             fontSize = 11.sp,
-                            color = if ((siteInfo.deviceNum ?: 0) > 0) Blue600 else Gray500
+                            color = if (hasDevices) Blue600 else Gray500
                         )
                     }
                 }
@@ -120,10 +126,8 @@ fun SiteCardItem(siteInfo: SiteInfo, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ================== 2. 信息区：轻量化设计 ==================
-            // 使用浅灰色背景容器，但更紧凑，或者直接用分割线
             Surface(
-                color = Gray50, // 极浅的灰色
+                color = Gray50,
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -133,8 +137,7 @@ fun SiteCardItem(siteInfo: SiteInfo, onClick: () -> Unit) {
                         .padding(vertical = 12.dp, horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 左侧：型号
-                    Column(modifier = Modifier.weight(1.5f)) { // 权重给大一点，因为型号通常长
+                    Column(modifier = Modifier.weight(1.5f)) {
                         Text("站点型号", fontSize = 11.sp, color = Gray400)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -147,7 +150,6 @@ fun SiteCardItem(siteInfo: SiteInfo, onClick: () -> Unit) {
                         )
                     }
 
-                    // 中间分割线
                     Box(
                         modifier = Modifier
                             .width(1.dp)
@@ -157,7 +159,6 @@ fun SiteCardItem(siteInfo: SiteInfo, onClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    // 右侧：类型
                     Column(modifier = Modifier.weight(1f)) {
                         Text("站点类型", fontSize = 11.sp, color = Gray400)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -175,7 +176,6 @@ fun SiteCardItem(siteInfo: SiteInfo, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // ================== 3. 底部：地址 ==================
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     Icons.Rounded.LocationOn,

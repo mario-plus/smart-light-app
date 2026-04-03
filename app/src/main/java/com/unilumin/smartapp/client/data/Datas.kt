@@ -1577,3 +1577,8 @@ data class UpdateDevice(
     val productId: Long,
     val productTypeId: Long
 )
+
+
+
+
+

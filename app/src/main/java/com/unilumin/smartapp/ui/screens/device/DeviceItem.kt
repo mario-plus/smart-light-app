@@ -7,7 +7,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,8 +48,7 @@ fun DeviceCardItem(
     productType: Long,
     onDetailClick: (IotDevice) -> Unit,
     onEditClick: (IotDevice) -> Unit, // 新增：向外暴露编辑事件
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit = {}
+    modifier: Modifier = Modifier
 ) {
     val (iconBg, iconTint) = when (iotDevice.state) {
         1 -> Blue50 to Blue600
@@ -73,7 +71,6 @@ fun DeviceCardItem(
                 onClick = { onDetailClick(iotDevice) },
                 onLongClick = { onEditClick(iotDevice) }
             )
-            content()
         }
     }
 }

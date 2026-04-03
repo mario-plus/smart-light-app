@@ -26,59 +26,37 @@ class SiteViewModel(
 ) : BaseViewModel(application) {
     private val siteService = retrofitClient.getService(SiteService::class.java)
 
-    // ================== 1. 地图相关状态 ==================
-    // 地图聚合点数据
     private val _mapPoints = MutableStateFlow<List<PoleMapPointRes>>(emptyList())
     val mapPoints = _mapPoints.asStateFlow()
-
-    // 【优化】移除了 isMapLoading 状态，实现静默加载
-
-    // 地图请求防抖 Job
     private var mapFetchJob: Job? = null
-
-    // 搜索跳转防抖 Job
     private var searchLocateJob: Job? = null
-
-    // 相机移动指令流（用于搜索跳转）
     private val _cameraEffect = MutableSharedFlow<CameraUpdate>()
     val cameraEffect = _cameraEffect.asSharedFlow()
 
-    // ================== 2. 详情与筛选状态 ==================
     private val _selectedSiteInfo = MutableStateFlow<SiteInfo?>(null)
     val selectedSiteInfo = _selectedSiteInfo.asStateFlow()
 
-    // 详情加载 Loading (详情页可能还需要保留Loading，视需求而定，这里暂时保留详情的，只去除地图的)
-    private val _isDetailLoading = MutableStateFlow(false)
-    val isDetailLoading = _isDetailLoading.asStateFlow()
-
-
-    // 筛选条件
     private val _selectedRoadId = MutableStateFlow<String?>(null)
     private val _searchKeyword = MutableStateFlow("")
     val searchKeyword = _searchKeyword.asStateFlow()
-
-    // 标记是否是首次加载地图
     private var isFirstLoad = true
-
-    // 道路元数据
     private val _siteRoadInfo = MutableStateFlow<List<SiteRoadInfo>?>(null)
     val siteRoadInfo = _siteRoadInfo.asStateFlow()
+
+    // 地图页面，需要通过站点ID查设备详情
+    private val _siteDetail = MutableStateFlow<SiteInfo?>(null)
+    val siteDetail = _siteDetail.asStateFlow()
 
     init {
         getRoadList()
     }
 
-    // ================== 核心方法：地图视口变化加载数据 ==================
     fun onMapCameraChange(
         minLng: Double, maxLng: Double, minLat: Double, maxLat: Double, zoom: Float
     ) {
-        // 1. 防抖
         mapFetchJob?.cancel()
         mapFetchJob = viewModelScope.launch {
             delay(300)
-            // 【优化】不再设置 Loading = true，静默请求
-
-            // 2. 动态精度计算
             val precision = when {
                 zoom < 10 -> 1        // 宏观视图
                 zoom < 12 -> 10       // 市级
@@ -102,15 +80,12 @@ class SiteViewModel(
                 )
 
                 val resultList = response ?: emptyList()
-                // 数据回来后直接更新，界面会自动刷新，无感知
                 _mapPoints.value = resultList
 
-                // 首次加载自动寻找最密集的点
                 if (isFirstLoad && resultList.isNotEmpty()) {
                     isFirstLoad = false
                     findAndMoveToDensestPoint(resultList)
                 }
-
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -128,20 +103,33 @@ class SiteViewModel(
         }
     }
 
-    // ================== 点击杆体获取详情 ==================
+    // 站点详情，包含设备
     fun fetchSiteDetail(siteId: Long) {
-        // 详情获取逻辑
+        // [修复点1] 获取新详情前，先清空可能残留的旧状态
+        _selectedSiteInfo.value = null
+        _siteDetail.value = null
+
+        launchWithLoading {
+            val result = UniCallbackService.parseDataNewSuspend(siteService.getSiteDetail(siteId))
+            _siteDetail.value = result
+        }
     }
 
+    // [修复点2] 返回时，彻底清空两种选中状态，关闭详情弹层
     fun clearSelection() {
         _selectedSiteInfo.value = null
+        _siteDetail.value = null
     }
 
-    // ================== 列表分页数据流 ==================
-
-
+    // 站点信息(包含设备信息) - Paging3自带内存缓存，不会因为UI图层覆盖而丢失数据
     val sitePagingFlow =
-        createPagingFlow(combine(_selectedRoadId, _searchKeyword, ::Pair)) { (roadId, keyword), page, size ->
+        createPagingFlow(
+            combine(
+                _selectedRoadId,
+                _searchKeyword,
+                ::Pair
+            )
+        ) { (roadId, keyword), page, size ->
             fetchPageData {
                 siteService.getSiteList(
                     curPage = page,

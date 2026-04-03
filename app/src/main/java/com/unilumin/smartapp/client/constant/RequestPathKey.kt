@@ -13,13 +13,15 @@ object RequestPathKey {
     const val KEY_ROAD_LIST: String = "$SMART_COMMON_APPLICATION/base/project_road_list"
     const val LEY_LAMP_LIST: String = "$SMART_COMMON_APPLICATION/base/smart_lamppole_list"
     const val LEY_SITE_MAP_POINT: String = "$SMART_COMMON_APPLICATION/base/lamp_map_point_list"
-    const val KEY_ENV_DATA: String =
-        "$SMART_COMMON_APPLICATION/env/map_visualization_weather_condition"
     const val KEY_ENV_DATA_LIST: String = "$SMART_COMMON_APPLICATION/env/env_data"
     const val KEY_CAMERA_LIVE_URL: String = "$SMART_COMMON_APPLICATION/security/camera_live"
 
     //产品规则
     const val KEY_PRODUCT_RULE: String = "$SMART_COMMON_APPLICATION/base/protocol_rule"
+
+    //站点详情，包含挂载的设备
+    const val KEY_SITE_DETAIL: String = "$SMART_COMMON_APPLICATION/base/smart_lamppole_detail"
+
 
     const val KEY_CAMERA_LIVE: String = "$ZLM/index/api/webrtc"
 

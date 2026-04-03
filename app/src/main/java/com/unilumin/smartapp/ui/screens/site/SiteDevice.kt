@@ -11,9 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Lightbulb
-import androidx.compose.material.icons.rounded.Sensors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
@@ -28,11 +25,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unilumin.smartapp.client.constant.DeviceConstant.getIconForName
 import com.unilumin.smartapp.client.data.SiteDevice
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.DeviceStatusRow
 import com.unilumin.smartapp.ui.components.InfoLabelValue
-import com.unilumin.smartapp.ui.theme.Amber600
 import com.unilumin.smartapp.ui.theme.Blue600
 import com.unilumin.smartapp.ui.theme.Gray100
 import com.unilumin.smartapp.ui.theme.Gray500
@@ -41,12 +38,7 @@ import com.unilumin.smartapp.ui.theme.Gray900
 
 @Composable
 fun SiteDeviceCardItem(device: SiteDevice, onClick: () -> Unit) {
-    val isLight = device.productTypeName.contains("灯") || device.productName.contains("灯")
-    val icon = if (isLight) Icons.Rounded.Lightbulb else Icons.Rounded.Sensors
-    val iconColor = if (isLight) Amber600 else Blue600
-
-
-
+    var iconForName = getIconForName(device.productTypeName)
     ElevatedCard(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
@@ -59,11 +51,11 @@ fun SiteDeviceCardItem(device: SiteDevice, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = CircleShape,
-                    color = iconColor.copy(alpha = 0.1f),
+                    color = Blue600.copy(alpha = 0.1f),
                     modifier = Modifier.size(42.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(icon, null, tint = iconColor, modifier = Modifier.size(22.dp))
+                        Icon(iconForName, null, tint = Blue600, modifier = Modifier.size(22.dp))
                     }
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -88,20 +80,16 @@ fun SiteDeviceCardItem(device: SiteDevice, onClick: () -> Unit) {
                     DeviceStatus(device.state)
                 }
             }
+
             Spacer(modifier = Modifier.height(12.dp))
             Divider(color = Gray100, thickness = 0.5.dp)
             Spacer(modifier = Modifier.height(12.dp))
-            // 产品分类+产品型号
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.weight(1f)) {
-                    InfoLabelValue(label = "产品分类", value = device.productTypeName)
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    InfoLabelValue(label = "产品型号", value = device.productName)
-                }
+            Column(modifier = Modifier.fillMaxWidth()) {
+                InfoLabelValue(label = "产品分类", value = device.productTypeName)
+                Spacer(modifier = Modifier.height(4.dp))
+                InfoLabelValue(label = "产品型号", value = device.productName)
             }
             Spacer(modifier = Modifier.height(12.dp))
-            //禁用，告警状态
             DeviceStatusRow(
                 device.deviceState == 0,
                 device.alarmType == 1
