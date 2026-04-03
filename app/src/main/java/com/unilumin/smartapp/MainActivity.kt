@@ -39,6 +39,7 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GROUP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_JOB
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_STRATEGY
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_DEV_MANAGE
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_MONITOR
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_PLAY_BOX
 import com.unilumin.smartapp.client.data.IotDevice
@@ -52,6 +53,7 @@ import com.unilumin.smartapp.ui.screens.application.lamp.LampJobDetailContent
 import com.unilumin.smartapp.ui.screens.application.lamp.LampStrategyOptContent
 import com.unilumin.smartapp.ui.screens.application.lamp.SmartLampScreen
 import com.unilumin.smartapp.ui.screens.application.monitor.SmartMonitorScreen
+import com.unilumin.smartapp.ui.screens.application.playBox.SmartLedDevInfoContent
 import com.unilumin.smartapp.ui.screens.application.playBox.SmartLedScreen
 import com.unilumin.smartapp.ui.screens.dashboard.DashboardScreen
 import com.unilumin.smartapp.ui.screens.dashboard.DeviceAlarmScreen
@@ -206,9 +208,7 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         composable("strategyOptScreen") { e ->
                             cachedLampViewModel?.let {
                                 LampStrategyOptContent(
-                                    cachedLampViewModel!!,
-                                    cachedLampStrategyInfo,
-                                    onBack = {
+                                    cachedLampViewModel!!, cachedLampStrategyInfo, onBack = {
                                         navController.popBackStack()
                                     })
                             }
@@ -237,16 +237,28 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                 imageLoader,
                                 retrofitClient,
                                 onBack = { navController.popBackStack() },
-                                toNew = { e ->
+                                toNew = { e, name ->
                                     cacheScreenViewModel = e
-                                    // navController.navigate("groupMemberScreen")
+                                    when (name) {
+                                        SMART_LED_DEV_MANAGE -> {
+                                            navController.navigate("ledDevInfo")
+                                        }
+                                    }
                                 })
+                        }
+
+                        //设备详情
+                        composable("ledDevInfo") {
+                            SmartLedDevInfoContent(imageLoader, cacheScreenViewModel!!, onBack = {
+                                navController.popBackStack()
+                            })
                         }
 
 
                         //设备详情页面
                         composable("deviceDetail/{deviceJson}") { backStackEntry ->
                             //如果此处的json过大，可以改成deviceId，deviceName进行传递
+                            //TODO 此处可以不通过传递参数，将数据放在viewModel中，再直接把viewModel传进去
                             val encodedJson = backStackEntry.arguments?.getString("deviceJson")
                             val deviceJson = URLDecoder.decode(encodedJson, "UTF-8")
                             val iotDevice = Gson().fromJson(deviceJson, IotDevice::class.java)

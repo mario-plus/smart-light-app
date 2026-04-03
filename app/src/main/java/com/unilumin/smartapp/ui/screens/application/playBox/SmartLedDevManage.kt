@@ -50,7 +50,7 @@ import com.unilumin.smartapp.ui.viewModel.ScreenViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartLedDevManage(
-    screenViewModel: ScreenViewModel
+    screenViewModel: ScreenViewModel, toLedDevDetail: () -> Unit
 ) {
     val deviceState by screenViewModel.state.collectAsState()
     val searchQuery by screenViewModel.searchQuery.collectAsState()
@@ -82,6 +82,10 @@ fun SmartLedDevManage(
         ) { ledInfo ->
             LedPlayBoxCard(
                 item = ledInfo, onDetailClick = { clickedItem ->
+                    screenViewModel.getLedDevFunc(
+                        clickedItem, "infoPublicControl", onSuccess = {
+                            toLedDevDetail()
+                        })
                 })
         }
     }

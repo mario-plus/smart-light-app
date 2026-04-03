@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
+import com.unilumin.smartapp.client.data.LedCommandReq
 import com.unilumin.smartapp.client.data.LedCtlPlanDetail
 import com.unilumin.smartapp.client.data.LedDevGroupRes
 import com.unilumin.smartapp.client.data.LedFileReq
@@ -16,6 +17,7 @@ import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Query
 
 /**
@@ -59,8 +61,7 @@ interface ScreenService {
      * */
     @GET(RequestPathKey.KEY_LED_GROUP_MEMBER)
     fun getLedGroupMember(
-        @Query("groupId") groupId: Long,
-        @Query("subSystemType") subSystemType: Int? = 3
+        @Query("groupId") groupId: Long, @Query("subSystemType") subSystemType: Int? = 3
     ): Call<NewResponseData<List<PlayBoxDeviceBO>?>?>?
 
 
@@ -94,5 +95,17 @@ interface ScreenService {
         @Body request: LedFileReq
     ): Call<NewResponseData<PageResponse<LedMaterialInfoVO>?>?>?
 
+
+    /**
+     * 远程控制指令
+     * */
+    @PUT(RequestPathKey.KEY_LED_COMMAND)
+    fun ledCommand(@Body request: LedCommandReq): Call<NewResponseData<Void?>?>?
+
+    /**
+     * 播放盒详情
+     * */
+    @GET(RequestPathKey.KEY_LED_DEVICE_DETAIL)
+    fun getLedDevDetail(@Query("id") id: Long): Call<NewResponseData<LedPageBO?>?>?
 
 }

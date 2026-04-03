@@ -1,21 +1,30 @@
 package com.unilumin.smartapp.ui.viewModel
 
 import android.app.Application
+import com.google.gson.reflect.TypeToken
 import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
+import com.unilumin.smartapp.client.UniCallbackService.parseDataNewSuspend
 import com.unilumin.smartapp.client.constant.DeviceConstant.fileTypeOptionsTransform
+import com.unilumin.smartapp.client.data.LedCommandReq
+import com.unilumin.smartapp.client.data.LedDevFunc
 import com.unilumin.smartapp.client.data.LedDevGroupRes
 import com.unilumin.smartapp.client.data.LedFileReq
 import com.unilumin.smartapp.client.data.LedMaterialInfoVO
+import com.unilumin.smartapp.client.data.LedPageBO
 import com.unilumin.smartapp.client.data.LedPlanBO
 import com.unilumin.smartapp.client.data.LedProgramRequest
 import com.unilumin.smartapp.client.data.Quadruple
+import com.unilumin.smartapp.client.service.RoadService
 import com.unilumin.smartapp.client.service.ScreenService
 import com.unilumin.smartapp.client.service.UserService
+import com.unilumin.smartapp.util.JsonUtils
+import com.unilumin.smartapp.util.ToastUtil
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 
 /**
@@ -27,8 +36,17 @@ class ScreenViewModel(
 
 
     private val screenService = retrofitClient.getService(ScreenService::class.java)
+
     private val userService = retrofitClient.getService(UserService::class.java)
 
+    private val roadService = retrofitClient.getService(RoadService::class.java)
+    val screenshot = MutableStateFlow("")
+    private val _selectLedDevInfo = MutableStateFlow<LedPageBO?>(null)
+    val selectLedDevInfo = _selectLedDevInfo.asStateFlow()
+
+    //播放盒设备功能
+    private val _ledDevFuncMaps = MutableStateFlow<Map<String, LedDevFunc>>(emptyMap())
+    val ledDevFuncMaps = _ledDevFuncMaps.asStateFlow()
 
     //设备网络状态
     val state = MutableStateFlow(-1)
@@ -73,6 +91,66 @@ class ScreenViewModel(
         searchQuery.value = query
     }
 
+    /**
+     * 获取播放盒设备功能
+     * key:   infoPublicConfig      设备配置
+     *                  infoPublicControl     设备控制
+     *                 infoPublicGroupControl  分组控制
+     * */
+    fun getLedDevFunc(ledDevInfo: LedPageBO, key: String, onSuccess: (() -> Unit)? = null) {
+        launchWithLoading(onSuccess = onSuccess) {
+            _selectLedDevInfo.value = ledDevInfo
+            var minioUrl = getMinioUrl(ledDevInfo.screenshot)
+            if (minioUrl != null) {
+                screenshot.value = minioUrl
+            }
+            val parseDataNewSuspend = parseDataNewSuspend(
+                roadService.getProductRule(productId = ledDevInfo.productId)
+            )
+            if (parseDataNewSuspend != null) {
+                try {
+                    val arrayData = parseDataNewSuspend.getAsJsonArray(key)
+                    if (arrayData != null && arrayData.size() > 0) {
+                        val type = object : TypeToken<List<LedDevFunc>>() {}.type
+                        val funcList: List<LedDevFunc> = JsonUtils.gson.fromJson(arrayData, type)
+                        val funcMap = funcList.associateBy { it.key }
+                        _ledDevFuncMaps.value = funcMap
+                    } else {
+                        _ledDevFuncMaps.value = emptyMap()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    _ledDevFuncMaps.value = emptyMap()
+                }
+            } else {
+                _ledDevFuncMaps.value = emptyMap()
+            }
+        }
+    }
+
+
+    /**
+     * 指令控制
+     * */
+    fun ledCommand(commandReq: LedCommandReq) {
+        launchWithLoading {
+            parseDataNewSuspend(screenService.ledCommand(commandReq))
+            ToastUtil.showSuccess(context, "操作成功")
+        }
+    }
+
+    fun ledDevDetail(deviceId: Long) {
+        launchWithLoading {
+            var parseDataNewSuspend = parseDataNewSuspend(screenService.getLedDevDetail(deviceId))
+            if (parseDataNewSuspend != null) {
+                _selectLedDevInfo.value = parseDataNewSuspend
+                var minioUrl = getMinioUrl(parseDataNewSuspend.screenshot)
+                if (minioUrl != null) {
+                    screenshot.value = minioUrl
+                }
+            }
+        }
+    }
 
     /**
      * 播放盒分页数据
@@ -90,52 +168,48 @@ class ScreenViewModel(
      * 播放表分页数据
      * */
 
-    val ledProgramPagingFlow =
-        createPagingFlow(
-            combine(
-                checkState,
-                searchQuery,
-                ::Pair
-            )
-        ) { (checkState, keywords), page, size ->
-            fetchPageData {
-                screenService.getLedProgramList(
-                    LedProgramRequest(
-                        keyword = keywords,
-                        pageSize = size,
-                        curPage = page,
-                        reviewStatus = when (checkState) {
-                            -1 -> null
-                            0 -> listOf(0)
-                            1 -> listOf(1, 2)
-                            2 -> listOf(3)
-                            else -> null
-                        }
-                    )
+    val ledProgramPagingFlow = createPagingFlow(
+        combine(
+            checkState, searchQuery, ::Pair
+        )
+    ) { (checkState, keywords), page, size ->
+        fetchPageData {
+            screenService.getLedProgramList(
+                LedProgramRequest(
+                    keyword = keywords,
+                    pageSize = size,
+                    curPage = page,
+                    reviewStatus = when (checkState) {
+                        -1 -> null
+                        0 -> listOf(0)
+                        1 -> listOf(1, 2)
+                        2 -> listOf(3)
+                        else -> null
+                    }
                 )
-            }
-        }
-
-
-    val ledGroupPagingFlow =
-        createPagingFlow(searchQuery) { searchQuery, page, size ->
-            getLedGroup(
-                searchQuery = searchQuery, page = page, pageSize = size
             )
         }
+    }
+
+
+    val ledGroupPagingFlow = createPagingFlow(searchQuery) { searchQuery, page, size ->
+        getLedGroup(
+            searchQuery = searchQuery, page = page, pageSize = size
+        )
+    }
 
     /**
      * 方案管理分页数据
      * */
-    val ledPlanPagingFlow =
-        createPagingFlow(combine(planType, searchQuery, ::Pair)) {(planType, keywords), page, size ->
-            getLedPlans(
-                planType = planType,
-                searchQuery = keywords,
-                page = page,
-                pageSize = size
-            )
-        }
+    val ledPlanPagingFlow = createPagingFlow(
+        combine(
+            planType, searchQuery, ::Pair
+        )
+    ) { (planType, keywords), page, size ->
+        getLedPlans(
+            planType = planType, searchQuery = keywords, page = page, pageSize = size
+        )
+    }
 
     // 素材列表
     val ledFilePagingFlow = createPagingFlow(
@@ -157,7 +231,7 @@ class ScreenViewModel(
         page: Int,
         pageSize: Int,
     ): List<LedDevGroupRes> {
-        val parseDataNewSuspend = UniCallbackService.parseDataNewSuspend(
+        val parseDataNewSuspend = parseDataNewSuspend(
             screenService.getLedGroupList(
                 keyword = searchQuery, pageSize = pageSize, curPage = page
             )
@@ -168,7 +242,7 @@ class ScreenViewModel(
             coroutineScope {
                 groupList.map { group ->
                     async {
-                        val detailData = UniCallbackService.parseDataNewSuspend(
+                        val detailData = parseDataNewSuspend(
                             screenService.getLedGroupMember(group.id)
                         )
                         group.groupDevs = detailData
@@ -185,7 +259,7 @@ class ScreenViewModel(
         page: Int,
         pageSize: Int,
     ): List<LedPlanBO> {
-        val pageData = UniCallbackService.parseDataNewSuspend(
+        val pageData = parseDataNewSuspend(
             screenService.getLedPlans(
                 keyword = searchQuery, pageSize = pageSize, curPage = page, type = planType
             )
@@ -196,7 +270,7 @@ class ScreenViewModel(
             coroutineScope {
                 planList.map { plan ->
                     async {
-                        val detailData = UniCallbackService.parseDataNewSuspend(
+                        val detailData = parseDataNewSuspend(
                             screenService.getLedCtlPlanDetail(plan.id)
                         )
                         plan.ctlPlanDetails = detailData
@@ -215,7 +289,7 @@ class ScreenViewModel(
         pageSize: Int,
         parentId: Long
     ): List<LedMaterialInfoVO> {
-        val pageData = UniCallbackService.parseDataNewSuspend(
+        val pageData = parseDataNewSuspend(
             screenService.getLedFileList(
                 LedFileReq(
                     keyword = searchQuery,

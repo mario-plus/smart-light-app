@@ -958,7 +958,7 @@ data class LedPageBO(
     // 设备序列号
     val serialNum: String? = null,
     // 产品id
-    val productId: Long? = null,
+    val productId: Long,
     // 产品名称
     val productName: String? = null,
     // 产品名称
@@ -1576,6 +1576,25 @@ data class UpdateDevice(
     val serialNum: String,
     val productId: Long,
     val productTypeId: Long
+)
+
+data class LedCommandReq(
+    //"指令类型:1.休眠 2.唤醒 3.重启 4.亮度(0-100) 5.截图 6 节目同步播放 7 NTP校时 8.发布节目 9.下发排程 10.同步分辨率 11.设置服务器地址 12.设置音量 13.获取终端日志 14 设置光感配置 15 清空排程和节目 16 节目收纳 17 场景切换"
+    val type: Int,
+    val value: Int,
+    val deviceId: Long? = null,
+    val groupId: Long? = null,
+    // val val:
+)
+
+data class LedDevFunc(
+    val key: String,
+    val zhName: String,
+    val enName: String,
+    val esName: String,
+    val zhDesc: String,
+    val enDesc: String,
+    val esDesc: String
 )
 
 

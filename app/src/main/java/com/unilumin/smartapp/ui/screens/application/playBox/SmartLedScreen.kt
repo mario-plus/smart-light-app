@@ -43,8 +43,7 @@ import com.unilumin.smartapp.ui.viewModel.SystemViewModel
 fun SmartLedScreen(
     imageLoader: ImageLoader,
     retrofitClient: RetrofitClient, onBack: () -> Unit,
-    /**跳转至新页面*/
-    toNew: (ScreenViewModel) -> Unit
+    toNew: (ScreenViewModel, String) -> Unit,
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
@@ -94,7 +93,9 @@ fun SmartLedScreen(
                 SMART_LED_DEV_MANAGE -> {
                     screenViewModel.updateState(-1)
                     screenViewModel.updateSearch("")
-                    SmartLedDevManage(screenViewModel)
+                    SmartLedDevManage(
+                        screenViewModel,
+                        toLedDevDetail = { toNew(screenViewModel, SMART_LED_DEV_MANAGE) })
                 }
                 // //播放表管理
                 SMART_LED_SCHEDULE_MANAGE -> {
@@ -113,11 +114,12 @@ fun SmartLedScreen(
                     screenViewModel.updateType(1)
                     SmartLedCtlPlanManage(screenViewModel)
                 }
-                SMART_LED_FILE_MANAGE->{
+
+                SMART_LED_FILE_MANAGE -> {
                     screenViewModel.updateSearch("")
                     screenViewModel.updateFileStatus(-1)
                     screenViewModel.updateFileType(-1)
-                    SmartLedFileManage(screenViewModel,imageLoader,retrofitClient)
+                    SmartLedFileManage(screenViewModel, imageLoader, retrofitClient)
                 }
                 //播放方案
                 SMART_LED_PLAY_SCHEDULE -> {
@@ -125,6 +127,7 @@ fun SmartLedScreen(
                     screenViewModel.updateType(2)
                     SmartLedPlayPlanManage(screenViewModel)
                 }
+
                 else -> {
                     EmptyDataView("未开发的功能")
                 }

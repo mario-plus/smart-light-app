@@ -26,10 +26,6 @@ object RequestPathKey {
     const val KEY_CAMERA_LIVE: String = "$ZLM/index/api/webrtc"
 
 
-    const val KEY_SCENE: String = "$SMART_LED/bn/area_scene_list"
-    const val KEY_SCENE_CTRL: String = "$SMART_LED/exhibition/model/central_control"
-
-
     //播放盒列表
     const val KEY_LED_LIST: String = "$SMART_LED/uni-led/led_page_list"
 
@@ -50,6 +46,12 @@ object RequestPathKey {
 
     //控制方案详情
     const val KEY_LED_CTL_PLAN_DETAIL: String = "$SMART_LED/uni-led/led_schedule_detail"
+
+    //播放盒(远程控制)
+    const val KEY_LED_COMMAND: String = "$SMART_LED/uni-led/led_command"
+
+    //播放盒详情
+    const val KEY_LED_DEVICE_DETAIL: String = "$SMART_LED/uni-led/led_detail"
 
 
     const val KEY_GET_USER: String = "$CAS/uc/user/profile/get"
