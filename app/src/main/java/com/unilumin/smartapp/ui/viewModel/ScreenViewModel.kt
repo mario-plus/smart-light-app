@@ -119,8 +119,7 @@ class ScreenViewModel(
 
 
     private suspend fun fetchAndParseDevFuncMap(
-        productId: Long,
-        key: String
+        productId: Long, key: String
     ): Map<String, LedDevFunc> {
         return try {
             val parseData = parseDataNewSuspend(roadService.getProductRule(productId = productId))
@@ -221,6 +220,16 @@ class ScreenViewModel(
             planType = planType, searchQuery = keywords, page = page, pageSize = size
         )
     }
+
+    /**
+     * led分组日志
+     * */
+    val ledGroupLogPagingFlow = createPagingFlow { page, size ->
+        fetchPageData {
+            screenService.getLedGroupLog(page, size, groupId = selectLedGroup.value?.id ?: 0L)
+        }
+    }
+
 
     // 素材列表
     val ledFilePagingFlow = createPagingFlow(

@@ -5,6 +5,7 @@ import com.unilumin.smartapp.client.data.LedCommandReq
 import com.unilumin.smartapp.client.data.LedCtlPlanDetail
 import com.unilumin.smartapp.client.data.LedDevGroupRes
 import com.unilumin.smartapp.client.data.LedFileReq
+import com.unilumin.smartapp.client.data.LedGroupLogBO
 import com.unilumin.smartapp.client.data.LedMaterialInfoVO
 import com.unilumin.smartapp.client.data.LedPageBO
 import com.unilumin.smartapp.client.data.LedPlanBO
@@ -108,4 +109,14 @@ interface ScreenService {
     @GET(RequestPathKey.KEY_LED_DEVICE_DETAIL)
     fun getLedDevDetail(@Query("id") id: Long): Call<NewResponseData<LedPageBO?>?>?
 
+    /**
+     * 播放盒分组日志
+     * */
+    @GET(RequestPathKey.KEY_LED_GROUP_LOG)
+    fun getLedGroupLog(
+        @Query("curPage") curPage: Int,
+        @Query("pageSize") pageSize: Int,
+        @Query("groupId") groupId: Long,
+        @Query("subSystemType") subSystemType: Int? = 3
+    ): Call<NewResponseData<PageResponse<LedGroupLogBO>?>?>?
 }

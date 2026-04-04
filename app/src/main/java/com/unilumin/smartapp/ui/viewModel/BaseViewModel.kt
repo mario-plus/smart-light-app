@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import retrofit2.Call
 
@@ -87,7 +88,23 @@ open class BaseViewModel(application: Application) : AndroidViewModel(applicatio
 
 
     /**
-     * 使用教程
+     * 无参
+     * */
+    fun <T : Any> createPagingFlow(
+        pageSize: Int = 10,
+        fetcher: suspend (page: Int, pageSize: Int) -> List<T>
+    ): Flow<PagingData<T>> {
+        return createPagingFlow(
+            paramsFlow = flowOf(Unit),
+            pageSize = pageSize,
+            fetcher = { _, page, size ->
+                fetcher(page, size)
+            }
+        )
+    }
+
+    /**
+     * tips:
      * 一个参数:    createPagingFlow(searchQuery) { searchQuery, page, size ->
      * 两个参数:    createPagingFlow(combine(chartType, primaryClass, ::Pair)) { (filter, query), page, size ->
      * 三个参数:    createPagingFlow(combine(state, searchQuery, lampModel, ::Triple)) { (taskState, searchQuery, lampModel), page, size ->

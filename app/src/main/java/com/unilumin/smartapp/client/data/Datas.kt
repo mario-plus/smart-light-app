@@ -1598,6 +1598,26 @@ data class LedDevFunc(
 )
 
 
+data class LedGroupLogBO(
+    val id: Long,
+    val pushTransactionId: String?,
+    //指令名称
+    val instructName: String?,
+    val operateTime: String?,
+    val deviceId: String?,
+    //设备名称
+    val deviceName: String?,
+    val groupId: String?,
+    //1失败，2成功
+    val state: Int?,
+    //错误信息
+    val errorName: String?,
+    //执行时间
+    val createTime: String?,
+    val createBy: String?,
+    val createName: String?
+)
+
 
 
 

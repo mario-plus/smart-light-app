@@ -53,6 +53,9 @@ object RequestPathKey {
     //播放盒详情
     const val KEY_LED_DEVICE_DETAIL: String = "$SMART_LED/uni-led/led_detail"
 
+    //播放盒分组日志
+    const val KEY_LED_GROUP_LOG: String = "$SMART_LED/uni-led/led_group_command_logs"
+
 
     const val KEY_GET_USER: String = "$CAS/uc/user/profile/get"
 

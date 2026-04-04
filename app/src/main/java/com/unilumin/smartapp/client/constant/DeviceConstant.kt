@@ -79,14 +79,10 @@ object DeviceConstant {
     val GROUP_DEV_REMOVE_TYPE = listOf<SystemConfig>(
         SystemConfig(GROUP_REMOVE_DEV, "移除设备", getIconForName(GROUP_REMOVE_DEV), true),
         SystemConfig(
-            GROUP_FORCE_REMOVE_DEV,
-            "强制移除",
-            getIconForName(GROUP_FORCE_REMOVE_DEV),
-            true
+            GROUP_FORCE_REMOVE_DEV, "强制移除", getIconForName(GROUP_FORCE_REMOVE_DEV), true
         ),
         SystemConfig(GROUP_ADD_DEV, "添加设备", getIconForName(GROUP_ADD_DEV), true)
     )
-
 
     //播放盒管理
     const val SMART_LED_DEV_MANAGE = "ledDevManage"
@@ -252,19 +248,10 @@ object DeviceConstant {
     val alarmConfirmOptions = listOf(1 to "已确认", 0 to "未确认")
 
     val fileTypeOptions = listOf(
-        -1 to "全部",
-        1 to "视频",
-        2 to "音频",
-        3 to "图片",
-        4 to "文件",
-        5 to "文本"
+        -1 to "全部", 1 to "视频", 2 to "音频", 3 to "图片", 4 to "文件", 5 to "文本"
     )
     val fileTypeOptionsTransform = mapOf(
-        1 to "video",
-        2 to "audio",
-        3 to "image",
-        4 to "document",
-        5 to "txt"
+        1 to "video", 2 to "audio", 3 to "image", 4 to "document", 5 to "txt"
     )
     val fileStatusOptions = listOf(-1 to "全部", 1 to "审核中", 2 to "已通过", 3 to "未通过")
 
