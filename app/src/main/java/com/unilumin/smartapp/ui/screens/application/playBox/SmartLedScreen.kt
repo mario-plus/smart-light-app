@@ -106,7 +106,9 @@ fun SmartLedScreen(
                 //分组管理
                 SMART_LED_GROUP_MANAGE -> {
                     screenViewModel.updateSearch("")
-                    SmartLedGroupManage(screenViewModel)
+                    SmartLedGroupManage(screenViewModel, onGroupClick = {
+                        toNew(screenViewModel, SMART_LED_GROUP_MANAGE)
+                    })
                 }
                 //控制方案
                 SMART_LED_CTL_SCHEDULE -> {

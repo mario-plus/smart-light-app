@@ -83,7 +83,7 @@ fun SmartLedDevManage(
             LedPlayBoxCard(
                 item = ledInfo, onDetailClick = { clickedItem ->
                     screenViewModel.getLedDevFunc(
-                        clickedItem, "infoPublicControl", onSuccess = {
+                        clickedItem,onSuccess = {
                             toLedDevDetail()
                         })
                 })

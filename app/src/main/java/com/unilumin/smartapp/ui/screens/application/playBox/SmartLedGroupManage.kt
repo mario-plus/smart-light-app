@@ -47,7 +47,8 @@ import com.unilumin.smartapp.ui.viewModel.ScreenViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartLedGroupManage(
-    screenViewModel: ScreenViewModel
+    screenViewModel: ScreenViewModel,
+    onGroupClick: () -> Unit = {} // 1. 暴露点击回调给外层（导航跳转等）
 ) {
     val searchQuery by screenViewModel.searchQuery.collectAsState()
     val totalCount by screenViewModel.totalCount.collectAsState()
@@ -67,14 +68,23 @@ fun SmartLedGroupManage(
         PagingList(
             totalCount = totalCount,
             lazyPagingItems = ledGroupPagingFlow,
-            itemKey = { it.id },
+            // 2. [关键修复]：直接移除 itemKey，防止后端数据重复时闪退
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 12.dp),
             emptyMessage = "暂无分组信息",
             contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp)
         ) { ledGroup ->
-            LedGroupCard(ledGroup = ledGroup as LedDevGroupRes)
+            ledGroup?.let {
+                LedGroupCard(
+                    ledGroup = ledGroup,
+                    onClick = {
+                     screenViewModel.getLedGroupFunc(ledGroup, onSuccess = {
+                         onGroupClick()
+                     })
+                    }
+                )
+            }
         }
     }
 }
@@ -82,15 +92,23 @@ fun SmartLedGroupManage(
 /**
  * 分组信息卡片组件
  */
+@OptIn(ExperimentalMaterial3Api::class) // 使用 Card 的 onClick 版本需要此注解
 @Composable
-fun LedGroupCard(ledGroup: LedDevGroupRes) {
+fun LedGroupCard(
+    ledGroup: LedDevGroupRes,
+    onClick: () -> Unit // 4. 接收点击事件
+) {
     Card(
+        onClick = onClick, // 5. 使用 Material 3 原生支持水波纹和点击的 Card
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 6.dp // 增加按压时的阴影高度，提供更好的交互反馈
+        )
     ) {
         Column(
             modifier = Modifier
@@ -116,8 +134,8 @@ fun LedGroupCard(ledGroup: LedDevGroupRes) {
                 )
                 DeviceStatus(
                     ledGroup.groupState, mapOf(
-                        0 to Triple(Color(0xFFE8F5E9), Color(0xFF388E3C), "正常"), // 假设 Green50, Green500 对应色值
-                        1 to Triple(Color(0xFFF5F5F5), Color(0xFF9E9E9E), "异常")  // 假设 Gray100, Gray500 对应色值
+                        0 to Triple(Color(0xFFE8F5E9), Color(0xFF388E3C), "正常"),
+                        1 to Triple(Color(0xFFF5F5F5), Color(0xFF9E9E9E), "异常")
                     )
                 )
             }
@@ -143,7 +161,8 @@ fun LedGroupCard(ledGroup: LedDevGroupRes) {
                     )
 
                     // 将创建者和创建时间组合显示
-                    val creatorInfo = "${ledGroup.createName ?: "-"}  ·  ${ledGroup.createTime ?: "-"}"
+                    val creatorInfo =
+                        "${ledGroup.createName ?: "-"}  ·  ${ledGroup.createTime ?: "-"}"
                     InfoRowItem(
                         icon = Icons.Rounded.AccountCircle,
                         label = "创建",

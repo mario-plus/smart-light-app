@@ -40,6 +40,7 @@ import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_GROUP
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_JOB
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LAMP_STRATEGY
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_DEV_MANAGE
+import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_LED_GROUP_MANAGE
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_MONITOR
 import com.unilumin.smartapp.client.constant.DeviceConstant.SMART_PLAY_BOX
 import com.unilumin.smartapp.client.data.IotDevice
@@ -54,6 +55,7 @@ import com.unilumin.smartapp.ui.screens.application.lamp.LampStrategyOptContent
 import com.unilumin.smartapp.ui.screens.application.lamp.SmartLampScreen
 import com.unilumin.smartapp.ui.screens.application.monitor.SmartMonitorScreen
 import com.unilumin.smartapp.ui.screens.application.playBox.SmartLedDevInfoContent
+import com.unilumin.smartapp.ui.screens.application.playBox.SmartLedGroupContent
 import com.unilumin.smartapp.ui.screens.application.playBox.SmartLedScreen
 import com.unilumin.smartapp.ui.screens.dashboard.DashboardScreen
 import com.unilumin.smartapp.ui.screens.dashboard.DeviceAlarmScreen
@@ -243,6 +245,11 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                                         SMART_LED_DEV_MANAGE -> {
                                             navController.navigate("ledDevInfo")
                                         }
+
+                                        SMART_LED_GROUP_MANAGE -> {
+                                            navController.navigate("ledGroupInfo")
+                                        }
+
                                     }
                                 })
                         }
@@ -250,6 +257,12 @@ fun SmartStreetLightApp(retrofitClient: RetrofitClient) {
                         //设备详情
                         composable("ledDevInfo") {
                             SmartLedDevInfoContent(imageLoader, cacheScreenViewModel!!, onBack = {
+                                navController.popBackStack()
+                            })
+                        }
+
+                        composable("ledGroupInfo") {
+                            SmartLedGroupContent(cacheScreenViewModel!!, onBack = {
                                 navController.popBackStack()
                             })
                         }

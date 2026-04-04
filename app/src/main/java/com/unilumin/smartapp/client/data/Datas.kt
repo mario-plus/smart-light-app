@@ -1049,7 +1049,7 @@ data class LedDevGroupRes(
     val createTime: String?,
     val isModify: Int?,
     val strategyId: String?,
-    val productId: String?,
+    val productId: Long,
     val productName: String?,
     //产品型号
     val productMode: String?,

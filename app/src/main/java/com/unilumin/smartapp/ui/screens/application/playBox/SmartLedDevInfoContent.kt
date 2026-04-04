@@ -272,7 +272,7 @@ private fun ScreenshotSection(
 
 
 @Composable
-private fun RemoteControlSection(
+ fun RemoteControlSection(
     initialVolume: Int,
     initialBrightness: Int,
     onVolumeChangeFinished: (Int) -> Unit,
@@ -471,7 +471,7 @@ data class PublishMenuItem(
 )
 
 @Composable
-private fun PublishManagementSection(
+ fun PublishManagementSection(
     menuItems: List<PublishMenuItem>
 ) {
     if (menuItems.isEmpty()) return

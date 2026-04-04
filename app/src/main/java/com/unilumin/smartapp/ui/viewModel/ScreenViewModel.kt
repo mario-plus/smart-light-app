@@ -40,9 +40,16 @@ class ScreenViewModel(
     private val userService = retrofitClient.getService(UserService::class.java)
 
     private val roadService = retrofitClient.getService(RoadService::class.java)
+
+    //选中的播放盒
     val screenshot = MutableStateFlow("")
     private val _selectLedDevInfo = MutableStateFlow<LedPageBO?>(null)
     val selectLedDevInfo = _selectLedDevInfo.asStateFlow()
+
+    //选中的播放盒分组
+    private val _selectLedGroup = MutableStateFlow<LedDevGroupRes?>(null)
+    val selectLedGroup = _selectLedGroup.asStateFlow()
+
 
     //播放盒设备功能
     private val _ledDevFuncMaps = MutableStateFlow<Map<String, LedDevFunc>>(emptyMap())
@@ -91,40 +98,43 @@ class ScreenViewModel(
         searchQuery.value = query
     }
 
-    /**
-     * 获取播放盒设备功能
-     * key:   infoPublicConfig      设备配置
-     *                  infoPublicControl     设备控制
-     *                 infoPublicGroupControl  分组控制
-     * */
-    fun getLedDevFunc(ledDevInfo: LedPageBO, key: String, onSuccess: (() -> Unit)? = null) {
+    fun getLedDevFunc(ledDevInfo: LedPageBO, onSuccess: (() -> Unit)? = null) {
         launchWithLoading(onSuccess = onSuccess) {
             _selectLedDevInfo.value = ledDevInfo
-            var minioUrl = getMinioUrl(ledDevInfo.screenshot)
-            if (minioUrl != null) {
-                screenshot.value = minioUrl
+            getMinioUrl(ledDevInfo.screenshot)?.let { url ->
+                screenshot.value = url
             }
-            val parseDataNewSuspend = parseDataNewSuspend(
-                roadService.getProductRule(productId = ledDevInfo.productId)
-            )
-            if (parseDataNewSuspend != null) {
-                try {
-                    val arrayData = parseDataNewSuspend.getAsJsonArray(key)
-                    if (arrayData != null && arrayData.size() > 0) {
-                        val type = object : TypeToken<List<LedDevFunc>>() {}.type
-                        val funcList: List<LedDevFunc> = JsonUtils.gson.fromJson(arrayData, type)
-                        val funcMap = funcList.associateBy { it.key }
-                        _ledDevFuncMaps.value = funcMap
-                    } else {
-                        _ledDevFuncMaps.value = emptyMap()
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    _ledDevFuncMaps.value = emptyMap()
-                }
+            _ledDevFuncMaps.value =
+                fetchAndParseDevFuncMap(ledDevInfo.productId, "infoPublicControl")
+        }
+    }
+
+    fun getLedGroupFunc(ledGroupRes: LedDevGroupRes, onSuccess: (() -> Unit)? = null) {
+        launchWithLoading(onSuccess = onSuccess) {
+            _selectLedGroup.value = ledGroupRes
+            _ledDevFuncMaps.value =
+                fetchAndParseDevFuncMap(ledGroupRes.productId, "infoPublicGroupControl")
+        }
+    }
+
+
+    private suspend fun fetchAndParseDevFuncMap(
+        productId: Long,
+        key: String
+    ): Map<String, LedDevFunc> {
+        return try {
+            val parseData = parseDataNewSuspend(roadService.getProductRule(productId = productId))
+            val arrayData = parseData?.getAsJsonArray(key)
+            if (arrayData != null && arrayData.size() > 0) {
+                val type = object : TypeToken<List<LedDevFunc>>() {}.type
+                val funcList: List<LedDevFunc> = JsonUtils.gson.fromJson(arrayData, type)
+                funcList.associateBy { it.key }
             } else {
-                _ledDevFuncMaps.value = emptyMap()
+                emptyMap()
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyMap()
         }
     }
 
