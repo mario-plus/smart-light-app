@@ -6,6 +6,7 @@ import com.unilumin.smartapp.client.data.LedCtlPlanDetail
 import com.unilumin.smartapp.client.data.LedDevGroupRes
 import com.unilumin.smartapp.client.data.LedFileReq
 import com.unilumin.smartapp.client.data.LedGroupLogBO
+import com.unilumin.smartapp.client.data.LedGroupMemberUpdate
 import com.unilumin.smartapp.client.data.LedMaterialInfoVO
 import com.unilumin.smartapp.client.data.LedPageBO
 import com.unilumin.smartapp.client.data.LedPlanBO
@@ -64,6 +65,19 @@ interface ScreenService {
     fun getLedGroupMember(
         @Query("groupId") groupId: Long, @Query("subSystemType") subSystemType: Int? = 3
     ): Call<NewResponseData<List<PlayBoxDeviceBO>?>?>?
+
+    /**
+     * 可选设备
+     * */
+    @GET(RequestPathKey.KEY_LED_GROUP_DEV_OPTIONAL)
+    fun getLedGroupDevOptional(
+        @Query("groupId") groupId: Long,
+        @Query("subSystemType") subSystemType: Int? = 3
+    ): Call<NewResponseData<List<PlayBoxDeviceBO>?>?>?
+
+
+    @POST(RequestPathKey.KEY_LED_GROUP_MEMBER_UPDATE)
+    fun updateGroupMember(@Body request: LedGroupMemberUpdate): Call<NewResponseData<Void?>?>?
 
 
     /**

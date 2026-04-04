@@ -41,6 +41,12 @@ object RequestPathKey {
     //分组成员
     const val KEY_LED_GROUP_MEMBER: String = "$SMART_LED/uni-led/device_list_by_group_id"
 
+    //可添加分组成员
+    const val KEY_LED_GROUP_DEV_OPTIONAL: String = "$SMART_LED/uni-led/optional_device_list"
+
+    //提交播放盒分组关联成员数据
+    const val KEY_LED_GROUP_MEMBER_UPDATE: String = "$SMART_LED/uni-led/device_group_mapping"
+
     //播放方案
     const val KEY_LED_PLAN_LIST: String = "$SMART_LED/uni-led/led_schedule_list"
 

@@ -10,10 +10,12 @@ import com.unilumin.smartapp.client.data.LedCommandReq
 import com.unilumin.smartapp.client.data.LedDevFunc
 import com.unilumin.smartapp.client.data.LedDevGroupRes
 import com.unilumin.smartapp.client.data.LedFileReq
+import com.unilumin.smartapp.client.data.LedGroupMemberUpdate
 import com.unilumin.smartapp.client.data.LedMaterialInfoVO
 import com.unilumin.smartapp.client.data.LedPageBO
 import com.unilumin.smartapp.client.data.LedPlanBO
 import com.unilumin.smartapp.client.data.LedProgramRequest
+import com.unilumin.smartapp.client.data.PlayBoxDeviceBO
 import com.unilumin.smartapp.client.data.Quadruple
 import com.unilumin.smartapp.client.service.RoadService
 import com.unilumin.smartapp.client.service.ScreenService
@@ -54,6 +56,16 @@ class ScreenViewModel(
     //播放盒设备功能
     private val _ledDevFuncMaps = MutableStateFlow<Map<String, LedDevFunc>>(emptyMap())
     val ledDevFuncMaps = _ledDevFuncMaps.asStateFlow()
+
+
+    //播放盒分组设备
+    private val _ledGroupDevMember = MutableStateFlow<List<PlayBoxDeviceBO>>(emptyList())
+    val ledGroupDevMember = _ledGroupDevMember.asStateFlow()
+
+    //播放盒分组可添加的设备
+    private val _ledGroupDevOptional = MutableStateFlow<List<PlayBoxDeviceBO>>(emptyList())
+    val ledGroupDevOptional = _ledGroupDevOptional.asStateFlow()
+
 
     //设备网络状态
     val state = MutableStateFlow(-1)
@@ -117,6 +129,27 @@ class ScreenViewModel(
         }
     }
 
+    fun updateLedGroupMember(request: LedGroupMemberUpdate, onSuccess: (() -> Unit)? = null) {
+        launchWithLoading(onSuccess = onSuccess) {
+            parseDataNewSuspend(screenService.updateGroupMember(request))
+        }
+    }
+
+
+    fun editGroupMember(ledGroupRes: LedDevGroupRes, onSuccess: (() -> Unit)? = null) {
+        launchWithLoading(onSuccess = onSuccess) {
+            _selectLedGroup.value = ledGroupRes
+            val parseData = parseDataNewSuspend(screenService.getLedGroupMember(ledGroupRes.id))
+            parseData?.let {
+                _ledGroupDevMember.value = it
+            }
+            var parseDataNewSuspend =
+                parseDataNewSuspend(screenService.getLedGroupDevOptional(ledGroupRes.id))
+            parseDataNewSuspend?.let {
+                _ledGroupDevOptional.value = it
+            }
+        }
+    }
 
     private suspend fun fetchAndParseDevFuncMap(
         productId: Long, key: String

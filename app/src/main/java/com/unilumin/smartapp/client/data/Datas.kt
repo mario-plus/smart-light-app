@@ -1618,6 +1618,8 @@ data class LedGroupLogBO(
     val createName: String?
 )
 
-
-
-
+data class LedGroupMemberUpdate(
+    val groupId: Long,
+    val deviceIds: List<Long>,
+    val subSystemType: Int? = 3,
+)
