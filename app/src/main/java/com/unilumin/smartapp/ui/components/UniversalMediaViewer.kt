@@ -21,6 +21,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.ImageLoader
 import coil.compose.AsyncImage
@@ -32,24 +33,19 @@ fun UniversalMediaViewer(
     modifier: Modifier = Modifier,
     url: String,
     suffix: String?,
-    imageLoader: ImageLoader,      // <--- 传入全局配置好的 ImageLoader
-    okHttpClient: OkHttpClient    // <--- 传入全局配置好的 OkHttpClient
+    imageLoader: ImageLoader,
+    okHttpClient: OkHttpClient
 ) {
     val safeSuffix = suffix?.lowercase()?.trim() ?: ""
-
-    val isImage = safeSuffix in listOf("jpg", "jpeg", "png", "webp", "bmp")
-    val isGif = safeSuffix == "gif"
+    val isImage = safeSuffix in listOf("jpg", "jpeg", "png", "webp", "bmp", "gif")
     val isVideoOrAudio = safeSuffix in listOf("mp4", "avi", "mkv", "mov", "mp3", "wav", "flac", "aac")
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black),
+        modifier = modifier.background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
         when {
-            //gif没有动
-            isImage || isGif -> {
+            isImage -> {
                 CoilImageViewer(url = url, imageLoader = imageLoader)
             }
             isVideoOrAudio -> {
@@ -65,52 +61,50 @@ fun UniversalMediaViewer(
 @Composable
 private fun CoilImageViewer(url: String, imageLoader: ImageLoader) {
     var isLoading by remember { mutableStateOf(true) }
-    val context = LocalContext.current
 
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(url)
-                .crossfade(true)
-                .build(),
-            imageLoader = imageLoader, // 直接使用传进来的，内置支持 GIF 和忽略 SSL
-            contentDescription = "媒体预览",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize(),
-            onSuccess = { isLoading = false },
-            onError = { isLoading = false }
-        )
-
-        if (isLoading) {
-            CircularProgressIndicator(color = Color.White)
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(url)
+            .crossfade(true)
+            .build(),
+        imageLoader = imageLoader, // 确保外部传入的 imageLoader 已经配置了 GifDecoder
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = Modifier.fillMaxSize(),
+        onState = { state ->
+            isLoading = state is coil.compose.AsyncImagePainter.State.Loading
         }
+    )
+
+    if (isLoading) {
+        CircularProgressIndicator(color = Color.White)
     }
 }
 
 @androidx.annotation.OptIn(UnstableApi::class)
-@OptIn(UnstableApi::class)
 @Composable
 private fun ExoPlayerViewer(url: String, okHttpClient: OkHttpClient) {
     val context = LocalContext.current
 
-    val exoPlayer = remember {
+    // 使用 remember(url) 确保当 URL 变化时重新创建播放器
+    val exoPlayer = remember(url) {
         val dataSourceFactory = OkHttpDataSource.Factory(okHttpClient)
         val mediaSourceFactory = DefaultMediaSourceFactory(context)
             .setDataSourceFactory(dataSourceFactory)
 
         ExoPlayer.Builder(context)
             .setMediaSourceFactory(mediaSourceFactory)
-            .build()
-            .apply {
-                val mediaItem = MediaItem.fromUri(url)
-                setMediaItem(mediaItem)
+            .build().apply {
+                setMediaItem(MediaItem.fromUri(url))
                 prepare()
-                playWhenReady = true // 自动播放
+                playWhenReady = true
             }
     }
 
-    DisposableEffect(Unit) {
+    // 确保组件销毁时释放资源，防止内存泄露
+    DisposableEffect(exoPlayer) {
         onDispose {
+            exoPlayer.stop()
             exoPlayer.release()
         }
     }
@@ -120,9 +114,14 @@ private fun ExoPlayerViewer(url: String, okHttpClient: OkHttpClient) {
             PlayerView(ctx).apply {
                 player = exoPlayer
                 useController = true
+                // 优化：视频拉伸模式，防止黑边或拉伸变形
+                resizeMode  = AspectRatioFrameLayout.RESIZE_MODE_FIT
                 setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS)
             }
         },
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        update = { view ->
+            view.player = exoPlayer
+        }
     )
 }

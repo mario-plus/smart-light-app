@@ -1,5 +1,8 @@
 package com.unilumin.smartapp.ui.screens.application.playBox
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +38,7 @@ import androidx.compose.material.icons.rounded.SettingsRemote
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,11 +51,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -61,7 +67,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.ImageLoader
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.unilumin.smartapp.client.data.LedCommandReq
 import com.unilumin.smartapp.ui.components.CommonTopAppBar
@@ -86,16 +93,13 @@ fun SmartLedDevInfoContent(
     val publishMenuItems = remember(ledDevFuncMaps) {
         val items = mutableListOf<PublishMenuItem>()
         if (ledDevFuncMaps.containsKey("programPublic")) {
-            items.add(
-                PublishMenuItem("发布播放表", Icons.Rounded.ListAlt) {})
+            items.add(PublishMenuItem("发布播放表", Icons.Rounded.ListAlt) {})
         }
         if (ledDevFuncMaps.containsKey("playSchedule")) {
-            items.add(
-                PublishMenuItem("发布播放方案", Icons.Rounded.PlayCircleOutline) {})
+            items.add(PublishMenuItem("发布播放方案", Icons.Rounded.PlayCircleOutline) {})
         }
         if (ledDevFuncMaps.containsKey("controlSchedule")) {
-            items.add(
-                PublishMenuItem("发布控制方案", Icons.Rounded.SettingsRemote) {})
+            items.add(PublishMenuItem("发布控制方案", Icons.Rounded.SettingsRemote) {})
         }
         items.toList()
     }
@@ -141,41 +145,14 @@ fun SmartLedDevInfoContent(
                     },
                     onActionClick = { actionType ->
                         when (actionType) {
-                            ActionType.SCREEN_ON -> {
-                                screenViewModel.ledCommand(
-                                    LedCommandReq(
-                                        deviceId = selectLedDevInfo?.id, type = 2, value = 0
-                                    )
-                                )
-                            }
-
-                            ActionType.SCREEN_OFF -> {
-                                screenViewModel.ledCommand(
-                                    LedCommandReq(
-                                        deviceId = selectLedDevInfo?.id, type = 1, value = 0
-                                    )
-                                )
-                            }
-
-                            ActionType.SCREENSHOT -> {
-                                screenViewModel.ledCommand(
-                                    LedCommandReq(
-                                        deviceId = selectLedDevInfo?.id, type = 5, value = 0
-                                    )
-                                )
-                            }
-
-                            ActionType.REBOOT -> {
-                                screenViewModel.ledCommand(
-                                    LedCommandReq(
-                                        deviceId = selectLedDevInfo?.id, type = 3, value = 0
-                                    )
-                                )
-                            }
+                            ActionType.SCREEN_ON -> screenViewModel.ledCommand(LedCommandReq(deviceId = selectLedDevInfo?.id, type = 2, value = 0))
+                            ActionType.SCREEN_OFF -> screenViewModel.ledCommand(LedCommandReq(deviceId = selectLedDevInfo?.id, type = 1, value = 0))
+                            ActionType.SCREENSHOT -> screenViewModel.ledCommand(LedCommandReq(deviceId = selectLedDevInfo?.id, type = 5, value = 0))
+                            ActionType.REBOOT -> screenViewModel.ledCommand(LedCommandReq(deviceId = selectLedDevInfo?.id, type = 3, value = 0))
                         }
                     })
             }
-            // 3. 动态发布管理区域 (传入组装好的列表)
+            // 3. 动态发布管理区域
             PublishManagementSection(menuItems = publishMenuItems)
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -186,6 +163,16 @@ fun SmartLedDevInfoContent(
 private fun ScreenshotSection(
     imageUrl: String?, imageLoader: ImageLoader, onRefresh: () -> Unit
 ) {
+    // 保留时间戳用于触发 Compose 重组
+    var refreshTimestamp by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    var rotationAngle by remember { mutableFloatStateOf(0f) }
+    val animatedRotation by animateFloatAsState(
+        targetValue = rotationAngle,
+        animationSpec = tween(durationMillis = 500, easing = LinearEasing),
+        label = "RefreshRotation"
+    )
+
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -203,11 +190,18 @@ private fun ScreenshotSection(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                IconButton(onClick = onRefresh) {
+                IconButton(
+                    onClick = {
+                        rotationAngle += 360f
+                        refreshTimestamp = System.currentTimeMillis() // 触发本地重新构建 ImageRequest
+                        onRefresh() // 调用远端刷新
+                    }
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.Refresh,
                         contentDescription = "刷新截图",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.rotate(animatedRotation)
                     )
                 }
             }
@@ -222,20 +216,53 @@ private fun ScreenshotSection(
                     .background(Color.Black.copy(alpha = 0.05f)),
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current).data(imageUrl)
-                        .crossfade(true).build(),
-                    imageLoader = imageLoader,
-                    contentDescription = "设备截图",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
                 if (imageUrl.isNullOrEmpty()) {
                     Icon(
                         imageVector = Icons.Rounded.ImageNotSupported,
                         contentDescription = "暂无截图",
                         tint = Color.Gray,
                         modifier = Modifier.size(48.dp)
+                    )
+                } else {
+                    SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(imageUrl)
+                            .setParameter("refresh_time", refreshTimestamp) // 改变参数，强制 Coil 认为这是一个新请求
+                            .memoryCachePolicy(CachePolicy.DISABLED) // 禁用此图片的内存缓存
+                            .diskCachePolicy(CachePolicy.DISABLED)   // 禁用此图片的磁盘缓存
+                            .crossfade(true)
+                            .build(),
+                        imageLoader = imageLoader,
+                        contentDescription = "设备截图",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                        loading = {
+                            // 💡 修复点：添加一层 Box，防止进度条被拉伸到填充满 200dp 的高度
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(36.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    strokeWidth = 3.dp
+                                )
+                            }
+                        },
+                        error = {
+                            // 💡 修复点：为 Error 图标也增加约束包裹
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.ImageNotSupported,
+                                    contentDescription = "加载失败",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                            }
+                        }
                     )
                 }
             }
@@ -252,8 +279,8 @@ private fun RemoteControlSection(
     onBrightnessChangeFinished: (Int) -> Unit,
     onActionClick: (ActionType) -> Unit
 ) {
-    var volume by remember(initialVolume) { mutableFloatStateOf(initialVolume.toFloat()) }
-    var brightness by remember(initialBrightness) { mutableFloatStateOf(initialBrightness.toFloat()) }
+    var volume by remember { mutableFloatStateOf(initialVolume.toFloat()) }
+    var brightness by remember { mutableFloatStateOf(initialBrightness.toFloat()) }
 
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -302,14 +329,10 @@ private fun RemoteControlSection(
                 QuickActionButton("关屏", Icons.Rounded.PowerOff, MaterialTheme.colorScheme.error) {
                     onActionClick(ActionType.SCREEN_OFF)
                 }
-                QuickActionButton(
-                    "截屏", Icons.Rounded.Screenshot, MaterialTheme.colorScheme.secondary
-                ) {
+                QuickActionButton("截屏", Icons.Rounded.Screenshot, MaterialTheme.colorScheme.secondary) {
                     onActionClick(ActionType.SCREENSHOT)
                 }
-                QuickActionButton(
-                    "重启", Icons.Rounded.RestartAlt, MaterialTheme.colorScheme.tertiary
-                ) {
+                QuickActionButton("重启", Icons.Rounded.RestartAlt, MaterialTheme.colorScheme.tertiary) {
                     onActionClick(ActionType.REBOOT)
                 }
             }
@@ -443,14 +466,13 @@ private fun QuickActionButton(
 }
 
 
-// 1. 定义菜单项数据结构
 data class PublishMenuItem(
     val title: String, val icon: ImageVector, val onClick: () -> Unit
 )
 
 @Composable
 private fun PublishManagementSection(
-    menuItems: List<PublishMenuItem> // 2. 接收动态列表
+    menuItems: List<PublishMenuItem>
 ) {
     if (menuItems.isEmpty()) return
     Card(
@@ -460,13 +482,11 @@ private fun PublishManagementSection(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
-            // 4. 动态遍历渲染，并控制分割线的显示
             menuItems.forEachIndexed { index, item ->
                 PublishItemRow(
                     title = item.title, icon = item.icon, onClick = item.onClick
                 )
 
-                // 只要不是最后一项，就加上分割线
                 if (index < menuItems.lastIndex) {
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 16.dp),

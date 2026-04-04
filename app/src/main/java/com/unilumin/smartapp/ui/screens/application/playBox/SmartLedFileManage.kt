@@ -58,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.zIndex
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.ImageLoader
 import coil.compose.AsyncImage
@@ -79,7 +78,9 @@ import com.unilumin.smartapp.util.TimeUtil.formatIsoTime
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartLedFileManage(
-    screenViewModel: ScreenViewModel, imageLoader: ImageLoader, retrofitClient: RetrofitClient
+    screenViewModel: ScreenViewModel,
+    imageLoader: ImageLoader,
+    retrofitClient: RetrofitClient
 ) {
     val searchQuery by screenViewModel.searchQuery.collectAsState()
     val fileType by screenViewModel.fileType.collectAsState()
@@ -87,12 +88,8 @@ fun SmartLedFileManage(
     val totalCount by screenViewModel.totalCount.collectAsState()
     val ledFilePagingFlow = screenViewModel.ledFilePagingFlow.collectAsLazyPagingItems()
 
-    // 维护一个文件夹的导航路径栈，初始化为根目录
     var folderStack by remember { mutableStateOf(listOf(FolderNode(0L, "全部文件"))) }
-
-    // 用于控制全屏媒体预览的状态
     var previewFile by remember { mutableStateOf<LedMaterialInfoVO?>(null) }
-
 
     BackHandler(enabled = folderStack.size > 1 || previewFile != null) {
         if (previewFile != null) {
@@ -109,83 +106,72 @@ fun SmartLedFileManage(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-                .zIndex(1f)
-        ) {
-            SearchHeader(
-                statusOptions = fileTypeOptions,
-                currentStatus = fileType,
-                searchQuery = searchQuery,
-                searchTitle = "搜索素材名称或目录名称",
-                onStatusChanged = { screenViewModel.updateFileType(it) },
-                onSearchChanged = { screenViewModel.updateSearch(it) })
+        // ... 保持 SearchHeader 和 ModernStateSelector 不变 ...
+        SearchHeader(
+            statusOptions = fileTypeOptions,
+            currentStatus = fileType,
+            searchQuery = searchQuery,
+            searchTitle = "搜索素材名称或目录名称",
+            onStatusChanged = { screenViewModel.updateFileType(it) },
+            onSearchChanged = { screenViewModel.updateSearch(it) }
+        )
 
-            ModernStateSelector(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 6.dp),
-                options = fileStatusOptions,
-                selectedValue = fileStatus,
-                onValueChange = { newValue ->
-                    screenViewModel.updateFileStatus(newValue)
-                })
+        ModernStateSelector(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp),
+            options = fileStatusOptions,
+            selectedValue = fileStatus,
+            onValueChange = { screenViewModel.updateFileStatus(it) }
+        )
 
-            if (folderStack.size > 1) {
-                BreadcrumbRow(
-                    folderStack = folderStack,
-                    onNodeClick = { index ->
-                        val newStack = folderStack.take(index + 1)
-                        folderStack = newStack
-                        screenViewModel.updateParentId(newStack.last().id)
-                    },
-                    onBackClick = {
-                        val newStack = folderStack.dropLast(1)
-                        folderStack = newStack
-                        screenViewModel.updateParentId(newStack.last().id)
+        if (folderStack.size > 1) {
+            BreadcrumbRow(
+                folderStack = folderStack,
+                onNodeClick = { index ->
+                    val newStack = folderStack.take(index + 1)
+                    folderStack = newStack
+                    screenViewModel.updateParentId(newStack.last().id)
+                },
+                onBackClick = {
+                    val newStack = folderStack.dropLast(1)
+                    folderStack = newStack
+                    screenViewModel.updateParentId(newStack.last().id)
+                }
+            )
+        }
+
+        PagingList(
+            totalCount = totalCount,
+            lazyPagingItems = ledFilePagingFlow,
+            modifier = Modifier.weight(1f),
+            //TODO 后端分页数据有问题，加载产生重复数据
+//            itemKey= { file ->
+//                "${file.id}_${file.type}_${file.relativePath.hashCode()}"
+//            },
+            contentPadding = PaddingValues(16.dp)
+        ) { file ->
+            LedMaterialCard(
+                imageLoader = imageLoader,
+                item = file,
+                onClick = {
+                    if (file.type == 1) {
+                        val targetId = file.id ?: 0L
+                        folderStack = folderStack + FolderNode(targetId, file.name ?: "未知")
+                        screenViewModel.updateParentId(targetId)
+                    } else {
+                        previewFile = file
                     }
-                )
-            }
-
-            PagingList(
-                totalCount = totalCount,
-                lazyPagingItems = ledFilePagingFlow,
-                modifier = Modifier.weight(1f),
-                itemKey = { it.id },
-                contentPadding = PaddingValues(
-                    top = 12.dp,
-                    bottom = 24.dp,
-                    start = 16.dp,
-                    end = 16.dp
-                )
-            ) { file ->
-                LedMaterialCard(
-                    imageLoader = imageLoader,
-                    item = file,
-                    onClick = {
-                        if (file.type == 1) {
-                            val targetId = file.id ?: 0L
-                            val targetName = file.name ?: "未知文件夹"
-                            folderStack = folderStack + FolderNode(targetId, targetName)
-                            screenViewModel.updateParentId(targetId)
-                        } else {
-                            // 点击普通文件，触发全屏预览弹窗
-                            previewFile = file
-                        }
-                    }
-                )
-            }
+                }
+            )
         }
     }
 
-    // 全屏媒体预览弹窗
+    // --- 优化后的预览弹窗 ---
     if (previewFile != null) {
         Dialog(
             onDismissRequest = { previewFile = null },
             properties = DialogProperties(
-                usePlatformDefaultWidth = false, // 允许填满屏幕
+                usePlatformDefaultWidth = false,
+                securePolicy = androidx.compose.ui.window.SecureFlagPolicy.Inherit,
                 dismissOnBackPress = true
             )
         ) {
@@ -194,27 +180,30 @@ fun SmartLedFileManage(
                     .fillMaxSize()
                     .background(Color.Black)
             ) {
-                // 记录真实的 URL 和 加载状态
                 var realMediaUrl by remember { mutableStateOf<String?>(null) }
                 var isFetchingUrl by remember { mutableStateOf(true) }
 
-                // 当 previewFile 发生变化时，启动协程去获取真实的 URL
+                // 获取 URL 逻辑，增加异常捕获防止崩溃
                 LaunchedEffect(previewFile) {
                     isFetchingUrl = true
-                    val rawPath = previewFile?.relativePath
-                    if (!rawPath.isNullOrBlank()) {
-                        realMediaUrl = screenViewModel.getMinioUrl(rawPath)
+                    try {
+                        val rawPath = previewFile?.relativePath
+                        if (!rawPath.isNullOrBlank()) {
+                            realMediaUrl = screenViewModel.getMinioUrl(rawPath)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    } finally {
+                        isFetchingUrl = false
                     }
-                    isFetchingUrl = false
                 }
+
                 if (isFetchingUrl) {
-                    // 1. 正在获取 URL，显示 Loading 圈
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
                         color = Color.White
                     )
                 } else if (!realMediaUrl.isNullOrBlank()) {
-                    // 2. 获取成功，使用 UniversalMediaViewer 播放
                     UniversalMediaViewer(
                         modifier = Modifier.fillMaxSize(),
                         url = realMediaUrl!!,
@@ -223,33 +212,23 @@ fun SmartLedFileManage(
                         okHttpClient = retrofitClient.getExoOkHttpClient()
                     )
                 } else {
-                    // 3. 获取失败或路径为空时的兜底提示
-                    Text(
-                        text = "获取文件地址失败",
-                        color = Color.White,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Text("获取文件地址失败", color = Color.White, modifier = Modifier.align(Alignment.Center))
                 }
 
-                // 右上角关闭按钮 (悬浮在最上层)
+                // 关闭按钮
                 IconButton(
                     onClick = { previewFile = null },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(16.dp)
+                        .padding(top = 40.dp, end = 16.dp) // 避开状态栏
                         .background(Color.Black.copy(alpha = 0.5f), shape = RoundedCornerShape(50))
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = "关闭预览",
-                        tint = Color.White
-                    )
+                    Icon(Icons.Rounded.Close, "关闭", tint = Color.White)
                 }
             }
         }
     }
 }
-
 /**
  * 现代化面包屑导航栏
  */

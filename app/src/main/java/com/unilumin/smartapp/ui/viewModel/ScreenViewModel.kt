@@ -143,7 +143,8 @@ class ScreenViewModel(
         launchWithLoading {
             var parseDataNewSuspend = parseDataNewSuspend(screenService.getLedDevDetail(deviceId))
             if (parseDataNewSuspend != null) {
-                _selectLedDevInfo.value = parseDataNewSuspend
+                //此处只更新截图，不更新整个页面数据，后端数据有问题，导致页面更新异常，亮度值0-->100
+                //_selectLedDevInfo.value = parseDataNewSuspend
                 var minioUrl = getMinioUrl(parseDataNewSuspend.screenshot)
                 if (minioUrl != null) {
                     screenshot.value = minioUrl
