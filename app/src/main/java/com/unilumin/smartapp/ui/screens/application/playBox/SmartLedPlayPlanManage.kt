@@ -1,9 +1,9 @@
 package com.unilumin.smartapp.ui.screens.application.playBox
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +29,7 @@ import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.PlayCircleOutline
+import androidx.compose.material.icons.rounded.SmartDisplay
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -37,6 +38,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -60,10 +62,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -75,7 +77,6 @@ import com.unilumin.smartapp.client.data.LedPlanBO
 import com.unilumin.smartapp.client.data.LedProgramRes
 import com.unilumin.smartapp.ui.components.CommonConfirmDialog
 import com.unilumin.smartapp.ui.components.CommonDropdownMenu
-import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.InfoRowItem
 import com.unilumin.smartapp.ui.components.ModernTimeRangePickerDialog
 import com.unilumin.smartapp.ui.components.PagingList
@@ -129,7 +130,7 @@ fun SmartLedPlayPlanManage(
         ) { ledPlan ->
             PlayPlanCard(
                 plan = ledPlan,
-                onClick = {
+                onEditClick = {
                     planToEdit = ledPlan
                     showFormSheet = true
                 },
@@ -183,7 +184,6 @@ fun SmartLedPlayPlanManage(
                             ledPlanPagingFlow.refresh()
                         })
                     }
-
                 }
             )
         }
@@ -203,7 +203,7 @@ fun PlayPlanForm(
 
     var name by remember { mutableStateOf(initialPlan?.name ?: "") }
     var playType by remember { mutableIntStateOf(initialPlan?.programPlayType ?: 100) }
-    var programSort by remember { mutableStateOf(initialPlan?.programSort?.toString() ?: "0") }
+    var programSort by remember { mutableStateOf(initialPlan?.programSort?.toString() ?: "1") }
     var programId by remember { mutableStateOf(initialPlan?.programId ?: "") }
 
     var startDate by remember { mutableStateOf(initialPlan?.startDate ?: "") }
@@ -251,13 +251,6 @@ fun PlayPlanForm(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
-            prefix = {
-                Icon(
-                    Icons.Rounded.Edit,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
         )
 
         OutlinedTextField(
@@ -272,18 +265,11 @@ fun PlayPlanForm(
                     }
                 }
             },
-            label = { Text("优先级 (0-100)") },
+            label = { Text("优先级 (1-100)") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            shape = RoundedCornerShape(12.dp),
-            prefix = {
-                Icon(
-                    Icons.Rounded.Layers,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
+            shape = RoundedCornerShape(12.dp)
         )
 
         CommonDropdownMenu(
@@ -295,18 +281,19 @@ fun PlayPlanForm(
             placeholder = "请选择播放表",
             modifier = Modifier.fillMaxWidth()
         )
-
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            SegmentedButton(
-                selected = playType == 100,
-                onClick = { playType = 100 },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-            ) { Text("插播 (100)") }
-            SegmentedButton(
-                selected = playType == 200,
-                onClick = { playType = 200 },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-            ) { Text("轮播 (200)") }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                SegmentedButton(
+                    selected = playType == 100,
+                    onClick = { playType = 100 },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                ) { Text("插播") }
+                SegmentedButton(
+                    selected = playType == 200,
+                    onClick = { playType = 200 },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                ) { Text("轮播") }
+            }
         }
 
         ClickableField(
@@ -481,51 +468,73 @@ fun ClickableField(
 }
 
 // --- 卡片视图展示区 ---
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PlayPlanCard(
     plan: LedPlanBO,
-    onClick: () -> Unit,
+    onEditClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            ),
+            // 稍微增大上下间距，给弥散的阴影留出呼吸空间
+            .padding(vertical = 8.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onLongPress = { onLongClick() }
+                )
+            },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp, pressedElevation = 6.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        // 【核心优化 1】提升默认高度，长按时高度降低，模拟真实物理下陷的 3D 质感
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 6.dp,
+            pressedElevation = 1.dp
+        ),
+        // 【核心优化 2】增加 0.5dp 的浅色描边，模拟 3D 边缘轮廓光，极大提升精致感
+        border = BorderStroke(
+            width = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp) // 使用统一点距移除冗余Spacer
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 4.dp)
+                modifier = Modifier.padding(bottom = 2.dp)
             ) {
                 Text(
                     text = plan.name ?: "未命名方案",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f, fill = false),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                DeviceStatus(
-                    plan.programPlayType, mapOf(
-                        100 to Triple(Color(0xFFE3F2FD), Color(0xFF1976D2), "插播"),
-                        200 to Triple(Color(0xFFE8F5E9), Color(0xFF388E3C), "轮播")
+                Spacer(modifier = Modifier.width(4.dp))
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Edit,
+                        contentDescription = "编辑",
+                        modifier = Modifier.size(18.dp),
+                        // 稍微调深一点图标颜色，与背景形成更好的对比度
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                )
+                }
             }
+            InfoRowItem(
+                icon = Icons.Rounded.SmartDisplay,
+                label = "播放类型",
+                value = if (plan.programPlayType == 100) "插播" else "轮播"
+            )
             InfoRowItem(
                 icon = Icons.Rounded.Layers,
                 label = "优先级",
@@ -547,7 +556,7 @@ fun PlayPlanCard(
                 value = "${plan.startDate ?: "-"} 至 ${plan.endDate ?: "-"}"
             )
 
-            Box(modifier = Modifier.padding(top = 8.dp)) {
+            Box(modifier = Modifier.padding(top = 6.dp)) {
                 WeekStrategySection(plan.weekValue)
             }
         }
