@@ -15,14 +15,18 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,6 +73,7 @@ import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.FilterList
@@ -100,9 +105,14 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
@@ -113,6 +123,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -150,6 +161,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -1325,6 +1337,10 @@ fun <T : Any> PagingList(
         }
     }
     val showScrollToTop = isScrolledDown
+
+    // 监听列表是否正在滑动
+    val isScrolling = listState.isScrollInProgress
+
     var showHeader by remember { mutableStateOf(false) }
 
     LaunchedEffect(totalCount, refreshState) {
@@ -1461,57 +1477,69 @@ fun <T : Any> PagingList(
             }
         }
 
-        // 底部操作区：统一样式的悬浮按钮
-        Column(
+        // 底部操作区：统一样式的悬浮按钮 (增加滑动时向右隐藏的动画逻辑)
+        AnimatedVisibility(
+            visible = !isScrolling, // 只有不在滑动时才显示整个操作区
+            enter = slideInHorizontally(
+                initialOffsetX = { fullWidth -> fullWidth * 2 }, // 从屏幕右侧边缘外滑入
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+            ) + fadeIn(),
+            exit = slideOutHorizontally(
+                targetOffsetX = { fullWidth -> fullWidth * 2 }, // 向右滑出屏幕边缘外
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+            ) + fadeOut(),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(end = 16.dp, bottom = 32.dp)
         ) {
-            // 回到顶部按钮
-            AnimatedVisibility(
-                visible = showScrollToTop,
-                enter = scaleIn(spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(),
-                exit = scaleOut(spring(stiffness = Spring.StiffnessMediumLow)) + fadeOut()
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Surface(
-                    onClick = { scope.launch { listState.animateScrollToItem(0) } },
-                    modifier = Modifier.size(48.dp), // 统一尺寸 48dp
-                    shape = CircleShape,
-                    color = Color(0xFF2979FF).copy(alpha = 0.2f), // 统一透明底色
-                    contentColor = Color(0xFF2979FF), // 统一图标颜色
-                    shadowElevation = 0.dp // 统一无阴影
+                // 回到顶部按钮：仅在向下滑动一定距离后显示，并受外层滑动隐藏逻辑控制
+                AnimatedVisibility(
+                    visible = showScrollToTop,
+                    enter = scaleIn(spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(),
+                    exit = scaleOut(spring(stiffness = Spring.StiffnessMediumLow)) + fadeOut()
                 ) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                        Icon(
-                            imageVector = Icons.Rounded.KeyboardArrowUp,
-                            contentDescription = "回到顶部",
-                            modifier = Modifier.size(24.dp) // 统一图标大小
-                        )
+                    Surface(
+                        onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape,
+                        color = Color(0xFF2979FF).copy(alpha = 0.2f),
+                        contentColor = Color(0xFF2979FF),
+                        shadowElevation = 0.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Icon(
+                                imageVector = Icons.Rounded.KeyboardArrowUp,
+                                contentDescription = "回到顶部",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 }
-            }
 
-            // 新增按钮
-            if (onAddClick != null) {
-                Surface(
-                    onClick = onAddClick,
-                    modifier = Modifier.size(48.dp), // 统一尺寸 48dp
-                    shape = CircleShape,
-                    color = Color(0xFF2979FF).copy(alpha = 0.2f), // 统一透明底色
-                    contentColor = Color(0xFF2979FF), // 统一图标颜色
-                    shadowElevation = 0.dp // 统一无阴影
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
+                // 新增按钮
+                if (onAddClick != null) {
+                    Surface(
+                        onClick = onAddClick,
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape,
+                        color = Color(0xFF2979FF).copy(alpha = 0.2f),
+                        contentColor = Color(0xFF2979FF),
+                        shadowElevation = 0.dp
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "",
-                            modifier = Modifier.size(24.dp) // 统一图标大小
-                        )
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "新增",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -2282,15 +2310,13 @@ private fun WeekDayChip(day: String) {
     }
 }
 
-
-
 /**
- * 单选下拉框
+ * 现代化单选下拉框 (优化版)
  * @param items 数据源
  * @param selectedItem 被选
- * @param itemLabel  显示的名称(下拉数据列表对应的key)
+ * @param itemLabel 显示的名称(下拉数据列表对应的key)
  * @param onItemSelected 选中事件
- * */
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> CommonDropdownMenu(
@@ -2301,18 +2327,16 @@ fun <T> CommonDropdownMenu(
     modifier: Modifier = Modifier,
     label: String = "请选择",
     placeholder: String = "请选择",
-    maxHeight: Dp = 360.dp // 新增参数：默认限制在240dp，约展示4-5个选项
+    maxHeight: Dp = 360.dp
 ) {
-    // 组件内部维护展开/收起的状态
     var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
+        onExpandedChange = { expanded = it },
         modifier = modifier
     ) {
         OutlinedTextField(
-            // 使用传入的 itemLabel 函数提取显示文本
             value = selectedItem?.let { itemLabel(it) } ?: "",
             onValueChange = {},
             readOnly = true,
@@ -2321,8 +2345,13 @@ fun <T> CommonDropdownMenu(
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
-            // 推荐加上默认的颜色配置，确保展开时的状态颜色变化符合 Material 3 规范
-            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                // 确保输入框背景是干净的
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+            ),
             modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth(),
@@ -2332,23 +2361,59 @@ fun <T> CommonDropdownMenu(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            // 核心优化：限制下拉框的最大高度
-            modifier = Modifier.heightIn(max = maxHeight)
+            modifier = Modifier
+                .heightIn(max = maxHeight)
+                // 1. 使用纯净的 surface 背景，拒绝灰暗色调
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(16.dp)
+                ),
+            // 让菜单外部边角更圆润
+            shape = RoundedCornerShape(16.dp),
+            // 添加阴影提升层级感 (如果 Material 3 版本支持，也可以默认生效)
+            shadowElevation = 6.dp
         ) {
             items.forEach { item ->
+                val isSelected = item == selectedItem
+
                 DropdownMenuItem(
-                    text = { Text(text = itemLabel(item)) },
+                    text = {
+                        Text(
+                            text = itemLabel(item),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    },
                     onClick = {
                         onItemSelected(item)
                         expanded = false
                     },
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    trailingIcon = {
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = "Selected",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    },
+                    // 2. 核心优化：为选中项添加柔和的背景色块，并增加四周留白
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 2.dp) // 让色块不顶到边缘
+                        .clip(RoundedCornerShape(10.dp)) // 色块圆角
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                            else Color.Transparent
+                        ),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
                 )
             }
         }
     }
 }
-
 /**
  * 通用步骤进度指示器组件
  *
@@ -2478,4 +2543,178 @@ fun CommonConfirmDialog(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(24.dp)
     )
+}
+
+/**
+ * 时间区间选择
+ * HH:mm:ss
+ * */
+@Composable
+fun ModernTimeRangePickerDialog(
+    initialStart: String,
+    initialEnd: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit
+) {
+    var tabIndex by remember { mutableIntStateOf(0) }
+    // 解析初始值
+    var startHour by remember { mutableIntStateOf(initialStart.split(":")[0].toIntOrNull() ?: 0) }
+    var startMin by remember { mutableIntStateOf(initialStart.split(":")[1].toIntOrNull() ?: 0) }
+    var endHour by remember { mutableIntStateOf(initialEnd.split(":")[0].toIntOrNull() ?: 23) }
+    var endMin by remember { mutableIntStateOf(initialEnd.split(":")[1].toIntOrNull() ?: 59) }
+    var errorMessage by remember { mutableStateOf("") }
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("选择时间段", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+                TabRow(
+                    selectedTabIndex = tabIndex,
+                    containerColor = Color.Transparent,
+                    indicator = { tabPositions ->
+                        SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(tabPositions[tabIndex]),
+                            color = MaterialTheme.colorScheme.primary,
+                            height = 3.dp
+                        )
+                    }
+                ) {
+                    Tab(
+                        selected = tabIndex == 0,
+                        onClick = { tabIndex = 0 },
+                        text = { Text("开始时间", fontWeight = if (tabIndex == 0) FontWeight.Bold else FontWeight.Normal) }
+                    )
+                    Tab(
+                        selected = tabIndex == 1,
+                        onClick = { tabIndex = 1 },
+                        text = { Text("结束时间", fontWeight = if (tabIndex == 1) FontWeight.Bold else FontWeight.Normal) }
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                // 核心滚轮区
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (tabIndex == 0) {
+                        WheelPicker(range = 0..23, currentValue = startHour, onValueChange = { startHour = it })
+                        Text(":", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(horizontal = 16.dp))
+                        WheelPicker(range = 0..59, currentValue = startMin, onValueChange = { startMin = it })
+                    } else {
+                        WheelPicker(range = 0..23, currentValue = endHour, onValueChange = { endHour = it })
+                        Text(":", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(horizontal = 16.dp))
+                        WheelPicker(range = 0..59, currentValue = endMin, onValueChange = { endMin = it })
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(24.dp), // 保持 24dp 的占位高度
+                    horizontalAlignment = Alignment.CenterHorizontally, // 水平居中
+                    verticalArrangement = Arrangement.Center // 垂直居中
+                ) {
+                    AnimatedVisibility(visible = errorMessage.isNotEmpty()) {
+                        Text(
+                            text = errorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("取消") }
+                    TextButton(
+                        onClick = {
+                            val startTotal = startHour * 60 + startMin
+                            val endTotal = endHour * 60 + endMin
+                            if (endTotal <= startTotal) {
+                                errorMessage = "结束时间必须晚于开始时间"
+                            } else {
+                                errorMessage = ""
+                                val startStr = String.format(Locale.getDefault(), "%02d:%02d:00", startHour, startMin)
+                                val endStr = String.format(Locale.getDefault(), "%02d:%02d:00", endHour, endMin)
+                                onConfirm(startStr, endStr)
+                            }
+                        }
+                    ) { Text("确定") }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun WheelPicker(
+    range: IntRange,
+    currentValue: Int,
+    onValueChange: (Int) -> Unit
+) {
+    val items = range.toList()
+    val itemHeight = 44.dp
+    val visibleItemsCount = 5
+    val halfCount = visibleItemsCount / 2
+
+    val initialIndex = items.indexOf(currentValue).coerceAtLeast(0)
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
+    val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
+
+    LaunchedEffect(listState.firstVisibleItemIndex) {
+        val index = listState.firstVisibleItemIndex
+        if (index in items.indices) {
+            onValueChange(items[index])
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .height(itemHeight * visibleItemsCount)
+            .width(64.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // 中心高亮背景
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(itemHeight)
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+        )
+
+        LazyColumn(
+            state = listState,
+            flingBehavior = flingBehavior,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(halfCount) { Spacer(modifier = Modifier.height(itemHeight)) }
+
+            items(items.size) { index ->
+                val isSelected = listState.firstVisibleItemIndex == index
+                Box(
+                    modifier = Modifier.height(itemHeight).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = String.format("%02d", items[index]),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    )
+                }
+            }
+
+            items(halfCount) { Spacer(modifier = Modifier.height(itemHeight)) }
+        }
+    }
 }

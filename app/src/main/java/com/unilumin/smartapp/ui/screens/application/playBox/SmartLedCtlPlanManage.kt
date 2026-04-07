@@ -82,10 +82,13 @@ fun SmartLedCtlPlanManage(
         PagingList(
             totalCount = totalCount,
             lazyPagingItems = ledPlanPagingFlow,
-            itemKey = { it.id },
+            itemKey = { it.id!! },
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 12.dp),
+            onAddClick = {
+                //TODO 新增控制方案
+            },
             emptyMessage = "暂无控制方案信息",
             contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp)
         ) { ledPlan ->
@@ -109,7 +112,7 @@ fun SmartLedCtlPlanManage(
             title = "删除控制方案",
             message = "确定要删除「$planName」吗？删除后将无法恢复",
             onConfirm = {
-                screenViewModel.delLedPlans(planToDelete!!.id)
+                screenViewModel.delLedPlans(planToDelete!!.id!!)
                 showDeleteDialog = false
                 planToDelete = null
                 ledPlanPagingFlow.refresh()
@@ -233,12 +236,15 @@ private fun CtlPlanDetailItem(detail: LedCtlPlanDetail) {
             val time = "${detail.startTime ?: "--"} ~ ${detail.endTime ?: "--"}"
             Tuple4(Icons.Rounded.WbSunny, Color(0xFF388E3C), "唤醒", time)
         }
+
         3 -> { // 重启
             Tuple4(Icons.Rounded.Refresh, Color(0xFFF57C00), "重启", detail.time ?: "--")
         }
+
         4 -> { // 亮度
             Tuple4(Icons.Rounded.Brightness6, Color(0xFF7B1FA2), "亮度", detail.time ?: "--")
         }
+
         else -> { // 未知或休眠等其他类型
             Tuple4(
                 Icons.Rounded.DateRange,

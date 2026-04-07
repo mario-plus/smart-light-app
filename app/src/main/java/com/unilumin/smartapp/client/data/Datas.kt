@@ -1071,37 +1071,42 @@ data class LedDevGroupRes(
 )
 
 data class LedPlanBO(
-    val id: Long, val name: String?, val startDate: String?, val endDate: String?,
+    val id: Long? = null,
+    var name: String? = null,
+    var startDate: String? = null,
+    var endDate: String? = null,
     //周限值，中间用英文逗号分隔，7个值，分别表示星期一到星期天：1执行 0不执行
-    val weekValue: String?, val createTime: String?, val updateTime: String?,
+    var weekValue: String? = null, val createTime: String? = null, val updateTime: String? = null,
     //类型：1.指令(控制) 2.节目(播放)
-    val type: Int?,
+    var type: Int? = null,
     //执行时间，HH:mm:ss
-    val commandExecuteTime: String?,
+    val commandExecuteTime: String? = null,
     //指令类型:1.休眠 2.唤醒 3.重启 4.亮度(0-100)"
-    val commandType: Int?,
+    val commandType: Int? = null,
     //指令值
-    val commandValue: String?,
+    val commandValue: String? = null,
     //节目开始时间 格式18:00:00
-    val programStartTime: String?,
+    var programStartTime: String? = null,
     //节目结束时间 格式22:00:00
-    val programEndTime: String?,
+    var programEndTime: String? = null,
     //节目播放类型 100插播 200轮播
-    val programPlayType: Int?,
+    var programPlayType: Int? = null,
     //节目优先级 0~100，同一个终端时，多个优先级必须不一样
-    val programSort: Int?, val programId: String?,
+    var programSort: Int? = null,
+    var programId: String? = null,
     //节目名称
-    val programName: String?,
+    var programName: String? = null,
     //是否有时间，0否1是
-    val isTime: Int?,
+    var isTime: Int? = null,
     //是否有日期，0否1是
-    val isDate: Int?,
+    var isDate: Int? = null,
     //是否有星期，0否1是
-    val isWeek: Int?,
+    var isWeek: Int? = null,
     //是否已发布，0否1是
-    val isPublish: Int?,
+    val isPublish: Int? = null,
     //同步状态，0 未同步，1 已同步
-    val asyncStatus: Int?,
+    val asyncStatus: Int? = null,
+    val subSystemType: Int? = 3,
     //控制方案--执行计划
     var ctlPlanDetails: List<LedCtlPlanDetail>? = null
 )
@@ -1622,4 +1627,45 @@ data class LedGroupMemberUpdate(
     val groupId: Long,
     val deviceIds: List<Long>,
     val subSystemType: Int? = 3,
+)
+
+
+data class LedScheduleAddDTO(
+    // 名称
+    var name: String,
+    // 类型：1.指令 2.节目
+    var type: Int,
+    // 开始日期：格式2020-10-22
+    var startDate: String? = null,
+    // 结束日期：格式2020-10-22
+    var endDate: String? = null,
+    // 周限值，中间用英文逗号分隔，7个值，分别表示星期一到星期天：1执行 0不执行
+    var weekValue: String? = null,
+    // 指令执行时间：格式18:00:00
+    var commandExecuteTime: String? = null,
+    // 指令类型:1.休眠 2.唤醒 3.重启 4.亮度(0-100)
+    var commandType: Int? = null,
+    // 指令值
+    var commandValue: Int? = null,
+    // 节目开始时间 格式18:00:00
+    var programStartTime: String? = null,
+    // 节目结束时间 格式22:00:00
+    var programEndTime: String? = null,
+    // 节目播放类型 100插播 200轮播
+    var programPlayType: Int? = null,
+    // 节目优先级 0~100，同一个终端时，多个优先级必须不一样
+    var programSort: Int? = null,
+    // 节目ID
+    var programId: Long? = null,
+    // 是否有时间，0否1是
+    var isTime: Int? = null,
+    // 是否有日期，0否1是
+    var isDate: Int? = null,
+    // 是否有星期，0否1是
+    var isWeek: Int? = null,
+    // 子应用id
+    var subSystemType: Int? = 3,
+    // 执行计划
+//    var executePlans: List<ScheduleExecutePlanDTO>? = null
+
 )

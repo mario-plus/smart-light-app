@@ -182,9 +182,23 @@ class ScreenViewModel(
         }
     }
 
-    fun delLedPlans(id: Long) {
-        launchWithLoading {
+    fun delLedPlans(id: Long, onSuccess: (() -> Unit)? = null) {
+        launchWithLoading(onSuccess = onSuccess) {
             parseDataNewSuspend(screenService.delLedPlans(IdsBody(idList = listOf(id))))
+            ToastUtil.showSuccess(context, "操作成功")
+        }
+    }
+
+    fun addLedPlans(requestBody: LedPlanBO, onSuccess: (() -> Unit)? = null) {
+        launchWithLoading(onSuccess = onSuccess) {
+            parseDataNewSuspend(screenService.addLedPlans(requestBody))
+            ToastUtil.showSuccess(context, "操作成功")
+        }
+    }
+
+    fun editLedPlans(requestBody: LedPlanBO, onSuccess: (() -> Unit)? = null) {
+        launchWithLoading(onSuccess = onSuccess) {
+            parseDataNewSuspend(screenService.editLedPlans(requestBody))
             ToastUtil.showSuccess(context, "操作成功")
         }
     }
@@ -333,7 +347,7 @@ class ScreenViewModel(
                 planList.map { plan ->
                     async {
                         val detailData = parseDataNewSuspend(
-                            screenService.getLedCtlPlanDetail(plan.id)
+                            screenService.getLedCtlPlanDetail(plan.id!!)
                         )
                         plan.ctlPlanDetails = detailData
                     }

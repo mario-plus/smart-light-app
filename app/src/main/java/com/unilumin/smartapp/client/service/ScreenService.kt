@@ -102,6 +102,19 @@ interface ScreenService {
     fun delLedPlans(@Body requestBody: IdsBody): Call<NewResponseData<Void?>?>?
 
     /**
+     * 新增播放方案
+     * */
+    @POST(RequestPathKey.KEY_LED_PLAN_DEL)
+    fun addLedPlans(@Body requestBody: LedPlanBO): Call<NewResponseData<Long?>?>?
+
+    /**
+     * 编辑播放方案
+     * */
+    @PUT(RequestPathKey.KEY_LED_PLAN_DEL)
+    fun editLedPlans(@Body requestBody: LedPlanBO): Call<NewResponseData<Long?>?>?
+
+
+    /**
      * 控制方案详情
      * */
     @GET(RequestPathKey.KEY_LED_CTL_PLAN_DETAIL)
