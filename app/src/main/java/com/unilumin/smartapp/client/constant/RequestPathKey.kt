@@ -49,6 +49,8 @@ object RequestPathKey {
 
     //播放方案
     const val KEY_LED_PLAN_LIST: String = "$SMART_LED/uni-led/led_schedule_list"
+    //删除播放方案
+    const val KEY_LED_PLAN_DEL: String = "$SMART_LED/uni-led/led_schedule"
 
     //控制方案详情
     const val KEY_LED_CTL_PLAN_DETAIL: String = "$SMART_LED/uni-led/led_schedule_detail"

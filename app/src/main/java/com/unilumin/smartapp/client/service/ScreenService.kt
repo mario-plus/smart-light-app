@@ -1,6 +1,7 @@
 package com.unilumin.smartapp.client.service
 
 import com.unilumin.smartapp.client.constant.RequestPathKey
+import com.unilumin.smartapp.client.data.IdsBody
 import com.unilumin.smartapp.client.data.LedCommandReq
 import com.unilumin.smartapp.client.data.LedCtlPlanDetail
 import com.unilumin.smartapp.client.data.LedDevGroupRes
@@ -18,6 +19,7 @@ import com.unilumin.smartapp.client.data.PlayBoxDeviceBO
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Query
@@ -92,6 +94,12 @@ interface ScreenService {
         @Query("subSystemType") subSystemType: Int? = 3
     ): Call<NewResponseData<PageResponse<LedPlanBO>?>?>?
 
+
+    /**
+     * 删除播放方案
+     * */
+    @HTTP(method = "DELETE", path = RequestPathKey.KEY_LED_PLAN_DEL, hasBody = true)
+    fun delLedPlans(@Body requestBody: IdsBody): Call<NewResponseData<Void?>?>?
 
     /**
      * 控制方案详情

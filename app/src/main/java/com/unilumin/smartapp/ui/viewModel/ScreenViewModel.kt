@@ -6,6 +6,7 @@ import com.unilumin.smartapp.client.RetrofitClient
 import com.unilumin.smartapp.client.UniCallbackService
 import com.unilumin.smartapp.client.UniCallbackService.parseDataNewSuspend
 import com.unilumin.smartapp.client.constant.DeviceConstant.fileTypeOptionsTransform
+import com.unilumin.smartapp.client.data.IdsBody
 import com.unilumin.smartapp.client.data.LedCommandReq
 import com.unilumin.smartapp.client.data.LedDevFunc
 import com.unilumin.smartapp.client.data.LedDevGroupRes
@@ -180,6 +181,14 @@ class ScreenViewModel(
             ToastUtil.showSuccess(context, "操作成功")
         }
     }
+
+    fun delLedPlans(id: Long) {
+        launchWithLoading {
+            parseDataNewSuspend(screenService.delLedPlans(IdsBody(idList = listOf(id))))
+            ToastUtil.showSuccess(context, "操作成功")
+        }
+    }
+
 
     fun ledDevDetail(deviceId: Long) {
         launchWithLoading {

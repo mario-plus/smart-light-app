@@ -1,6 +1,8 @@
 package com.unilumin.smartapp.ui.screens.application.playBox
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,7 +22,6 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,9 +30,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -39,15 +46,14 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.unilumin.smartapp.client.data.LedCtlPlanDetail
 import com.unilumin.smartapp.client.data.LedPlanBO
 import com.unilumin.smartapp.client.data.Tuple4
+import com.unilumin.smartapp.ui.components.CommonConfirmDialog
 import com.unilumin.smartapp.ui.components.DeviceStatus
 import com.unilumin.smartapp.ui.components.InfoRowItem
 import com.unilumin.smartapp.ui.components.PagingList
 import com.unilumin.smartapp.ui.components.SearchHeader
-
 import com.unilumin.smartapp.ui.components.WeekStrategySection
 import com.unilumin.smartapp.ui.viewModel.ScreenViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartLedCtlPlanManage(
     screenViewModel: ScreenViewModel
@@ -55,6 +61,12 @@ fun SmartLedCtlPlanManage(
     val searchQuery by screenViewModel.searchQuery.collectAsState()
     val totalCount by screenViewModel.totalCount.collectAsState()
     val ledPlanPagingFlow = screenViewModel.ledPlanPagingFlow.collectAsLazyPagingItems()
+    // 状态管理：控制删除确认弹窗及记录当前选中项
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var planToDelete by remember { mutableStateOf<LedPlanBO?>(null) }
+    // 获取触觉反馈服务
+    val hapticFeedback = LocalHapticFeedback.current
+
 
     Column(
         modifier = Modifier
@@ -79,25 +91,59 @@ fun SmartLedCtlPlanManage(
         ) { ledPlan ->
             LedPlanCard(
                 plan = ledPlan,
-                modifier = Modifier.padding(vertical = 6.dp)
+                modifier = Modifier.padding(vertical = 6.dp),
+                onClick = {
+                    // TODO: 跳转详情
+                },
+                onLongClick = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    planToDelete = ledPlan
+                    showDeleteDialog = true
+                }
             )
         }
     }
+    if (showDeleteDialog && planToDelete != null) {
+        val planName = planToDelete?.name ?: "未命名方案"
+        CommonConfirmDialog(
+            title = "删除控制方案",
+            message = "确定要删除「$planName」吗？删除后将无法恢复",
+            onConfirm = {
+                screenViewModel.delLedPlans(planToDelete!!.id)
+                showDeleteDialog = false
+                planToDelete = null
+                ledPlanPagingFlow.refresh()
+            },
+            onDismiss = {
+                showDeleteDialog = false
+                planToDelete = null
+            }
+        )
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LedPlanCard(
     plan: LedPlanBO,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
+    // 移除 onClick 传参，改用 combinedClickable 处理长按和点击
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        onClick = { /* TODO: 跳转详情 */ }
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -246,6 +292,3 @@ private fun CtlPlanDetailItem(detail: LedCtlPlanDetail) {
         }
     }
 }
-
-
-
