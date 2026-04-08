@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -57,6 +58,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -108,6 +111,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -133,6 +137,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -147,6 +152,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -154,6 +160,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -2268,7 +2276,7 @@ fun WeekStrategySection(weekValue: String?) {
         Spacer(modifier = Modifier.height(8.dp))
         if (activeDays.isEmpty()) {
             Text(
-                text = "暂无执行计划",
+                text = "暂无",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
                 modifier = Modifier.padding(start = 24.dp)
@@ -2494,6 +2502,9 @@ fun StepCircle(
     }
 }
 
+/**
+ * 二次确认组件
+ * */
 @Composable
 fun CommonConfirmDialog(
     title: String,
@@ -2571,8 +2582,6 @@ fun ModernTimeRangePickerDialog(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("选择时间段", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(16.dp))
                 TabRow(
                     selectedTabIndex = tabIndex,
                     containerColor = Color.Transparent,
@@ -2715,6 +2724,210 @@ fun WheelPicker(
             }
 
             items(halfCount) { Spacer(modifier = Modifier.height(itemHeight)) }
+        }
+    }
+}
+
+/**
+ * 时间点选择
+ * */
+@Composable
+fun ModernTimePickerDialog(
+    initialTime: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    val timeParts = initialTime.split(":")
+    var hour by remember { mutableIntStateOf(timeParts.getOrNull(0)?.toIntOrNull() ?: 12) }
+    var min by remember { mutableIntStateOf(timeParts.getOrNull(1)?.toIntOrNull() ?: 0) }
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    WheelPicker(
+                        range = 0..23,
+                        currentValue = hour,
+                        onValueChange = { hour = it }
+                    )
+                    Text(
+                        text = ":",
+                        style = MaterialTheme.typography.headlineLarge,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    WheelPicker(
+                        range = 0..59,
+                        currentValue = min,
+                        onValueChange = { min = it }
+                    )
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("取消")
+                    }
+                    TextButton(
+                        onClick = {
+                            val timeStr = String.format(Locale.getDefault(), "%02d:%02d:00", hour, min)
+                            onConfirm(timeStr)
+                        }
+                    ) {
+                        Text("确定")
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/**
+ * 交互式控制卡片（带滑动条和输入框）
+ * */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InteractiveControlCard(
+    title: String,
+    value: Int,
+    unit: String = "",
+    accentColor: Color = Color(0xFF2F78FF),
+    onValueChange: (Int) -> Unit,
+    onCommit: (Int) -> Unit
+) {
+    val focusManager = LocalFocusManager.current
+    var textValue by remember(value) { mutableStateOf(value.toString()) }
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // --- 标题 ---
+        Text(
+            text = title,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF333333),
+            modifier = Modifier.widthIn(min = 40.dp)
+        )
+
+        // --- Slider ---
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { floatVal ->
+                val intVal = floatVal.toInt()
+                textValue = intVal.toString()
+                onValueChange(intVal)
+            },
+            onValueChangeFinished = { onCommit(value) },
+            valueRange = 0f..100f,
+            interactionSource = interactionSource,
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp),
+            thumb = {
+                Box(
+                    modifier = Modifier
+                        .size(26.dp)
+                        .shadow(4.dp, CircleShape, spotColor = accentColor)
+                        .background(Color.White, CircleShape)
+                        .border(1.5.dp, accentColor.copy(alpha = 0.2f), CircleShape)
+                )
+            },
+            track = { sliderState ->
+                val fraction = (sliderState.value - sliderState.valueRange.start) /
+                        (sliderState.valueRange.endInclusive - sliderState.valueRange.start)
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(14.dp)
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(accentColor.copy(alpha = 0.12f))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(fraction)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(7.dp))
+                            .background(accentColor)
+                    )
+                }
+            }
+        )
+
+        // --- 输入框 ---
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .width(68.dp)
+                .height(34.dp)
+                .background(Color(0xFFF5F7FA), RoundedCornerShape(8.dp))
+                .border(1.dp, Color(0xFFE8ECEF), RoundedCornerShape(8.dp))
+                .padding(horizontal = 6.dp)
+        ) {
+            BasicTextField(
+                value = textValue,
+                onValueChange = { newText ->
+                    if (newText.all { it.isDigit() }) {
+                        textValue = newText
+                        val intVal = newText.toIntOrNull()
+                        if (intVal != null && intVal in 0..100) {
+                            onValueChange(intVal)
+                        }
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(onDone = {
+                    val finalVal = textValue.toIntOrNull()?.coerceIn(0, 100) ?: 0
+                    textValue = finalVal.toString()
+                    onCommit(finalVal)
+                    focusManager.clearFocus()
+                }),
+                textStyle = TextStyle(
+                    color = Color(0xFF333333),
+                    fontSize = 15.sp,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Medium
+                ),
+                singleLine = true,
+                modifier = Modifier
+                    .weight(1f)
+                    .onFocusChanged { focusState ->
+                        if (!focusState.isFocused) {
+                            val finalVal = textValue.toIntOrNull()?.coerceIn(0, 100) ?: 0
+                            if (finalVal != value) onCommit(finalVal)
+                            textValue = finalVal.toString()
+                        }
+                    }
+            )
+            if (unit.isNotEmpty()) {
+                Text(
+                    text = unit,
+                    color = Color.Gray,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 1.dp)
+                )
+            }
         }
     }
 }

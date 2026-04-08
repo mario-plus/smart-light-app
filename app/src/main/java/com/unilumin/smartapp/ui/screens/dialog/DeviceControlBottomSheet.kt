@@ -1,30 +1,19 @@
 package com.unilumin.smartapp.ui.screens.dialog
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material3.Button
@@ -32,30 +21,22 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unilumin.smartapp.client.constant.DeviceConstant
+import com.unilumin.smartapp.ui.components.InteractiveControlCard
 import com.unilumin.smartapp.ui.theme.ControlBlue
 import com.unilumin.smartapp.ui.theme.ControlRed
 
@@ -181,137 +162,3 @@ fun RowScope.PowerButton(text: String, color: Color, onClick: () -> Unit) {
     }
 }
 
-// 交互式控制卡片（带滑动条和输入框）
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun InteractiveControlCard(
-    title: String,
-    value: Int,
-    unit: String = "",
-    accentColor: Color = Color(0xFF2F78FF),
-    onValueChange: (Int) -> Unit,
-    onCommit: (Int) -> Unit
-) {
-    val focusManager = LocalFocusManager.current
-    var textValue by remember(value) { mutableStateOf(value.toString()) }
-    val interactionSource = remember { MutableInteractionSource() }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // --- 标题 ---
-        Text(
-            text = title,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF333333),
-            modifier = Modifier.widthIn(min = 40.dp)
-        )
-
-        // --- Slider ---
-        Slider(
-            value = value.toFloat(),
-            onValueChange = { floatVal ->
-                val intVal = floatVal.toInt()
-                textValue = intVal.toString()
-                onValueChange(intVal)
-            },
-            onValueChangeFinished = { onCommit(value) },
-            valueRange = 0f..100f,
-            interactionSource = interactionSource,
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 8.dp),
-            thumb = {
-                Box(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .shadow(4.dp, CircleShape, spotColor = accentColor)
-                        .background(Color.White, CircleShape)
-                        .border(1.5.dp, accentColor.copy(alpha = 0.2f), CircleShape)
-                )
-            },
-            track = { sliderState ->
-                val fraction = (sliderState.value - sliderState.valueRange.start) /
-                        (sliderState.valueRange.endInclusive - sliderState.valueRange.start)
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(14.dp)
-                        .clip(RoundedCornerShape(7.dp))
-                        .background(accentColor.copy(alpha = 0.12f))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(fraction)
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(7.dp))
-                            .background(accentColor)
-                    )
-                }
-            }
-        )
-
-        // --- 输入框 ---
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .width(68.dp)
-                .height(34.dp)
-                .background(Color(0xFFF5F7FA), RoundedCornerShape(8.dp))
-                .border(1.dp, Color(0xFFE8ECEF), RoundedCornerShape(8.dp))
-                .padding(horizontal = 6.dp)
-        ) {
-            BasicTextField(
-                value = textValue,
-                onValueChange = { newText ->
-                    if (newText.all { it.isDigit() }) {
-                        textValue = newText
-                        val intVal = newText.toIntOrNull()
-                        if (intVal != null && intVal in 0..100) {
-                            onValueChange(intVal)
-                        }
-                    }
-                },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(onDone = {
-                    val finalVal = textValue.toIntOrNull()?.coerceIn(0, 100) ?: 0
-                    textValue = finalVal.toString()
-                    onCommit(finalVal)
-                    focusManager.clearFocus()
-                }),
-                textStyle = TextStyle(
-                    color = Color(0xFF333333),
-                    fontSize = 15.sp,
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Medium
-                ),
-                singleLine = true,
-                modifier = Modifier
-                    .weight(1f)
-                    .onFocusChanged { focusState ->
-                        if (!focusState.isFocused) {
-                            val finalVal = textValue.toIntOrNull()?.coerceIn(0, 100) ?: 0
-                            if (finalVal != value) onCommit(finalVal)
-                            textValue = finalVal.toString()
-                        }
-                    }
-            )
-            if (unit.isNotEmpty()) {
-                Text(
-                    text = unit,
-                    color = Color.Gray,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(start = 1.dp)
-                )
-            }
-        }
-    }
-}

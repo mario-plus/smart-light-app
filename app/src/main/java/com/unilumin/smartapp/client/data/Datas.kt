@@ -1081,8 +1081,8 @@ data class LedPlanBO(
     var type: Int? = null,
     //执行时间，HH:mm:ss
     val commandExecuteTime: String? = null,
-    //指令类型:1.休眠 2.唤醒 3.重启 4.亮度(0-100)"
-    val commandType: Int? = null,
+    //指令类型: 2.唤醒 3.重启 4.亮度(0-100)"
+    var commandType: Int? = null,
     //指令值
     val commandValue: String? = null,
     //节目开始时间 格式18:00:00
@@ -1108,23 +1108,32 @@ data class LedPlanBO(
     val asyncStatus: Int? = null,
     val subSystemType: Int? = 3,
     //控制方案--执行计划
-    var ctlPlanDetails: List<LedCtlPlanDetail>? = null
+    var executePlans: List<LedCtlPlanDetail>? = null,
+    //时间区间，控制方案使用
+    var dateRange: List<String>? = null
 )
 
+data class LedCtlPlans(
+    var id: Long?,
+    var executePlans: List<LedCtlPlanDetail>? = null,
+    val subSystemType: Int? = 3
+)
+
+
 data class LedCtlPlanDetail(
-    val id: Long? = null,
+    var id: Long? = null,
     //方案id
     val scheduleId: Long? = null,
     //指令类型:2.亮屏 3.重启 4.亮度(0-100)
-    val commandType: Int? = null,
+    var commandType: Int? = null,
     //执行时间
-    val time: String? = null,
+    var time: String? = null,
     //指令值
-    val commandValue: Int? = null,
+    var commandValue: Int? = null,
     //开始时间：格式2020-10-22
-    val startTime: String? = null,
+    var startTime: String? = null,
     //结束时间：格式2020-10-22
-    val endTime: String? = null,
+    var endTime: String? = null,
     //创建时间
     val createTime: String? = null,
     //更新时间

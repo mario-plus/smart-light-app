@@ -54,6 +54,8 @@ object RequestPathKey {
 
     //控制方案详情
     const val KEY_LED_CTL_PLAN_DETAIL: String = "$SMART_LED/uni-led/led_schedule_detail"
+    //更新控制方案
+    const val KEY_LED_CTL_PLAN_UPDATE: String = "$SMART_LED/uni-led/led_schedule_execute_plan"
 
     //播放盒(远程控制)
     const val KEY_LED_COMMAND: String = "$SMART_LED/uni-led/led_command"

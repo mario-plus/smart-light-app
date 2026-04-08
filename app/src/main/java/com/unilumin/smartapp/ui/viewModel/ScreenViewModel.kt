@@ -8,6 +8,7 @@ import com.unilumin.smartapp.client.UniCallbackService.parseDataNewSuspend
 import com.unilumin.smartapp.client.constant.DeviceConstant.fileTypeOptionsTransform
 import com.unilumin.smartapp.client.data.IdsBody
 import com.unilumin.smartapp.client.data.LedCommandReq
+import com.unilumin.smartapp.client.data.LedCtlPlans
 import com.unilumin.smartapp.client.data.LedDevFunc
 import com.unilumin.smartapp.client.data.LedDevGroupRes
 import com.unilumin.smartapp.client.data.LedFileReq
@@ -198,6 +199,9 @@ class ScreenViewModel(
 
     fun editLedPlans(requestBody: LedPlanBO, onSuccess: (() -> Unit)? = null) {
         launchWithLoading(onSuccess = onSuccess) {
+            if (requestBody.type == 1) {
+                parseDataNewSuspend(screenService.editLedCtlPlan(LedCtlPlans(requestBody.id,requestBody.executePlans)))
+            }
             parseDataNewSuspend(screenService.editLedPlans(requestBody))
             ToastUtil.showSuccess(context, "操作成功")
         }
@@ -349,7 +353,7 @@ class ScreenViewModel(
                         val detailData = parseDataNewSuspend(
                             screenService.getLedCtlPlanDetail(plan.id!!)
                         )
-                        plan.ctlPlanDetails = detailData
+                        plan.executePlans = detailData
                     }
                 }.awaitAll()
             }

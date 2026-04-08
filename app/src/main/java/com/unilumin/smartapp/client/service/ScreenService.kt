@@ -4,6 +4,7 @@ import com.unilumin.smartapp.client.constant.RequestPathKey
 import com.unilumin.smartapp.client.data.IdsBody
 import com.unilumin.smartapp.client.data.LedCommandReq
 import com.unilumin.smartapp.client.data.LedCtlPlanDetail
+import com.unilumin.smartapp.client.data.LedCtlPlans
 import com.unilumin.smartapp.client.data.LedDevGroupRes
 import com.unilumin.smartapp.client.data.LedFileReq
 import com.unilumin.smartapp.client.data.LedGroupLogBO
@@ -122,6 +123,8 @@ interface ScreenService {
         @Query("id") id: Long, @Query("subSystemType") subSystemType: Int? = 3
     ): Call<NewResponseData<List<LedCtlPlanDetail>?>?>?
 
+    @PUT(RequestPathKey.KEY_LED_CTL_PLAN_UPDATE)
+    fun editLedCtlPlan(@Body requestBody: LedCtlPlans): Call<NewResponseData<Void?>?>?
 
     /**
      * 素材列表
